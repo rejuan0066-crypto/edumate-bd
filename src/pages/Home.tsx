@@ -7,6 +7,40 @@ import { useWebsiteSettings, FALLBACK_LOGO_URL, DEFAULT_MADRASA_BUILDING_URL } f
 import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
 import { format } from 'date-fns';
 import FloatingSocialIcons from '@/components/home/FloatingSocialIcons';
+import {
+  Phone,
+  Mail,
+  MapPin,
+  LogIn,
+  FileSignature,
+  UserCheck,
+  Home as HomeIcon,
+  ChevronDown,
+  Megaphone,
+  CheckCircle2,
+  ClipboardList,
+  ChevronRight,
+  FileText,
+  Clock,
+  User,
+  BookOpen,
+  GraduationCap,
+  ArrowRight,
+  Video,
+  Utensils,
+  Library,
+  Landmark,
+  Stethoscope,
+  Award,
+  BarChart3,
+  CreditCard,
+  HeartHandshake,
+  Medal,
+  Users,
+  Calendar,
+  X,
+  Menu,
+} from 'lucide-react';
 import '@/styles/institutional-home.css';
 
 interface DeptDetail {
@@ -109,38 +143,41 @@ const Home = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Dynamic institution info from settings
-  const instName = settings.institution_name || 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা';
-  const instNameEn = settings.institution_name_en || 'Al-Arabia Subhania Madrasah & Eyateem Khana';
-  const logoUrl = settings.logo_url || settings.loader_logo_url || FALLBACK_LOGO_URL;
-  const heroImage = settings.hero_bg_image_url || DEFAULT_MADRASA_BUILDING_URL;
-  const heroTitle = settings.hero_title_bn || 'দ্বীনি শিক্ষা ও চারিত্রিক নৈতিকতার এক শীর্ষ বিদ্যাপীঠ';
-  const heroSubtitle = settings.hero_subtitle_bn || 'বিশুদ্ধ কুরআন তিলাওয়াত, তাজবীদ, আন্তর্জাতিক মানের হিফজুল কুরআন প্রশিক্ষণ ও ইসলামিক শিক্ষার এক আদর্শ পরিবেশ।';
-  const phone = settings.phone || '০১৭৪৯-৮৪২৪০১';
-  const email = settings.email || 'info@subhania.edu.bd';
-  const address = settings.address || 'খাজাঞ্চি রোড, এমএইচ সেন্টার, বিশ্বনাথ, সিলেট, বাংলাদেশ';
-  const regNumber = settings.registration_number || '১২৪/সিলেট';
-  const estYear = settings.established_year || '২০০৮';
+  // Dynamic institution info directly from database settings
+  const instName = settings?.institution_name || 'আল আরাবিয়া ছোবহানিয়া হাফিজিয়া মাদরাসা';
+  const instNameEn = settings?.institution_name_en || 'Al-Arabia Subhania Hafizia Madrasah';
+  const logoUrl = settings?.logo_url || settings?.loader_logo_url || FALLBACK_LOGO_URL;
+  const heroImage = settings?.hero_bg_image_url || DEFAULT_MADRASA_BUILDING_URL;
+  const heroTitle = settings?.hero_title_bn || 'ইসলামিক শিক্ষার আলোকবর্তিকা';
+  const heroSubtitle = settings?.hero_subtitle_bn || 'কুরআন ও সুন্নাহর আলোকে আদর্শ মানুষ গড়ার প্রত্যয়ে প্রতিষ্ঠিত';
+  const phone = settings?.phone || '01749842401';
+  const email = settings?.email || 'info@subhania.edu.bd';
+  const address = settings?.address || 'খাজাঞ্চি রোড, এমএইচ সেন্টার, বিশ্বনাথ, সিলেট';
+  const regNumber = settings?.registration_number || '১২৪/সিলেট';
+  const estYear = settings?.established_year || '২০০৮';
 
-  // Leaders
-  const adminName = settings.admin_name || 'আলহাজ্ব আব্দুছ ছোবহান';
-  const adminTitle = settings.admin_title_bn || 'প্রতিষ্ঠাতা ও সভাপতি, ম্যানেজিং কমিটি';
-  const adminPhoto = settings.admin_photo_url;
-  const adminMessage = settings.admin_message_bn ||
-    '“অত্র অঞ্চলের ভবিষ্যৎ প্রজন্মকে সহীহ সুন্নাহ ও কুরআনের শিক্ষায় আলোকিত করার লক্ষ্যে এই প্রতিষ্ঠান যাত্রা শুরু করেছিল। আল্লাহর অশেষ রহমতে ও দ্বীনদরদী মানুষের সহযোগিতায় আজ এটি একটি সুপ্রতিষ্ঠিত দ্বীনি কেন্দ্রে রূপ নিয়েছে।”';
+  // Leader / Founder / Principal info directly from database settings
+  const principalName = principal?.principal_name || settings?.principal_name || 'আলহাজ্ব আব্দুছ ছোবহান';
+  const principalTitle = principal?.principal_title_bn || settings?.principal_title_bn || 'প্রতিষ্ঠাতা ও প্রিন্সিপাল';
+  const principalPhoto = principal?.principal_photo_url || settings?.principal_photo_url;
+  const principalMessage = settings?.principal_message_bn ||
+    'আসসালামু আলাইকুম ওয়া রাহমাতুল্লাহ। আমাদের মাদরাসায় আপনাকে স্বাগতম।';
 
-  const principalName = principal?.principal_name || settings.principal_name || 'মাওলানা মোহাম্মদ আবুল বশর';
-  const principalTitle = principal?.principal_title_bn || settings.principal_title_bn || 'মুহতামিম ও প্রিন্সিপাল';
-  const principalPhoto = principal?.principal_photo_url || settings.principal_photo_url;
-  const principalMessage = settings.principal_message_bn ||
-    '“যোগ্য শিক্ষক মণ্ডলীর সার্বক্ষণিক তদারকি, নিয়মিত ছবক প্রদান ও আবাসিক শিক্ষার্থীদের চারিত্রিক ও আত্মিক গঠনের জন্য আমরা বদ্ধপরিকর। আমাদের লক্ষ্য প্রতিটি ছাত্রকে আদর্শ হাফেজ ও আলেম হিসেবে গড়ে তোলা।”';
+  const adminName = settings?.admin_name ? settings.admin_name.trim() : '';
+  const adminTitle = settings?.admin_title_bn || 'এডমিন';
+  const adminPhoto = settings?.admin_photo_url;
+  const adminMessage = settings?.admin_message_bn || '';
 
-  // Stats
-  const statStudents = settings.stat_students || '৩৫০+';
-  const statTeachers = settings.stat_teachers || '২৫ জন';
-  const statYears = settings.stat_years || '১৮ বছর';
+  // Whether there are two distinct leaders or only one (Founder & Principal)
+  const hasDistinctAdmin = Boolean(adminName && adminName !== principalName);
 
-  const announcement = settings.header_style?.topbar_announcement_bn ||
+  // Stats from database
+  const statStudents = settings?.stat_students || '১৬০+';
+  const statTeachers = settings?.stat_teachers || '১৪+';
+  const statYears = settings?.stat_years || '৫+';
+
+  const announcement =
+    settings?.header_style?.topbar_announcement_bn ||
     '২০২৬-২০২৭ শিক্ষাবর্ষের নূরানী, নাজেরা ও হিফজুল কুরআন শাখায় ভর্তি ফরম বিতরণ চলছে • এতিমখানার লিল্লাহ ফান্ডে অনুদান প্রদান করুন';
 
   const activeDept = activeModalKey ? DEPT_DETAILS[activeModalKey] : null;
@@ -163,16 +200,16 @@ const Home = () => {
             </div>
             <div className="top-right">
               <a href={`tel:${phone}`}>
-                <i className="fas fa-phone-alt"></i> {phone}
+                <Phone className="w-3 h-3 inline mr-1" /> {phone}
               </a>
               <a href={`mailto:${email}`}>
-                <i className="fas fa-envelope"></i> {email}
+                <Mail className="w-3 h-3 inline mr-1" /> {email}
               </a>
               <span>
-                <i className="fas fa-map-marker-alt"></i> বিশ্বনাথ, সিলেট
+                <MapPin className="w-3 h-3 inline mr-1" /> বিশ্বনাথ, সিলেট
               </span>
               <Link to="/login" style={{ color: '#fef08a', fontWeight: 700 }}>
-                <i className="fas fa-sign-in-alt"></i> লগইন
+                <LogIn className="w-3.5 h-3.5 inline mr-1" /> লগইন
               </Link>
             </div>
           </div>
@@ -207,11 +244,11 @@ const Home = () => {
 
             <div className="header-cta-group">
               <Link to="/login" className="btn-portal-outline">
-                <i className="fas fa-user-lock"></i>
+                <UserCheck className="w-4 h-4 inline mr-1.5" />
                 <span>শিক্ষক / স্টাফ পোর্টাল</span>
               </Link>
               <Link to="/admission" className="btn-portal-solid">
-                <i className="fas fa-file-signature"></i>
+                <FileSignature className="w-4 h-4 inline mr-1.5" />
                 <span>অনলাইন ভর্তি আবেদন</span>
               </Link>
             </div>
@@ -222,24 +259,39 @@ const Home = () => {
       {/* 3. MULTI-LEVEL INSTITUTIONAL NAVBAR */}
       <nav className="nav-bar">
         <div className="inst-container">
-          <div className="mobile-nav-toggle-row" style={{ display: 'none', padding: '10px 0', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div
+            className="mobile-nav-toggle-row"
+            style={{ display: 'none', padding: '10px 0', justifyContent: 'space-between', alignItems: 'center' }}
+          >
             <span style={{ color: '#fef08a', fontWeight: 700, fontSize: '14px' }}>মেনু ও নেভিগেশন</span>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '14px' }}
+              style={{
+                background: 'rgba(255,255,255,0.15)',
+                border: 'none',
+                color: '#fff',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
             >
-              <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i> মেনু
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              <span>মেনু</span>
             </button>
           </div>
           <ul className={`nav-list ${mobileMenuOpen ? 'mobile-open' : ''}`}>
             <li className="nav-item active">
               <Link to="/">
-                <i className="fas fa-home"></i> প্রচ্ছদ
+                <HomeIcon className="w-3.5 h-3.5 inline mr-1" /> প্রচ্ছদ
               </Link>
             </li>
             <li className="nav-item">
               <Link to="/about">
-                প্রতিষ্ঠান পরিচিতি <i className="fas fa-angle-down" style={{ fontSize: '11px' }}></i>
+                প্রতিষ্ঠান পরিচিতি <ChevronDown className="w-3 h-3 inline ml-1" />
               </Link>
               <ul className="dropdown-menu">
                 <li>
@@ -249,7 +301,7 @@ const Home = () => {
                   <Link to="/about#vision">লক্ষ্য, উদ্দেশ্য ও ভিশন</Link>
                 </li>
                 <li>
-                  <Link to="/about#admin-message">ম্যানেজিং পরিচালনা পরিষদ</Link>
+                  <Link to="/about#principal-message">পরিচালনা পরিষদ ও অধ্যক্ষের বাণী</Link>
                 </li>
                 <li>
                   <Link to="/about#teachers">শিক্ষক ও কর্মচারী ডিরেক্টরি</Link>
@@ -258,7 +310,7 @@ const Home = () => {
             </li>
             <li className="nav-item">
               <a href="#departments">
-                শিক্ষা বিভাগসমূহ <i className="fas fa-angle-down" style={{ fontSize: '11px' }}></i>
+                শিক্ষা বিভাগসমূহ <ChevronDown className="w-3 h-3 inline ml-1" />
               </a>
               <ul className="dropdown-menu">
                 <li>
@@ -285,7 +337,7 @@ const Home = () => {
             </li>
             <li className="nav-item">
               <Link to="/admission">
-                ভর্তি ও পাঠ্যক্রম <i className="fas fa-angle-down" style={{ fontSize: '11px' }}></i>
+                ভর্তি ও পাঠ্যক্রম <ChevronDown className="w-3 h-3 inline ml-1" />
               </Link>
               <ul className="dropdown-menu">
                 <li>
@@ -304,7 +356,7 @@ const Home = () => {
             </li>
             <li className="nav-item">
               <Link to="/results">
-                পরীক্ষা ও ফলাফল <i className="fas fa-angle-down" style={{ fontSize: '11px' }}></i>
+                পরীক্ষা ও ফলাফল <ChevronDown className="w-3 h-3 inline ml-1" />
               </Link>
               <ul className="dropdown-menu">
                 <li>
@@ -338,7 +390,7 @@ const Home = () => {
       <div className="ticker-bar">
         <div className="inst-container ticker-inner">
           <span className="ticker-label">
-            <i className="fas fa-bullhorn"></i> জরুরি বিজ্ঞপ্তি:
+            <Megaphone className="w-3.5 h-3.5 inline mr-1" /> জরুরি বিজ্ঞপ্তি:
           </span>
           <marquee behavior="scroll" direction="left" scrollamount="4" className="ticker-content">
             {announcement}
@@ -372,7 +424,7 @@ const Home = () => {
               <div className="spotlight-strip">
                 <span className="quote">“জ্ঞানার্জন প্রতিটি মুসলমানের উপর ফরজ” — আল-হাদিস</span>
                 <span style={{ color: '#64748b', fontWeight: 600 }}>
-                  <i className="fas fa-check-circle" style={{ color: '#059669', marginRight: '4px' }}></i>
+                  <CheckCircle2 className="w-3.5 h-3.5 inline mr-1 text-emerald-600" />
                   নিবন্ধিত ও অভ্যন্তরীণ অডিট নিয়ন্ত্রিত
                 </span>
               </div>
@@ -382,11 +434,11 @@ const Home = () => {
             <div className="official-notice-card">
               <div className="desk-head">
                 <div className="desk-title">
-                  <i className="fas fa-clipboard-list" style={{ color: 'var(--primary)' }}></i>
+                  <ClipboardList className="w-4 h-4 inline mr-1 text-emerald-800" />
                   <span>দাপ্তরিক নোটিশ ও সার্কুলার</span>
                 </div>
                 <Link to="/notices" className="desk-link">
-                  সকল নোটিশ <i className="fas fa-angle-right"></i>
+                  সকল নোটিশ <ChevronRight className="w-3.5 h-3.5 inline ml-0.5" />
                 </Link>
               </div>
 
@@ -447,7 +499,7 @@ const Home = () => {
 
               <div className="desk-foot">
                 <Link to="/notices" className="btn-all-notices">
-                  <i className="fas fa-file-pdf" style={{ marginRight: '6px' }}></i>
+                  <FileText className="w-3.5 h-3.5 inline mr-1.5" />
                   দাপ্তরিক নোটিশ আর্কাইভ দেখুন
                 </Link>
               </div>
@@ -463,55 +515,112 @@ const Home = () => {
           <span style={{ fontSize: '12.5px', color: '#64748b' }}>মাদরাসার লক্ষ্য ও অনুপ্রেরণা</span>
         </div>
 
-        <div className="leadership-grid">
-          {/* President */}
-          <div className="leader-box">
-            {adminPhoto ? (
-              <img
-                src={adminPhoto}
-                alt={adminName}
-                className="leader-portrait"
-              />
-            ) : (
-              <div className="leader-portrait" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#064e3b', fontSize: '32px' }}>
-                <i className="fas fa-user-tie"></i>
+        {hasDistinctAdmin ? (
+          <div className="leadership-grid">
+            {/* President / Admin */}
+            <div className="leader-box">
+              {adminPhoto ? (
+                <img src={adminPhoto} alt={adminName} className="leader-portrait" />
+              ) : (
+                <div
+                  className="leader-portrait"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#f1f5f9',
+                    color: '#064e3b',
+                  }}
+                >
+                  <UserCheck className="w-10 h-10 text-emerald-800" />
+                </div>
+              )}
+              <div className="leader-info-content">
+                <div className="leader-tag">{adminTitle}</div>
+                <div className="leader-name">{adminName}</div>
+                <p className="leader-quote">{adminMessage}</p>
+                <Link to="/about#admin-message" className="leader-btn-more">
+                  সম্পূর্ণ বাণী পড়ুন <ArrowRight className="w-3 h-3 inline ml-1" />
+                </Link>
               </div>
-            )}
-            <div className="leader-info-content">
-              <div className="leader-tag">প্রতিষ্ঠাতা ও সভাপতি</div>
-              <div className="leader-name">{adminName}</div>
-              <div className="leader-desig">{adminTitle}</div>
-              <p className="leader-quote">{adminMessage}</p>
-              <Link to="/about#admin-message" className="leader-btn-more">
-                সম্পূর্ণ বাণী পড়ুন <i className="fas fa-angle-double-right"></i>
-              </Link>
+            </div>
+
+            {/* Principal */}
+            <div className="leader-box">
+              {principalPhoto ? (
+                <img src={principalPhoto} alt={principalName} className="leader-portrait" />
+              ) : (
+                <div
+                  className="leader-portrait"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#f1f5f9',
+                    color: '#064e3b',
+                  }}
+                >
+                  <GraduationCap className="w-10 h-10 text-emerald-800" />
+                </div>
+              )}
+              <div className="leader-info-content">
+                <div className="leader-tag">{principalTitle}</div>
+                <div className="leader-name">{principalName}</div>
+                <p className="leader-quote">{principalMessage}</p>
+                <Link to="/about#principal-message" className="leader-btn-more">
+                  সম্পূর্ণ বাণী পড়ুন <ArrowRight className="w-3 h-3 inline ml-1" />
+                </Link>
+              </div>
             </div>
           </div>
-
-          {/* Principal */}
-          <div className="leader-box">
+        ) : (
+          /* Single Grand Leadership Card for Founder & Principal */
+          <div className="leader-box" style={{ maxWidth: '820px', margin: '0 auto' }}>
             {principalPhoto ? (
               <img
                 src={principalPhoto}
                 alt={principalName}
                 className="leader-portrait"
+                style={{ width: '130px', height: '150px' }}
               />
             ) : (
-              <div className="leader-portrait" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#064e3b', fontSize: '32px' }}>
-                <i className="fas fa-user-graduate"></i>
+              <div
+                className="leader-portrait"
+                style={{
+                  width: '130px',
+                  height: '150px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: '#f0fdf4',
+                  border: '2px solid #bbf7d0',
+                  color: '#064e3b',
+                }}
+              >
+                <GraduationCap className="w-14 h-14 text-emerald-800" />
               </div>
             )}
-            <div className="leader-info-content">
-              <div className="leader-tag">মুহতামিম ও প্রিন্সিপাল</div>
-              <div className="leader-name">{principalName}</div>
-              <div className="leader-desig">{principalTitle}</div>
-              <p className="leader-quote">{principalMessage}</p>
-              <Link to="/about#principal-message" className="leader-btn-more">
-                সম্পূর্ণ বাণী পড়ুন <i className="fas fa-angle-double-right"></i>
-              </Link>
+            <div className="leader-info-content" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div className="leader-tag" style={{ fontSize: '13px' }}>
+                {principalTitle}
+              </div>
+              <div className="leader-name" style={{ fontSize: '22px', margin: '3px 0 6px 0' }}>
+                {principalName}
+              </div>
+              <div className="leader-desig" style={{ fontSize: '13px', color: '#64748b' }}>
+                {instName}
+              </div>
+              <p className="leader-quote" style={{ fontSize: '14px', lineHeight: '1.7', color: '#334155' }}>
+                {principalMessage}
+              </p>
+              <div style={{ marginTop: '10px' }}>
+                <Link to="/about#principal-message" className="leader-btn-more" style={{ fontSize: '13.5px' }}>
+                  সম্পূর্ণ বাণী ও পরিচিতি পড়ুন <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* 7. ACADEMIC DEPARTMENTS (CLICKABLE DIRECTORY) */}
@@ -534,7 +643,7 @@ const Home = () => {
               </p>
             </div>
             <div className="dept-action-text">
-              <span>সিলেবাস ও বিস্তারিত দেখুন</span> <i className="fas fa-arrow-right"></i>
+              <span>সিলেবাস ও বিস্তারিত দেখুন</span> <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
             </div>
           </div>
 
@@ -550,7 +659,7 @@ const Home = () => {
               </p>
             </div>
             <div className="dept-action-text">
-              <span>সিলেবাস ও বিস্তারিত দেখুন</span> <i className="fas fa-arrow-right"></i>
+              <span>সিলেবাস ও বিস্তারিত দেখুন</span> <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
             </div>
           </div>
 
@@ -566,7 +675,7 @@ const Home = () => {
               </p>
             </div>
             <div className="dept-action-text">
-              <span>সিলেবাস ও বিস্তারিত দেখুন</span> <i className="fas fa-arrow-right"></i>
+              <span>সিলেবাস ও বিস্তারিত দেখুন</span> <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
             </div>
           </div>
 
@@ -582,7 +691,7 @@ const Home = () => {
               </p>
             </div>
             <div className="dept-action-text">
-              <span>সিলেবাস ও বিস্তারিত দেখুন</span> <i className="fas fa-arrow-right"></i>
+              <span>সিলেবাস ও বিস্তারিত দেখুন</span> <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
             </div>
           </div>
         </div>
@@ -598,7 +707,7 @@ const Home = () => {
         <div className="facilities-grid">
           <div className="facility-box">
             <div className="facility-icon">
-              <i className="fas fa-video"></i>
+              <Video className="w-5 h-5 text-emerald-800" />
             </div>
             <div className="facility-content">
               <h5>সিসিটিভি নিয়ন্ত্রিত নিরাপত্তা</h5>
@@ -608,7 +717,7 @@ const Home = () => {
 
           <div className="facility-box">
             <div className="facility-icon">
-              <i className="fas fa-utensils"></i>
+              <Utensils className="w-5 h-5 text-emerald-800" />
             </div>
             <div className="facility-content">
               <h5>স্বাস্থ্যসম্মত পুষ্টিকর খাবার</h5>
@@ -618,7 +727,7 @@ const Home = () => {
 
           <div className="facility-box">
             <div className="facility-icon">
-              <i className="fas fa-book-reader"></i>
+              <Library className="w-5 h-5 text-emerald-800" />
             </div>
             <div className="facility-content">
               <h5>সমৃদ্ধ কিতাবখানা (লাইব্রেরি)</h5>
@@ -628,7 +737,7 @@ const Home = () => {
 
           <div className="facility-box">
             <div className="facility-icon">
-              <i className="fas fa-mosque"></i>
+              <Landmark className="w-5 h-5 text-emerald-800" />
             </div>
             <div className="facility-content">
               <h5>কেন্দ্রীয় জামে মসজিদ</h5>
@@ -638,7 +747,7 @@ const Home = () => {
 
           <div className="facility-box">
             <div className="facility-icon">
-              <i className="fas fa-medkit"></i>
+              <Stethoscope className="w-5 h-5 text-emerald-800" />
             </div>
             <div className="facility-content">
               <h5>স্বাস্থ্যসেবা ও প্রাথমিক চিকিৎসা</h5>
@@ -648,7 +757,7 @@ const Home = () => {
 
           <div className="facility-box">
             <div className="facility-icon">
-              <i className="fas fa-award"></i>
+              <Award className="w-5 h-5 text-emerald-800" />
             </div>
             <div className="facility-content">
               <h5>পাগড়ি প্রদান ও আনুষ্ঠানিক সনদ</h5>
@@ -671,25 +780,25 @@ const Home = () => {
             <div className="services-btn-grid">
               <Link to="/admission" className="service-btn-item">
                 <div className="s-icon">
-                  <i className="fas fa-file-invoice"></i>
+                  <FileSignature className="w-6 h-6 mx-auto text-emerald-800" />
                 </div>
                 <div className="s-title">অনলাইন ভর্তি ফরম</div>
               </Link>
               <Link to="/results" className="service-btn-item">
                 <div className="s-icon">
-                  <i className="fas fa-poll"></i>
+                  <BarChart3 className="w-6 h-6 mx-auto text-emerald-800" />
                 </div>
                 <div className="s-title">ফলাফল অনুসন্ধান</div>
               </Link>
               <Link to="/fees" className="service-btn-item">
                 <div className="s-icon">
-                  <i className="fas fa-credit-card"></i>
+                  <CreditCard className="w-6 h-6 mx-auto text-emerald-800" />
                 </div>
                 <div className="s-title">অনলাইন বেতন ফি</div>
               </Link>
               <Link to="/donation" className="service-btn-item">
                 <div className="s-icon">
-                  <i className="fas fa-hand-holding-heart"></i>
+                  <HeartHandshake className="w-6 h-6 mx-auto text-emerald-800" />
                 </div>
                 <div className="s-title">দান ও লিল্লাহ ফান্ড</div>
               </Link>
@@ -699,24 +808,32 @@ const Home = () => {
           {/* Stats Box */}
           <div className="institutional-stats-box">
             <div className="stats-title">
-              <i className="fas fa-medal" style={{ color: 'var(--gold-light)' }}></i> প্রাতিষ্ঠানিক পরিসংখ্যান ও ঐতিহ্য
+              <Medal className="w-4 h-4 inline mr-1 text-amber-300" /> প্রাতিষ্ঠানিক পরিসংখ্যান ও ঐতিহ্য
             </div>
             <div className="stats-grid-2x2">
               <div className="stat-single">
                 <div className="num">{statStudents}</div>
-                <div className="lbl">বর্তমান শিক্ষার্থী</div>
+                <div className="lbl">
+                  <Users className="w-3 h-3 inline mr-1" /> বর্তমান শিক্ষার্থী
+                </div>
               </div>
               <div className="stat-single">
                 <div className="num">{statTeachers}</div>
-                <div className="lbl">অনুমোদিত শিক্ষক</div>
+                <div className="lbl">
+                  <GraduationCap className="w-3 h-3 inline mr-1" /> অনুমোদিত শিক্ষক
+                </div>
               </div>
               <div className="stat-single">
                 <div className="num">১০০+</div>
-                <div className="lbl">হিফজ সমাপনী হাফেজ</div>
+                <div className="lbl">
+                  <Award className="w-3 h-3 inline mr-1" /> হিফজ সমাপনী হাফেজ
+                </div>
               </div>
               <div className="stat-single">
                 <div className="num">{statYears}</div>
-                <div className="lbl">ধারাবাহিক ঐতিহ্য</div>
+                <div className="lbl">
+                  <Calendar className="w-3 h-3 inline mr-1" /> ধারাবাহিক ঐতিহ্য
+                </div>
               </div>
             </div>
           </div>
@@ -728,7 +845,7 @@ const Home = () => {
         <div className="lillah-wrap">
           <div className="lillah-text">
             <h3>
-              <i className="fas fa-hand-holding-heart" style={{ marginRight: '6px' }}></i>
+              <HeartHandshake className="w-5 h-5 inline mr-1.5 text-amber-800" />
               এতিমখানা ও লিল্লাহ বোর্ডিং ফান্ডে সহযোগিতা করুন
             </h3>
             <p>
@@ -738,7 +855,7 @@ const Home = () => {
 
           <div className="bank-account-card">
             <div className="bank-name">
-              <i className="fas fa-university" style={{ color: 'var(--gold)', marginRight: '6px' }}></i>
+              <Landmark className="w-4 h-4 inline mr-1.5 text-amber-600" />
               সরাসরি মাদরাসার ব্যাংক হিসাব:
             </div>
             <div style={{ fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
@@ -767,7 +884,7 @@ const Home = () => {
                 বিশুদ্ধ কুরআন শিক্ষাদান ও সমাজের সুবিধাবঞ্চিত এতিম শিশুদের দ্বীনি ও নৈতিক শিক্ষায় গড়ে তোলার একটি ঐতিহ্যবাহী শীর্ষ প্রতিষ্ঠান।
               </p>
               <div style={{ color: '#e2e8f0', fontWeight: 600 }}>
-                <i className="fas fa-phone-alt" style={{ color: 'var(--gold)', marginRight: '6px' }}></i>
+                <Phone className="w-3.5 h-3.5 inline mr-1 text-amber-400" />
                 হেল্পলাইন: {phone}
               </div>
             </div>
@@ -861,25 +978,25 @@ const Home = () => {
               <div className="specs-grid">
                 <div className="spec-card">
                   <div className="spec-label">
-                    <i className="fas fa-clock" style={{ marginRight: '4px' }}></i> কোর্স মেয়াদ ও সময়কাল
+                    <Clock className="w-3.5 h-3.5 inline mr-1 text-amber-600" /> কোর্স মেয়াদ ও সময়কাল
                   </div>
                   <div className="spec-val">{activeDept.duration}</div>
                 </div>
                 <div className="spec-card">
                   <div className="spec-label">
-                    <i className="fas fa-user-check" style={{ marginRight: '4px' }}></i> ভর্তি যোগ্যতা ও বয়স
+                    <UserCheck className="w-3.5 h-3.5 inline mr-1 text-amber-600" /> ভর্তি যোগ্যতা ও বয়স
                   </div>
                   <div className="spec-val">{activeDept.age}</div>
                 </div>
                 <div className="spec-card">
                   <div className="spec-label">
-                    <i className="fas fa-chair" style={{ marginRight: '4px' }}></i> মোট আসন সংখ্যা
+                    <Users className="w-3.5 h-3.5 inline mr-1 text-amber-600" /> মোট আসন সংখ্যা
                   </div>
                   <div className="spec-val">{activeDept.seats}</div>
                 </div>
                 <div className="spec-card">
                   <div className="spec-label">
-                    <i className="fas fa-user-tie" style={{ marginRight: '4px' }}></i> বিভাগীয় প্রধান / তত্ত্বাবধায়ক
+                    <User className="w-3.5 h-3.5 inline mr-1 text-amber-600" /> বিভাগীয় প্রধান / তত্ত্বাবধায়ক
                   </div>
                   <div className="spec-val">{activeDept.head}</div>
                 </div>
@@ -887,21 +1004,30 @@ const Home = () => {
 
               <div className="syllabus-box-modal">
                 <div className="syllabus-box-head">
-                  <i className="fas fa-book-open" style={{ color: 'var(--primary)', marginRight: '6px' }}></i>
+                  <BookOpen className="w-4 h-4 inline mr-1.5 text-emerald-800" />
                   পাঠ্যক্রম ও প্রধান প্রশিক্ষণ সূচি (সিলেবাস)
                 </div>
                 <ul className="syllabus-box-body">
                   {activeDept.syllabus.map((item, i) => (
                     <li key={i}>
-                      <i className="fas fa-check-circle" style={{ color: '#059669', marginRight: '6px' }}></i>
+                      <CheckCircle2 className="w-3.5 h-3.5 inline mr-1.5 text-emerald-600" />
                       {item}
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '12px 16px', fontSize: '13px', color: '#166534' }}>
-                <i className="fas fa-graduation-cap" style={{ marginRight: '6px' }}></i>
+              <div
+                style={{
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '6px',
+                  padding: '12px 16px',
+                  fontSize: '13px',
+                  color: '#166534',
+                }}
+              >
+                <GraduationCap className="w-4 h-4 inline mr-1.5" />
                 <strong>সমাপনী ফলাফল ও কেন্দ্রীয় সনদ:</strong> {activeDept.outcome}
               </div>
             </div>
@@ -911,7 +1037,7 @@ const Home = () => {
                 ভর্তি তথ্য ও সহায়তায়: {phone}
               </span>
               <Link to="/admission" className="btn-apply-direct" onClick={() => setActiveModalKey(null)}>
-                অনলাইন আবেদন করুন <i className="fas fa-arrow-right"></i>
+                অনলাইন আবেদন করুন <ArrowRight className="w-3.5 h-3.5 inline ml-1.5" />
               </Link>
             </div>
           </div>
