@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bell, ArrowRight, Calendar, MapPin } from 'lucide-react';
+import { Bell, ArrowRight, Calendar, FileText, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Props {
@@ -13,62 +13,84 @@ const HomeNoticesSection = ({ notices, language, t }: Props) => {
   const bn = language === 'bn';
 
   return (
-    <div className="card-elevated overflow-hidden h-full flex flex-col">
-      <div className="bg-primary px-4 py-3 sm:py-3.5 flex items-center justify-between">
-        <span className="text-base sm:text-lg font-bold text-primary-foreground font-display flex items-center gap-2 tracking-wide">
-          <MapPin className="w-5 h-5" />
-          {bn ? 'নোটিশ বোর্ড' : 'Notice Board'}
-        </span>
-        <Link to="/notices" className="text-xs sm:text-sm text-primary-foreground/90 hover:text-white font-medium flex items-center gap-1">
-          {t('viewAll')} <ArrowRight className="w-3.5 h-3.5" />
+    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden h-full flex flex-col">
+      {/* Official Desk Header */}
+      <div className="bg-slate-100 dark:bg-slate-900 border-b-2 border-primary px-4 py-3 sm:py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+            <Bell className="w-4 h-4" />
+          </div>
+          <span className="text-sm sm:text-base font-bold text-primary font-display tracking-tight">
+            {bn ? 'দাপ্তরিক নোটিশ ও সার্কুলার ডেস্ক' : 'Official Notice & Circular Desk'}
+          </span>
+        </div>
+        <Link
+          to="/notices"
+          className="text-xs text-primary hover:underline font-semibold flex items-center gap-1"
+        >
+          {t('viewAll')} <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
 
-      {/* Marquee announcement */}
-      <div className="bg-accent/20 px-4 py-2.5 border-b overflow-hidden">
-        <div className="animate-marquee whitespace-nowrap text-sm text-foreground font-semibold">
-          {bn ? 'দিন নির্ধারিত হয়েছে | আগামী মাদ্রাসা বন্ধ | ' : 'Date confirmed | Upcoming holiday | '}
-          {bn ? 'শিক্ষা সফরের দিন নির্ধারিত হয়েছে' : 'Tour date has been set'}
+      {/* Marquee ticker strip */}
+      <div className="bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 border-b border-amber-200/60 dark:border-amber-900/40 overflow-hidden">
+        <div className="animate-marquee whitespace-nowrap text-xs text-amber-900 dark:text-amber-200 font-medium">
+          {bn
+            ? '📢 বিশেষ বিজ্ঞপ্তি: নতুন শিক্ষাবর্ষে নূরানী, নাজেরা ও হিফজ শাখায় সীমিত আসনে ভর্তি কার্যক্রম চলমান।'
+            : '📢 Circular: Admission is open for Noorani, Nazera & Hifz departments with limited seats.'}
         </div>
       </div>
 
-      <ScrollArea className="flex-1 min-h-[280px] max-h-[380px]">
+      {/* Tabular Notice List */}
+      <ScrollArea className="flex-1 min-h-[300px] max-h-[390px]">
         <div className="divide-y divide-border">
-          {notices.length > 0 ? notices.map((n, idx) => (
-            <Link
-              key={n.id}
-              to="/notices"
-              className="flex items-start gap-3.5 px-4 py-3.5 hover:bg-primary/5 transition-colors group"
-            >
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                <Bell className="w-4 h-4 text-primary" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug">
-                  {bn ? (n.title_bn || n.title) : n.title}
-                </p>
-                <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {n.published_at ? format(new Date(n.published_at), 'dd/MM/yyyy') : ''}
-                </div>
-              </div>
-            </Link>
-          )) : (
-            <div className="text-center py-14 text-muted-foreground">
-              <Bell className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p className="text-base font-medium">{bn ? 'কোনো নোটিশ নেই' : 'No notices'}</p>
+          {notices.length > 0 ? (
+            notices.map((n) => {
+              const dateStr = n.published_at
+                ? format(new Date(n.published_at), 'dd/MM/yyyy')
+                : '';
+              const title = bn ? n.title_bn || n.title : n.title;
+
+              return (
+                <Link
+                  key={n.id}
+                  to="/notices"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors group"
+                >
+                  {/* Date Column */}
+                  <div className="shrink-0 text-center font-mono text-[11px] font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                    {dateStr}
+                  </div>
+
+                  {/* Title */}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                      {title}
+                    </p>
+                  </div>
+
+                  {/* Icon */}
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              );
+            })
+          ) : (
+            <div className="text-center py-16 text-muted-foreground">
+              <FileText className="w-10 h-10 mx-auto mb-2 opacity-30" />
+              <p className="text-sm font-medium">{bn ? 'কোনো নোটিশ পাওয়া যায়নি' : 'No notices available'}</p>
             </div>
           )}
         </div>
       </ScrollArea>
 
-      {/* See all notice button */}
-      <div className="p-3.5 border-t">
+      {/* Bottom Action */}
+      <div className="p-3 bg-muted/20 border-t border-border">
         <Link
           to="/notices"
-          className="block w-full py-3 bg-primary text-primary-foreground rounded-xl text-center text-base font-bold hover:bg-primary/90 transition-colors shadow-sm"
+          className="flex items-center justify-center gap-2 w-full py-2 px-3 bg-primary text-primary-foreground rounded-lg text-center text-xs sm:text-sm font-bold hover:bg-primary/90 transition shadow-sm"
         >
-          📋 {bn ? 'সকল নোটিশ দেখুন' : 'See all notice'}
+          <FileText className="w-4 h-4" />
+          {bn ? 'দাপ্তরিক নোটিশ আর্কাইভ দেখুন' : 'View Notice Archive'}
         </Link>
       </div>
     </div>
