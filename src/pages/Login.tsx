@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { GraduationCap, Lock, User, Loader2, Eye, EyeOff, ShieldCheck, ArrowLeft, Mail } from 'lucide-react';
+import { GraduationCap, Lock, User, Loader2, Eye, EyeOff, ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import LanguageToggle from '@/components/LanguageToggle';
 import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
@@ -243,56 +243,66 @@ const Login = () => {
       ? { background: settings.login_bg_color }
       : { background: 'radial-gradient(ellipse at 50% 20%, #064e3b 0%, #022c22 65%, #011610 100%)' };
 
-  const formStyle: React.CSSProperties = {
-    ...(settings.login_form_bg_color ? { backgroundColor: settings.login_form_bg_color } : {}),
-    ...(settings.login_form_border_radius !== undefined ? { borderRadius: `${settings.login_form_border_radius}px` } : {}),
-    ...(settings.login_form_shadow === false ? { boxShadow: 'none' } : {}),
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative" style={bgStyle}>
       {!settings.login_bg_image_url && (
         <div className="islamic-pattern absolute inset-0 opacity-15 pointer-events-none" />
       )}
       {settings.login_bg_image_url && (
-        <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
       )}
 
+      {/* Language Toggle in top right */}
       <div className="absolute top-4 right-4 z-20">
         <LanguageToggle />
       </div>
 
+      {/* Modern Frosted Glass Card */}
       <div
-        className="w-full max-w-sm sm:max-w-md bg-white/98 dark:bg-slate-900/98 backdrop-blur-md shadow-2xl rounded-2xl p-6 sm:p-8 border border-slate-100 dark:border-slate-800 relative z-10"
-        style={formStyle}
+        className="w-full max-w-[420px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] rounded-3xl p-7 sm:p-9 relative z-10 overflow-hidden"
       >
+        {/* Subtle top glossy specular highlight */}
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+
         <div className="text-center mb-6">
+          {/* Circular Crest Logo with Emerald Halo */}
           {showLogo && (
-            <div className="w-16 h-16 rounded-full mx-auto mb-3 p-1 bg-white border border-emerald-600/20 shadow-sm flex items-center justify-center">
-              {loginLogo ? (
-                <img
-                  src={loginLogo}
-                  alt="Logo"
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    if (!img.dataset.fallback) {
-                      img.dataset.fallback = 'true';
-                      img.src = '/loader-logo.png';
-                    }
-                  }}
-                  className="w-full h-full rounded-full object-contain"
-                />
-              ) : (
-                <div className="w-full h-full rounded-full bg-emerald-800 flex items-center justify-center">
-                  <GraduationCap className="w-8 h-8 text-white" />
-                </div>
-              )}
+            <div className="relative inline-flex items-center justify-center mx-auto mb-3">
+              <div className="w-18 h-18 rounded-full p-1 bg-white/95 shadow-md ring-4 ring-emerald-600/15 flex items-center justify-center transition-transform hover:scale-105">
+                {loginLogo ? (
+                  <img
+                    src={loginLogo}
+                    alt="Logo"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (!img.dataset.fallback) {
+                        img.dataset.fallback = 'true';
+                        img.src = '/loader-logo.png';
+                      }
+                    }}
+                    className="w-full h-full rounded-full object-contain"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-emerald-800 flex items-center justify-center">
+                    <GraduationCap className="w-8 h-8 text-white" />
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
+          {/* Secure Portal Pill Badge */}
+          <div className="flex justify-center mb-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-600/20 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+              {language === 'bn' ? 'নিরাপদ পোর্টাল সাইন ইন' : 'Secure Portal Sign In'}
+            </span>
+          </div>
+
+          {/* Institution Name */}
           {showName && (
             <h1
-              className="text-base sm:text-lg font-bold font-display text-slate-800 dark:text-white leading-snug px-2"
+              className="text-lg sm:text-xl font-black font-display text-slate-900 dark:text-white leading-tight px-1"
               title={instName}
               style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
             >
@@ -300,54 +310,63 @@ const Login = () => {
             </h1>
           )}
 
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {language === 'bn' ? 'মাদরাসা ম্যানেজমেন্ট পোর্টাল' : 'Madrasa Management Portal'}
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+            {language === 'bn' ? 'মাদরাসা ম্যানেজমেন্ট সিস্টেম' : 'Madrasa Management System'}
           </p>
         </div>
 
+        {/* Modern Form */}
         <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
-          <div>
-            <Label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
               {t('username')}
-            </Label>
-            <Input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={language === 'bn' ? 'ইমেইল এড্রেস' : 'Email address'}
-              className="h-11 rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 text-sm"
-              type="email"
-              name="email"
-              autoComplete="off"
-            />
+            </label>
+            <div className="relative flex items-center">
+              <div className="absolute left-3.5 text-emerald-700 dark:text-emerald-400 pointer-events-none z-20 flex items-center">
+                <User className="w-4 h-4" />
+              </div>
+              <input
+                type="email"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={language === 'bn' ? 'ইমেইল এড্রেস লিখুন' : 'Email address'}
+                autoComplete="off"
+                className="w-full h-11.5 pl-10 pr-3.5 rounded-xl border border-slate-200/90 dark:border-slate-700/80 bg-white/95 dark:bg-slate-950/70 hover:bg-white focus:bg-white dark:focus:bg-slate-950 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 shadow-xs transition-all"
+              />
+            </div>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <Label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                 {t('password')}
-              </Label>
+              </label>
               <button
                 type="button"
                 onClick={() => setForgotOpen(true)}
-                className="text-xs text-emerald-700 hover:text-emerald-800 hover:underline transition"
+                className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 hover:underline transition"
               >
                 {t('forgotPassword')}
               </button>
             </div>
-            <div className="relative">
-              <Input
+            <div className="relative flex items-center">
+              <div className="absolute left-3.5 text-emerald-700 dark:text-emerald-400 pointer-events-none z-20 flex items-center">
+                <Lock className="w-4 h-4" />
+              </div>
+              <input
                 type={showPassword ? 'text' : 'password'}
+                name="password"
                 value={password}
                 onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
                 placeholder="••••••••"
-                className="h-11 rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pr-10 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 text-sm"
-                name="password"
                 autoComplete="new-password"
+                className="w-full h-11.5 pl-10 pr-10 rounded-xl border border-slate-200/90 dark:border-slate-700/80 bg-white/95 dark:bg-slate-950/70 hover:bg-white focus:bg-white dark:focus:bg-slate-950 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 shadow-xs transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 z-10 transition-colors"
+                className="absolute right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 z-20 p-1 transition"
                 tabIndex={-1}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -356,29 +375,35 @@ const Login = () => {
             </div>
           </div>
 
-          <Button
+          <button
             type="submit"
-            className="w-full h-11 text-sm font-semibold text-white rounded-lg shadow-sm hover:shadow transition-all active:scale-[0.99] bg-emerald-700 hover:bg-emerald-800 mt-2"
             disabled={loading}
+            className="w-full h-12 mt-2 rounded-xl text-white font-bold text-sm tracking-wide shadow-md shadow-emerald-800/25 hover:shadow-lg hover:shadow-emerald-800/40 active:scale-[0.99] transition-all flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-70"
+            style={{
+              background: 'linear-gradient(135deg, #059669 0%, #047857 50%, #064e3b 100%)',
+            }}
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 <span>{language === 'bn' ? 'যাচাই করা হচ্ছে...' : 'Signing in...'}</span>
               </>
             ) : (
-              <span>{t('signIn')}</span>
+              <>
+                <span>{t('signIn')}</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </>
             )}
-          </Button>
+          </button>
         </form>
 
-        <div className="mt-5 text-center">
+        <div className="mt-5 pt-3.5 border-t border-slate-200/60 dark:border-slate-800 text-center">
           <Link
             to="/"
-            className="text-xs text-slate-500 hover:text-emerald-700 hover:underline inline-flex items-center gap-1 transition"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400 transition"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>{language === 'bn' ? 'হোম পেইজে ফিরে যান' : 'Back to Home'}</span>
+            <span>{language === 'bn' ? 'মাদরাসার মূল ওয়েবসাইটে ফিরুন' : 'Back to main website'}</span>
           </Link>
         </div>
       </div>
