@@ -537,27 +537,6 @@ const Home = () => {
                   </span>
                   <h4>{detail.title}</h4>
                   <p>{detail.desc}</p>
-
-                  {detail.classes && detail.classes.length > 0 && (
-                    <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                      {detail.classes.map((cls: any) => (
-                        <span
-                          key={cls.id || cls.name_bn}
-                          style={{
-                            fontSize: '11px',
-                            background: '#f8fafc',
-                            color: '#1e293b',
-                            border: '1px solid #e2e8f0',
-                            padding: '2px 8px',
-                            borderRadius: '4px',
-                            fontWeight: 600,
-                          }}
-                        >
-                          {cls.name_bn || cls.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
                 <div className="dept-action-text">
                   <span>সিলেবাস ও বিস্তারিত দেখুন</span> <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
