@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSessionTimeoutSettings } from '@/hooks/useSessionTimeoutSettings';
 import { toast } from 'sonner';
@@ -18,6 +19,7 @@ const LAST_ACTIVE_KEY = 'edumate_session_last_active_time';
 const BG_SINCE_KEY = 'edumate_session_bg_since';
 
 export const SessionTimeoutManager: React.FC = () => {
+  const navigate = useNavigate();
   const { user, role, signOut } = useAuth();
   const { settings } = useSessionTimeoutSettings();
 
@@ -44,6 +46,7 @@ export const SessionTimeoutManager: React.FC = () => {
       try {
         localStorage.removeItem(LAST_ACTIVE_KEY);
         localStorage.removeItem(BG_SINCE_KEY);
+        sessionStorage.setItem('auto_logout_redirect_home', '1');
       } catch {
         // ignore
       }
@@ -65,9 +68,14 @@ export const SessionTimeoutManager: React.FC = () => {
           icon: <ShieldAlert className="w-5 h-5 text-amber-500" />,
         });
         isLoggingOut.current = false;
+        // Redirect directly to home page ('/')
+        navigate('/', { replace: true });
+        if (window.location.pathname !== '/') {
+          window.location.replace('/');
+        }
       }
     },
-    [signOut]
+    [signOut, navigate]
   );
 
   const recordActivity = useCallback(() => {

@@ -13,6 +13,20 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) {
+    let autoLoggedOut = false;
+    try {
+      if (sessionStorage.getItem('auto_logout_redirect_home') === '1') {
+        sessionStorage.removeItem('auto_logout_redirect_home');
+        autoLoggedOut = true;
+      }
+    } catch {
+      /* ignore */
+    }
+
+    if (autoLoggedOut) {
+      return <Navigate to="/" replace />;
+    }
+
     return <Navigate to="/login" replace />;
   }
 
