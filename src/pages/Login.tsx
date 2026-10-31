@@ -59,6 +59,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isManuallyTyped, setIsManuallyTyped] = useState(false);
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [emailVerifyOpen, setEmailVerifyOpen] = useState(false);
@@ -230,6 +231,19 @@ const Login = () => {
     setOtpOpen(open);
   };
 
+
+  const handleTogglePassword = () => {
+    if (!isManuallyTyped && password) {
+      toast.warning(
+        language === 'bn'
+          ? 'নিরাপত্তার স্বার্থে অটোফিল হওয়া সেভ করা পাসওয়ার্ড দেখা যাবে না। পাসওয়ার্ড দেখতে হলে নিজে টাইপ করুন।'
+          : 'For security reasons, autofilled saved passwords cannot be viewed. Please type it manually to view.'
+      );
+      return;
+    }
+    setShowPassword((s) => !s);
+  };
+
   const loginLogo = settings.favicon_url || settings.logo_url;
   const showLogo = settings.login_show_logo !== false;
   const showName = settings.login_show_institution_name !== false;
@@ -348,16 +362,30 @@ const Login = () => {
               />
             </div>
 
-            {/* Password Pill Input with Exact Reference Styling */}
+            {/* Password Pill Input with Exact Reference Styling & Autofill Protection */}
             <div className="relative flex items-center">
               <div className="absolute left-4.5 text-[#446d5c] pointer-events-none z-20 flex items-center">
                 <Lock className="w-4 h-4" />
               </div>
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword && isManuallyTyped ? 'text' : 'password'}
                 name="password"
                 value={password}
-                onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
+                onKeyDown={(e) => {
+                  if (['Tab', 'Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Escape'].includes(e.key)) return;
+                  setIsManuallyTyped(true);
+                }}
+                onPaste={() => {
+                  setIsManuallyTyped(true);
+                }}
+                onChange={(e) => {
+                  const val = sanitizePasswordInput(e.target.value);
+                  if (!val) {
+                    setIsManuallyTyped(false);
+                    setShowPassword(false);
+                  }
+                  setPassword(val);
+                }}
                 placeholder={language === 'bn' ? 'পাসওয়ার্ড........' : 'Password........'}
                 autoComplete="new-password"
                 className="w-full h-12 pl-11 pr-11 rounded-full border-0 text-[#1b4332] placeholder:text-[#446d5c] focus:outline-none focus:ring-2 focus:ring-[#0d6b49]/40 text-sm font-medium transition text-center"
@@ -365,12 +393,12 @@ const Login = () => {
               />
               <button
                 type="button"
-                onClick={() => setShowPassword((s) => !s)}
+                onClick={handleTogglePassword}
                 className="absolute right-4 text-[#446d5c] hover:text-[#1b4332] z-20 p-1 transition"
                 tabIndex={-1}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword && isManuallyTyped ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword && isManuallyTyped ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
 
