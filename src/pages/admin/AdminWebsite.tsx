@@ -15,6 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import WebsitePageBuilder from '@/components/admin/WebsitePageBuilder';
 import DivisionFormSettingsControl from '@/components/admin/DivisionFormSettingsControl';
+import DepartmentDetailsManager from '@/components/admin/DepartmentDetailsManager';
 import { toast } from 'sonner';
 import { useWebsiteSettings, WebsiteSettings, InfoLink } from '@/hooks/useWebsiteSettings';
 import { useMenuSettings, MenuItemConfig } from '@/hooks/useMenuSettings';
@@ -1538,6 +1539,9 @@ const AdminWebsite = () => {
                 <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সংরক্ষণ' : 'Save'}
               </Button>
             </div>
+
+            {/* Department Details & Curriculum Editor */}
+            <DepartmentDetailsManager />
           </TabsContent>
 
           {/* Info Links Tab */}

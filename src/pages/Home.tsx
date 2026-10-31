@@ -172,6 +172,20 @@ const Home = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Fetch customized department details from website_settings
+  const { data: customDeptSettings = {} } = useQuery({
+    queryKey: ['department-details-config'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('website_settings')
+        .select('value')
+        .eq('key', 'department_details_config')
+        .maybeSingle();
+      return (data?.value as Record<string, any>) || {};
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const [selectedDept, setSelectedDept] = useState<DeptDetail | null>(null);
 
   const getDivisionDetail = (div: any, index: number): DeptDetail => {
@@ -187,6 +201,9 @@ const Home = () => {
       meta = DEPT_METADATA_MAP.hifz;
     }
 
+    // Check if custom settings exist for this division (by id or name_bn)
+    const custom = customDeptSettings?.[div.id] || customDeptSettings?.[div.name_bn];
+
     const activeClasses = (div.classes || [])
       .filter((c: any) => c.is_active !== false)
       .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
@@ -195,6 +212,12 @@ const Home = () => {
       title: `${toBnNum(index + 1)}. ${div.name_bn || div.name}`,
       classes: activeClasses,
       ...meta,
+      desc: custom?.desc || meta.desc,
+      duration: custom?.duration || meta.duration,
+      age: custom?.age || meta.age,
+      seats: custom?.seats || meta.seats,
+      syllabus: Array.isArray(custom?.syllabus) && custom.syllabus.length > 0 ? custom.syllabus : meta.syllabus,
+      outcome: custom?.outcome || meta.outcome,
     };
   };
 
