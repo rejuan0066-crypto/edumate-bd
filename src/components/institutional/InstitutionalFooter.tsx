@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Phone } from 'lucide-react';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InstitutionalFooterProps {
   onDepartmentSelect?: (deptKey: string) => void;
@@ -13,6 +15,18 @@ export const InstitutionalFooter = ({ onDepartmentSelect }: InstitutionalFooterP
   const phone = settings.phone || '01749842401';
   const email = settings.email || 'info@subhania.edu.bd';
   const address = settings.address || 'খাজাঞ্চি রোড, এমএইচ সেন্টার, বিশ্বনাথ, সিলেট, বাংলাদেশ';
+
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['public-divisions-footer'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('divisions')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      return data || [];
+    },
+  });
 
   const handleDeptClick = (key: string) => {
     if (onDepartmentSelect) {
@@ -59,26 +73,38 @@ export const InstitutionalFooter = ({ onDepartmentSelect }: InstitutionalFooterP
           <div className="footer-col">
             <h4>শিক্ষা বিভাগসমূহ</h4>
             <ul>
-              <li>
-                <a href="/#departments" onClick={() => handleDeptClick('noorani')}>
-                  নূরানী কিন্ডারগার্টেন
-                </a>
-              </li>
-              <li>
-                <a href="/#departments" onClick={() => handleDeptClick('nazera')}>
-                  নাজেরা কুরআন বিভাগ
-                </a>
-              </li>
-              <li>
-                <a href="/#departments" onClick={() => handleDeptClick('hifz')}>
-                  হিফজুল কুরআনুল কারীম
-                </a>
-              </li>
-              <li>
-                <a href="/#departments" onClick={() => handleDeptClick('kitab')}>
-                  কিতাব ও আরবি ভাষা
-                </a>
-              </li>
+              {divisions.length > 0 ? (
+                divisions.map((div) => (
+                  <li key={div.id}>
+                    <a href="/#departments" onClick={() => handleDeptClick(div.id)}>
+                      {div.name_bn || div.name}
+                    </a>
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li>
+                    <a href="/#departments" onClick={() => handleDeptClick('nuarani')}>
+                      নূরানি বিভাগ
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/#departments" onClick={() => handleDeptClick('ebthedayee')}>
+                      ইবতেদায়ী বিভাগ
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/#departments" onClick={() => handleDeptClick('mutawassitah')}>
+                      মুতাওয়াসসিতাহ বিভাগ
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/#departments" onClick={() => handleDeptClick('hifz')}>
+                      হিফজ বিভাগ
+                    </a>
+                  </li>
+                </>
+              )}
               <li>
                 <Link to="/donation">এতিমখানা লিল্লাহ বোর্ডিং</Link>
               </li>

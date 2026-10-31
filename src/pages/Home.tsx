@@ -48,20 +48,28 @@ import '@/styles/institutional-home.css';
 interface DeptDetail {
   title: string;
   sub: string;
+  badge: string;
+  badgeBg: string;
+  badgeColor: string;
+  desc: string;
   duration: string;
   age: string;
   seats: string;
   head: string;
+  classes?: any[];
   syllabus: string[];
   outcome: string;
 }
 
-const DEPT_DETAILS: Record<string, DeptDetail> = {
+const DEPT_METADATA_MAP: Record<string, Omit<DeptDetail, 'title'>> = {
   noorani: {
-    title: '১. নূরানী ও কিন্ডারগার্টেন বিভাগ',
+    badge: 'শিশু ও প্রাথমিক বুনিয়াদী',
+    badgeBg: '#ecfdf5',
+    badgeColor: '#047857',
     sub: 'শিশু ও বুনিয়াদি দ্বীনি শিক্ষা কাঠামো',
-    duration: '৩ বছর মেয়াদি (প্লে, নার্সারি ও ১ম শ্রেণি)',
-    age: '৪ থেকে ৭ বছর বয়সী শিশু',
+    desc: 'সহীহ মাখরাজ ও তাজবীদের সাথে কুরআন শিক্ষা, প্রয়োজনীয় মাসআলা, বাংলা, ইংরেজি, গণিত ও ক্যালিগ্রাফি প্রশিক্ষণ।',
+    duration: '৩ বছর মেয়াদি (নূরানি ১ম, ২য় ও ৩য় শ্রেণি)',
+    age: '৪ থেকে ৮ বছর বয়সী শিশু',
     seats: '৬০ জন (আবাসিক ও অনাবাসিক)',
     head: 'মাওলানা মোহাম্মদ আবুল বশর (বিভাগীয় প্রধান)',
     syllabus: [
@@ -71,61 +79,70 @@ const DEPT_DETAILS: Record<string, DeptDetail> = {
       'প্রাথমিক গণিত, ড্রয়িং ও আদব-আখলাক শিষ্টাচার শিক্ষা।',
     ],
     outcome:
-      'নূরানী সমাপনী পরীক্ষা শেষে কেন্দ্রীয় সনদ প্রদান করা হয় এবং শিক্ষার্থী সরাসরি নাজেরা ও হিফজ শাখায় ভর্তির পূর্ণ যোগ্যতা অর্জন করে।',
+      'নূরানী সমাপনী পরীক্ষা শেষে কেন্দ্রীয় সনদ প্রদান করা হয় এবং শিক্ষার্থী সরাসরি হিফজ বা ইবতেদায়ী শাখায় ভর্তির পূর্ণ যোগ্যতা অর্জন করে।',
   },
-  nazera: {
-    title: '২. নাজেরা কুরআনুল কারীম বিভাগ',
-    sub: 'হিফজুল কুরআনের পূর্বপ্রস্তুতি পর্ব',
-    duration: '১ বছর মেয়াদি',
-    age: 'নূরানী কোর্স সমাপ্তকারী অথবা দেখে পড়তে সক্ষম শিক্ষার্থী',
-    seats: '৪০ জন (শতভাগ আবাসিক)',
-    head: 'হাফেজ ক্বারী ফয়জুল ইসলাম',
+  ebthedayee: {
+    badge: 'প্রাথমিক দ্বীনি স্তর',
+    badgeBg: '#fef3c7',
+    badgeColor: '#b45309',
+    sub: 'প্রাথমিক দ্বীনি ও সাধারণ কারিকুলাম',
+    desc: 'সহীহ কুরআন ও দ্বীনি শিক্ষার পাশাপাশি সাধারণ প্রাথমিক বিষয়াবলি এবং আরবি ব্যাকরণের বুনিয়াদি পাঠদান।',
+    duration: '২ বছর মেয়াদি (৪র্থ ও ৫ম শ্রেণি)',
+    age: '৮ থেকে ১১ বছর',
+    seats: '৫০ জন (আবাসিক ও অনাবাসিক)',
+    head: 'মাওলানা আব্দুর রহমান (বিভাগীয় তত্ত্বাবধায়ক)',
     syllabus: [
-      'সম্পূর্ণ ৩০ পারা কুরআন দ্রুত, নির্ভুল ও স্পষ্টভাবে দেখে পড়ার নিরবচ্ছিন্ন মাশক।',
-      'তাজবীদের সূক্ষ্ম নিয়মাবলি (ইখফা, ইদগাম, কলকলা, মদ) প্রয়োগসহ তিলাওয়াত।',
-      'নামাজের শেষ ১০টি সূরা ও গুরুত্বপূর্ণ মাসনুন দোয়া মুখস্থকরণ।',
-      'হিফজ শুরু করার মানসিক ও শারীরিক প্রস্তুতি গঠন।',
+      'কুরআনুল কারীম তিলাওয়াত ও অর্থসহ সহজ হাদিস মুখস্থকরণ।',
+      'প্রাথমিক ফিকহ, আকাইদ ও ইসলামের মৌলিক বুনিয়াদি শিক্ষা।',
+      'বাংলা, ইংরেজি, গণিত ও সাধারণ বিজ্ঞান পাঠ্যক্রম।',
+      'সুন্দর হস্তলিপি ও ইসলামী আচরণবিধি অনুশীলন।',
     ],
     outcome:
-      'নাজেরা সমাপ্তির পর মূল্যায়ন পরীক্ষা নিয়ে মেধার ভিত্তিতে মূল হিফজ বিভাগে উত্তীর্ণ করা হয়।',
+      'ইবতেদায়ী ৫ম সমাপনীতে কেন্দ্রীয় পরীক্ষায় অংশগ্রহণ এবং মুতাওয়াসসিতাহ স্তরে পদার্পণের স্বীকৃতি।',
+  },
+  mutawassitah: {
+    badge: 'উচ্চতর আরবি ও শরিয়াহ',
+    badgeBg: '#faf5ff',
+    badgeColor: '#7e22ce',
+    sub: 'আরবি ব্যাকরণ ও শরিয়াহর বুনিয়াদি শিক্ষা',
+    desc: 'আরবি ব্যাকরণ (নাহু-ছরফ), তরজমায়ে কুরআন, হাদিস শরিফ ও ফিকহের প্রামাণ্য কিতাবাদি অধ্যয়নের সুশৃঙ্খল পাঠদান।',
+    duration: '২-৩ বছর মেয়াদি (সরফ ও নাহমেবির বর্ষ)',
+    age: 'ইবতেদায়ী বা হিফজ সম্পন্নকারী',
+    seats: '৪৫ জন (আবাসিক)',
+    head: 'মুফতি জুবায়ের আহমদ (প্রধান শিক্ষক, কিতাব)',
+    syllabus: [
+      'ইলমুস সরফ (মিযান, মুনশাইব) ও আরবি শব্দরূপ রূপান্তর।',
+      'ইলমুন নাহু (নাহবেমীর) ও আরবি বাক্যগঠন বিশ্লেষণ।',
+      'ফিকহ শাস্ত্রের মূলনীতি ও প্রাথমিক মসলা-মাসায়েল।',
+      'আরবি কথোপকথন ও শুদ্ধ উচ্চারণ প্রশিক্ষণ।',
+    ],
+    outcome:
+      'শিক্ষার্থীকে আরবি ভাষা ও দ্বীনের মৌলিক বিদ্যায় দক্ষ করে উচ্চতর কওমি মাদরাসায় ভর্তির উপযোগী করে তোলা।',
   },
   hifz: {
-    title: '৩. হিফজুল কুরআনুল কারীম বিভাগ',
-    sub: 'আন্তর্জাতিক মানের হিফজ ও তাজবীদ প্রশিক্ষণ',
+    badge: 'বিশেষায়িত হিফজ ও নাজেরা',
+    badgeBg: '#eff6ff',
+    badgeColor: '#1d4ed8',
+    sub: 'আন্তর্জাতিক মানের তাহফিজুল কুরআনুল কারীম',
+    desc: 'নাজেরা থেকে শুরু করে সম্পূর্ণ ৩০ পারা কুরআন হিফজ, তাজবীদ, সুমধুর কণ্ঠে মাশক এবং সাপ্তাহিক কেন্দ্রীয় দৌর (আমোক্তা)।',
     duration: '২ থেকে ৩ বছর মেয়াদি (মেধা অনুযায়ী)',
     age: 'নাজেরা উত্তীর্ণ শিক্ষার্থী',
-    seats: '৮০ জন (শতভাগ আবাসিক নিবিড় তত্ত্বাবধান)',
-    head: 'হাফেজ মাওলানা জুবায়ের আহমদ (প্রধান হিফজ শিক্ষক)',
+    seats: '৭০ জন (শতভাগ আবাসিক নিবিড় তত্ত্বাবধান)',
+    head: 'হাফেজ ক্বারী ফয়জুল ইসলাম (প্রধান হিফজ শিক্ষক)',
     syllabus: [
-      'দৈনিক নতুন সবক (হিফজ), সাত সবক ও আমপারা রিভিশনের ত্রিস্তরীয় কঠোর নিয়ম।',
-      'আন্তর্জাতিক ক্বারীদের তিলাওয়াত অনুকরণে সুর ও লাহজা প্রশিক্ষণ।',
-      'প্রতি বৃহস্পতিবার সাপ্তাহিক ও প্রতি মাসে পূর্ণাঙ্গ পারাভিত্তিক মাসিক পরীক্ষা।',
-      'তাহাজ্জুদের বিশেষ আমল ও তারাবীর নামাজ পড়ানোর নিয়মিত মহড়া।',
+      'হিফজ নাজেরা ও দেখে পড়ার নিখুঁত দ্রুততা অর্জন।',
+      'দৈনিক নতুন সবক (হিফজ), সাত সবক ও আমপারা রিভিশনের কঠোর অনুশাসন।',
+      'আন্তর্জাতিক ক্বারীদের তিলাওয়াত অনুকরণে সুর ও তাজবীদ মাশক।',
+      'পারাভিত্তিক সাপ্তাহিক ও মাসিক কেন্দ্রীয় দৌর (৫ পারা, ১০ পারা, ২০ পারা)।',
     ],
     outcome:
       'হিফজ সমাপনীতে কেন্দ্রীয় বেফাকুল মাদারিসের সনদ, পাগড়ি প্রদান ও আন্তর্জাতিক হিফজ প্রতিযোগিতায় অংশগ্রহণের সুযোগ।',
   },
-  kitab: {
-    title: '৪. কিতাব ও আরবি ভাষা বিভাগ',
-    sub: 'উচ্চতর দ্বীনি এলেম ও ফিকাহ শাস্ত্র',
-    duration: 'ধারাবাহিক মাদরাসা শিক্ষাক্রম',
-    age: 'হিফজ সম্পন্নকারী অথবা সমমানের শিক্ষার্থী',
-    seats: '৫০ জন (আবাসিক)',
-    head: 'মুফতি আব্দুর রহমান কাসেমী',
-    syllabus: [
-      'মিযান, মুনশাইব ও ইলমুস সারফ ও নাহু (আরবি ব্যাকরণ)।',
-      'সহজ আরবি কথোপকথন ও বিশুদ্ধ ক্যালিগ্রাফি লিখন শৈলী।',
-      'মুকাদ্দামাতুল জাযারিয়্যাহ ও তাজবীদের গভীর তাত্ত্বিক জ্ঞান।',
-      'ফিকহ ও আকাইদের বুনিয়াদি কিতাবসমূহ।',
-    ],
-    outcome:
-      'শিক্ষার্থীকে আরবি ভাষা ও দ্বীনের মৌলিক বিদ্যায় পারদর্শী করে উচ্চতর কওমি মাদরাসায় ভর্তির উপযোগী করে তোলা।',
-  },
 };
 
+const toBnNum = (n: number) => n.toString().replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[+d]);
+
 const Home = () => {
-  const [activeModalKey, setActiveModalKey] = useState<string | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { settings } = useWebsiteSettings();
   const { data: principal } = usePrincipalOfficer();
 
@@ -144,6 +161,63 @@ const Home = () => {
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  // Fetch live divisions with classes directly from database
+  const { data: dbDivisions = [] } = useQuery({
+    queryKey: ['public-divisions-home-with-classes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('divisions')
+        .select('*, classes(*)')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) return [];
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const [selectedDept, setSelectedDept] = useState<DeptDetail | null>(null);
+
+  const getDivisionDetail = (div: any, index: number): DeptDetail => {
+    const name = (div.name_bn || div.name || '').toLowerCase();
+    let meta = DEPT_METADATA_MAP.noorani;
+    if (name.includes('নূরানি') || name.includes('nuarani')) {
+      meta = DEPT_METADATA_MAP.noorani;
+    } else if (name.includes('ইবতেদায়ী') || name.includes('ইবতেদায়ী') || name.includes('ebthedayee')) {
+      meta = DEPT_METADATA_MAP.ebthedayee;
+    } else if (name.includes('মুতাওয়াসসিতাহ') || name.includes('মুতাওয়াসসিতাহ') || name.includes('mutawassitah')) {
+      meta = DEPT_METADATA_MAP.mutawassitah;
+    } else if (name.includes('হিফজ') || name.includes('hifz')) {
+      meta = DEPT_METADATA_MAP.hifz;
+    }
+
+    const activeClasses = (div.classes || [])
+      .filter((c: any) => c.is_active !== false)
+      .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
+
+    return {
+      title: `${toBnNum(index + 1)}. ${div.name_bn || div.name}`,
+      classes: activeClasses,
+      ...meta,
+    };
+  };
+
+  const handleDeptSelectById = (deptId: string) => {
+    if (!dbDivisions.length) return;
+    const found = dbDivisions.find(
+      (d: any) =>
+        d.id === deptId ||
+        d.name_bn?.includes(deptId) ||
+        d.name?.toLowerCase().includes(deptId.toLowerCase())
+    );
+    if (found) {
+      const idx = dbDivisions.indexOf(found);
+      setSelectedDept(getDivisionDetail(found, idx));
+      const el = document.getElementById('departments');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   // Dynamic institution info directly from database settings
   const instName = settings?.institution_name || 'আল আরাবিয়া ছোবহানিয়া হাফিজিয়া মাদরাসা';
@@ -182,8 +256,6 @@ const Home = () => {
     settings?.header_style?.topbar_announcement_bn ||
     '২০২৬-২০২৭ শিক্ষাবর্ষের নূরানী, নাজেরা ও হিফজুল কুরআন শাখায় ভর্তি ফরম বিতরণ চলছে • এতিমখানার লিল্লাহ ফান্ডে অনুদান প্রদান করুন';
 
-  const activeDept = activeModalKey ? DEPT_DETAILS[activeModalKey] : null;
-
   return (
     <div className="institutional-root">
       <Seo
@@ -193,7 +265,7 @@ const Home = () => {
       />
 
       {/* 1. TOP & GRAND INSTITUTIONAL HEADER & NAVBAR */}
-      <InstitutionalHeader onDepartmentSelect={(key) => setActiveModalKey(key)} />
+      <InstitutionalHeader onDepartmentSelect={(key) => handleDeptSelectById(key)} />
 
       {/* 4. OFFICIAL NOTICE TICKER */}
       <div className="ticker-bar">
@@ -440,69 +512,59 @@ const Home = () => {
         </div>
 
         <div className="dept-interactive-grid">
-          {/* Noorani */}
-          <div className="dept-interactive-card" onClick={() => setActiveModalKey('noorani')}>
-            <div>
-              <span className="badge-dept" style={{ background: '#ecfdf5', color: '#047857' }}>
-                শিশু ও প্রাথমিক
-              </span>
-              <h4>১. নূরানী বিভাগ</h4>
-              <p>
-                সহীহ মাখরাজ ও তাজবীদের সাথে কুরআন শিক্ষা, প্রয়োজনীয় মাসআলা, বাংলা, ইংরেজি, গণিত ও ক্যালিগ্রাফি প্রশিক্ষণ।
-              </p>
-            </div>
-            <div className="dept-action-text">
-              <span>সিলেবাস ও বিস্তারিত দেখুন</span> <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
-            </div>
-          </div>
+          {(dbDivisions.length > 0
+            ? dbDivisions
+            : [
+                { id: 'nuarani', name_bn: 'নূরানি বিভাগ' },
+                { id: 'ebthedayee', name_bn: 'ইবতেদায়ী বিভাগ' },
+                { id: 'mutawassitah', name_bn: 'মুতাওয়াসসিতাহ বিভাগ' },
+                { id: 'hifz', name_bn: 'হিফজ বিভাগ' },
+              ]
+          ).map((div: any, idx: number) => {
+            const detail = getDivisionDetail(div, idx);
+            return (
+              <div
+                key={div.id || idx}
+                className="dept-interactive-card"
+                onClick={() => setSelectedDept(detail)}
+              >
+                <div>
+                  <span
+                    className="badge-dept"
+                    style={{ background: detail.badgeBg, color: detail.badgeColor }}
+                  >
+                    {detail.badge}
+                  </span>
+                  <h4>{detail.title}</h4>
+                  <p>{detail.desc}</p>
 
-          {/* Nazera */}
-          <div className="dept-interactive-card" onClick={() => setActiveModalKey('nazera')}>
-            <div>
-              <span className="badge-dept" style={{ background: '#fef3c7', color: '#b45309' }}>
-                হিফজ প্রস্তুতিমূলক
-              </span>
-              <h4>২. নাজেরা কুরআন বিভাগ</h4>
-              <p>
-                দ্রুত ও নির্ভুল দেখে পড়ার যোগ্যতা অর্জন, সুমধুর কণ্ঠে মাশক এবং আন্তর্জাতিক মানের হিফজের প্রস্তুতি পর্ব।
-              </p>
-            </div>
-            <div className="dept-action-text">
-              <span>সিলেবাস ও বিস্তারিত দেখুন</span> <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
-            </div>
-          </div>
-
-          {/* Hifz */}
-          <div className="dept-interactive-card" onClick={() => setActiveModalKey('hifz')}>
-            <div>
-              <span className="badge-dept" style={{ background: '#eff6ff', color: '#1d4ed8' }}>
-                বিশেষায়িত ও আবাসিক
-              </span>
-              <h4>৩. হিফজুল কুরআন</h4>
-              <p>
-                অভিজ্ঞ হাফেজগণের নিবিড় তত্ত্বাবধানে ৩ বছরে সম্পূর্ণ কুরআন হিফজ ও সাপ্তাহিক কেন্দ্রীয় দৌর (আমোক্তা)।
-              </p>
-            </div>
-            <div className="dept-action-text">
-              <span>সিলেবাস ও বিস্তারিত দেখুন</span> <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
-            </div>
-          </div>
-
-          {/* Kitab */}
-          <div className="dept-interactive-card" onClick={() => setActiveModalKey('kitab')}>
-            <div>
-              <span className="badge-dept" style={{ background: '#faf5ff', color: '#7e22ce' }}>
-                উচ্চতর শরিয়াহ
-              </span>
-              <h4>৪. কিতাব ও আরবি বিভাগ</h4>
-              <p>
-                আরবি ব্যাকরণ (নাহু-ছরফ), তরজমায়ে কুরআন, হাদিস শরিফ ও ফিকহের মৌলিক কিতাবাদি অধ্যয়নের সুশৃঙ্খল পাঠদান।
-              </p>
-            </div>
-            <div className="dept-action-text">
-              <span>সিলেবাস ও বিস্তারিত দেখুন</span> <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
-            </div>
-          </div>
+                  {detail.classes && detail.classes.length > 0 && (
+                    <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                      {detail.classes.map((cls: any) => (
+                        <span
+                          key={cls.id || cls.name_bn}
+                          style={{
+                            fontSize: '11px',
+                            background: '#f8fafc',
+                            color: '#1e293b',
+                            border: '1px solid #e2e8f0',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {cls.name_bn || cls.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="dept-action-text">
+                  <span>সিলেবাস ও বিস্তারিত দেখুন</span> <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -684,49 +746,68 @@ const Home = () => {
       </section>
 
       {/* 11. GRAND INSTITUTIONAL FOOTER */}
-      <InstitutionalFooter onDepartmentSelect={(key) => setActiveModalKey(key)} />
+      <InstitutionalFooter onDepartmentSelect={(key) => handleDeptSelectById(key)} />
 
       {/* ============================================== */}
       {/* MODAL: DEPARTMENT DETAILS POPUP */}
       {/* ============================================== */}
-      {activeDept && (
-        <div className="modal-overlay" onClick={() => setActiveModalKey(null)}>
+      {selectedDept && (
+        <div className="modal-overlay" onClick={() => setSelectedDept(null)}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header-bar">
               <div>
-                <h3>{activeDept.title}</h3>
-                <p>{activeDept.sub}</p>
+                <h3>{selectedDept.title}</h3>
+                <p>{selectedDept.sub}</p>
               </div>
-              <button className="btn-close-x" onClick={() => setActiveModalKey(null)}>
+              <button className="btn-close-x" onClick={() => setSelectedDept(null)}>
                 &times;
               </button>
             </div>
 
             <div className="modal-content-area">
+              {/* Classes list if available */}
+              {selectedDept.classes && selectedDept.classes.length > 0 && (
+                <div
+                  style={{
+                    marginBottom: '14px',
+                    background: '#f8fafc',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '13px',
+                  }}
+                >
+                  <strong style={{ color: '#064e3b' }}>অন্তর্ভুক্ত শ্রেণি / জামাত: </strong>
+                  <span style={{ color: '#334155' }}>
+                    {selectedDept.classes.map((c: any) => c.name_bn || c.name).join(' • ')}
+                  </span>
+                </div>
+              )}
+
               <div className="specs-grid">
                 <div className="spec-card">
                   <div className="spec-label">
                     <Clock className="w-3.5 h-3.5 inline mr-1 text-amber-600" /> কোর্স মেয়াদ ও সময়কাল
                   </div>
-                  <div className="spec-val">{activeDept.duration}</div>
+                  <div className="spec-val">{selectedDept.duration}</div>
                 </div>
                 <div className="spec-card">
                   <div className="spec-label">
                     <UserCheck className="w-3.5 h-3.5 inline mr-1 text-amber-600" /> ভর্তি যোগ্যতা ও বয়স
                   </div>
-                  <div className="spec-val">{activeDept.age}</div>
+                  <div className="spec-val">{selectedDept.age}</div>
                 </div>
                 <div className="spec-card">
                   <div className="spec-label">
                     <Users className="w-3.5 h-3.5 inline mr-1 text-amber-600" /> মোট আসন সংখ্যা
                   </div>
-                  <div className="spec-val">{activeDept.seats}</div>
+                  <div className="spec-val">{selectedDept.seats}</div>
                 </div>
                 <div className="spec-card">
                   <div className="spec-label">
                     <User className="w-3.5 h-3.5 inline mr-1 text-amber-600" /> বিভাগীয় প্রধান / তত্ত্বাবধায়ক
                   </div>
-                  <div className="spec-val">{activeDept.head}</div>
+                  <div className="spec-val">{selectedDept.head}</div>
                 </div>
               </div>
 
@@ -736,7 +817,7 @@ const Home = () => {
                   পাঠ্যক্রম ও প্রধান প্রশিক্ষণ সূচি (সিলেবাস)
                 </div>
                 <ul className="syllabus-box-body">
-                  {activeDept.syllabus.map((item, i) => (
+                  {selectedDept.syllabus.map((item, i) => (
                     <li key={i}>
                       <CheckCircle2 className="w-3.5 h-3.5 inline mr-1.5 text-emerald-600" />
                       {item}
@@ -756,7 +837,7 @@ const Home = () => {
                 }}
               >
                 <GraduationCap className="w-4 h-4 inline mr-1.5" />
-                <strong>সমাপনী ফলাফল ও কেন্দ্রীয় সনদ:</strong> {activeDept.outcome}
+                <strong>সমাপনী ফলাফল ও কেন্দ্রীয় সনদ:</strong> {selectedDept.outcome}
               </div>
             </div>
 
@@ -764,7 +845,7 @@ const Home = () => {
               <span style={{ fontSize: '12px', color: '#64748b' }}>
                 ভর্তি তথ্য ও সহায়তায়: {phone}
               </span>
-              <Link to="/admission" className="btn-apply-direct" onClick={() => setActiveModalKey(null)}>
+              <Link to="/admission" className="btn-apply-direct" onClick={() => setSelectedDept(null)}>
                 অনলাইন আবেদন করুন <ArrowRight className="w-3.5 h-3.5 inline ml-1.5" />
               </Link>
             </div>
