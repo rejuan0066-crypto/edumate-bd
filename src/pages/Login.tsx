@@ -330,10 +330,10 @@ const Login = () => {
             </p>
           </div>
 
-          <form className="space-y-3.5" onSubmit={handleSubmit} autoComplete="off">
-            {/* Username / Email Pill Input with Icon */}
+          <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
+            {/* Username / Email Pill Input with Exact Reference Styling */}
             <div className="relative flex items-center">
-              <div className="absolute left-4 text-[#064e3b]/75 pointer-events-none z-20 flex items-center">
+              <div className="absolute left-4.5 text-[#446d5c] pointer-events-none z-20 flex items-center">
                 <User className="w-4 h-4" />
               </div>
               <input
@@ -341,16 +341,16 @@ const Login = () => {
                 name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={language === 'bn' ? 'ইমেইল এড্রেস........' : 'Email........'}
+                placeholder={language === 'bn' ? 'ইমেইল........' : 'Email........'}
                 autoComplete="off"
-                className="w-full h-11 pl-11 pr-5 rounded-full bg-[#dceee6] border border-[#c2e2d4] text-[#064e3b] placeholder:text-[#064e3b]/55 focus:outline-none focus:ring-2 focus:ring-[#0d6b49]/30 text-xs sm:text-sm font-medium transition"
-                style={{ height: '44px' }}
+                className="w-full h-12 pl-11 pr-11 rounded-full border-0 text-[#1b4332] placeholder:text-[#446d5c] focus:outline-none focus:ring-2 focus:ring-[#0d6b49]/40 text-sm font-medium transition text-center"
+                style={{ height: '48px', backgroundColor: '#b5d7cb' }}
               />
             </div>
 
-            {/* Password Pill Input with Icon */}
+            {/* Password Pill Input with Exact Reference Styling */}
             <div className="relative flex items-center">
-              <div className="absolute left-4 text-[#064e3b]/75 pointer-events-none z-20 flex items-center">
+              <div className="absolute left-4.5 text-[#446d5c] pointer-events-none z-20 flex items-center">
                 <Lock className="w-4 h-4" />
               </div>
               <input
@@ -360,13 +360,13 @@ const Login = () => {
                 onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
                 placeholder={language === 'bn' ? 'পাসওয়ার্ড........' : 'Password........'}
                 autoComplete="new-password"
-                className="w-full h-11 pl-11 pr-10 rounded-full bg-[#dceee6] border border-[#c2e2d4] text-[#064e3b] placeholder:text-[#064e3b]/55 focus:outline-none focus:ring-2 focus:ring-[#0d6b49]/30 text-xs sm:text-sm font-medium transition"
-                style={{ height: '44px' }}
+                className="w-full h-12 pl-11 pr-11 rounded-full border-0 text-[#1b4332] placeholder:text-[#446d5c] focus:outline-none focus:ring-2 focus:ring-[#0d6b49]/40 text-sm font-medium transition text-center"
+                style={{ height: '48px', backgroundColor: '#b5d7cb' }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-3.5 text-[#064e3b]/60 hover:text-[#064e3b] z-20 p-1 transition"
+                className="absolute right-4 text-[#446d5c] hover:text-[#1b4332] z-20 p-1 transition"
                 tabIndex={-1}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -375,23 +375,23 @@ const Login = () => {
             </div>
 
             {/* Forgot password */}
-            <div className="text-center pt-0.5">
+            <div className="text-center pt-1">
               <button
                 type="button"
                 onClick={() => setForgotOpen(true)}
-                className="text-[11px] text-slate-500 hover:text-[#0d6b49] hover:underline font-medium transition"
+                className="text-xs text-[#527768] hover:text-[#0d6b49] hover:underline font-medium transition"
               >
                 {language === 'bn' ? 'পাসওয়ার্ড ভুলে গেছেন?' : 'Forgot your password?'}
               </button>
             </div>
 
             {/* Pill LOGIN Button */}
-            <div className="text-center pt-1.5">
+            <div className="text-center pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-36 sm:w-40 h-10.5 rounded-full text-white font-extrabold text-xs tracking-wider uppercase shadow-md shadow-emerald-900/25 hover:shadow-lg active:scale-95 transition-all bg-[#0d7a55] hover:bg-[#064e3b] cursor-pointer disabled:opacity-70 flex items-center justify-center mx-auto"
-                style={{ height: '42px' }}
+                className="w-36 sm:w-40 h-11 rounded-full text-white font-extrabold text-xs tracking-wider uppercase shadow-md shadow-emerald-900/25 hover:shadow-lg active:scale-95 transition-all cursor-pointer disabled:opacity-70 flex items-center justify-center mx-auto"
+                style={{ height: '44px', backgroundColor: '#0d7a55' }}
               >
                 {loading ? (
                   <>
