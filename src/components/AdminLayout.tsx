@@ -671,13 +671,13 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
   return (
     <AdminLayoutNestingContext.Provider value={true}>
-      <div className="min-h-screen bg-slate-50/80 dark:bg-background w-full overflow-x-auto" style={{ ['--admin-sidebar-width' as string]: `${desktopSidebarWidth}px` }}>
+      <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 w-full overflow-x-auto relative z-0" style={{ ['--admin-sidebar-width' as string]: `${desktopSidebarWidth}px` }}>
         {renderSidebar(false)}
         {mobileSidebarOpen && renderSidebar(true)}
 
         <div className={`flex min-h-screen flex-col ${mobileHeaderOffsetClass} ${desktopHeaderOffsetClass} lg:ml-[var(--admin-sidebar-width)]`}>
           {/* Top bar */}
-          <header className={`admin-header-glass px-3 sm:px-4 lg:px-6 ${headerPadClass} fixed top-0 right-0 left-0 lg:left-[var(--admin-sidebar-width)] z-40 flex items-center justify-between gap-2`} style={{ ...headerStyle, boxShadow: undefined, fontSize: 'var(--header-font-size, 13px)', paddingTop: `calc(env(safe-area-inset-top) + ${headerTopPadding})` }}>
+          <header className={`admin-header-glass px-4 sm:px-6 lg:px-8 h-16 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 shadow-2xs fixed top-0 right-0 left-0 lg:left-[var(--admin-sidebar-width)] z-40 flex items-center justify-between gap-2`} style={{ ...headerStyle, boxShadow: undefined, fontSize: 'var(--header-font-size, 13px)', paddingTop: `calc(env(safe-area-inset-top) + ${headerTopPadding})` }}>
             <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
               <button onClick={() => { if (window.innerWidth < 1024) setMobileSidebarOpen(true); else setSidebarOpen(!sidebarOpen); }} className="min-h-[38px] min-w-[38px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl hover:bg-secondary/60 active:scale-95 transition-all duration-200 shrink-0" aria-label="Toggle menu">
                 <Menu className="w-5 h-5 text-muted-foreground" />
@@ -692,10 +692,13 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                 </button>
               )}
               {/* Page label in header */}
-              <span className="text-sm sm:text-base font-bold text-emerald-950 dark:text-emerald-100 truncate max-w-[240px] sm:max-w-none flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>
-                {currentPageLabel}
-              </span>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs text-slate-400 font-medium hidden sm:inline">{language === 'bn' ? 'অ্যাডমিন' : 'Admin'}</span>
+                <span className="text-xs text-slate-400 font-medium hidden sm:inline">/</span>
+                <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
+                  {currentPageLabel}
+                </h1>
+              </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {/* Search */}
@@ -718,7 +721,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           </header>
 
           {/* Content */}
-          <main className="flex-1 px-2.5 sm:px-6 md:px-8 pb-24 lg:pb-10 pt-2 sm:pt-4 w-full max-w-[1536px] mx-auto bg-slate-50/50 dark:bg-transparent">
+          <main className="flex-1 px-3 sm:px-6 md:px-8 pb-24 lg:pb-12 pt-4 sm:pt-6 w-full max-w-[1536px] mx-auto">
             <BackButton position="top" />
             {/* Modern SaaS Content Container */}
             <div className="admin-page-card rounded-xl sm:rounded-2xl bg-card border border-border/80 p-3.5 sm:p-6 lg:p-7 min-h-[65vh] w-full shadow-sm relative overflow-hidden">

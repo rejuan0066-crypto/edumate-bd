@@ -494,7 +494,7 @@ const DashboardInstitutionCard = () => {
         </Button>
       )}
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-5 lg:gap-6 pr-10 sm:pr-24">
-        <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-white/5 border border-border/40">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden bg-white p-1 shadow-xs border border-slate-200 dark:border-slate-700">
           {displayLogo ? (
             <img
               src={displayLogo}
@@ -520,17 +520,17 @@ const DashboardInstitutionCard = () => {
                 <p
                   dir="rtl"
                   lang="ar"
-                  className="text-xl sm:text-2xl lg:text-4xl font-semibold text-center text-primary/90 leading-tight mb-1 break-words max-w-full"
+                  className="text-lg sm:text-2xl font-semibold text-center text-emerald-800 dark:text-emerald-400 leading-tight mb-1 break-words max-w-full"
                   style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
                 >
                   {(institution as any).name_ar}
                 </p>
               )}
-              <h1 className="text-base sm:text-2xl lg:text-3xl font-display font-bold text-center text-primary leading-snug break-words max-w-full">
+              <h1 className="text-lg sm:text-2xl font-bold text-center text-slate-900 dark:text-white leading-snug break-words max-w-full tracking-tight">
                 {displayName}
               </h1>
               {institution?.name_en && institution?.name && (
-                <p className="text-xs sm:text-base lg:text-2xl font-display font-semibold text-center text-primary/70 leading-snug break-words max-w-full mt-0.5">
+                <p className="text-xs sm:text-sm font-medium text-center text-slate-500 dark:text-slate-400 leading-snug break-words max-w-full mt-0.5">
                   {language === 'bn' ? institution.name_en : institution.name}
                 </p>
               )}
@@ -540,7 +540,7 @@ const DashboardInstitutionCard = () => {
               {language === 'bn' ? 'প্রতিষ্ঠানের নাম যোগ করা হয়নি' : 'Institution name not set'}
             </h1>
           )}
-          <div className="text-xs sm:text-sm lg:text-base text-muted-foreground space-y-0.5 lg:space-y-1 w-full mt-1">
+          <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 space-y-0.5 w-full mt-1.5">
             {institution?.address && <p className="text-center text-sm sm:text-lg lg:text-xl break-words">{institution.address}</p>}
             {institution?.phone && <p className="text-center text-xs sm:text-base lg:text-lg break-words">{institution.phone}</p>}
             {institution?.email && <p className="text-center text-xs sm:text-base lg:text-lg font-serif break-all">{institution.email}</p>}
