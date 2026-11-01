@@ -6,7 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Trash2, Loader2, CheckCircle, Eye, XCircle, Clock, Pencil, Filter, UserX, UserCheck, Printer, History, Download, BarChart3, Layers, MoreHorizontal } from 'lucide-react';
+import { Search, Plus, Trash2, Loader2, CheckCircle, Eye, XCircle, Clock, Pencil, Filter, UserX, UserCheck, Printer, History, Download, BarChart3, Layers, MoreHorizontal, Users, Sparkles, RotateCcw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import AdmissionForm from '@/components/admission/AdmissionForm';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
-import { bnToEn, enToBn, formatDigits } from '@/lib/utils';
+import { bnToEn, enToBn, formatDigits, cn } from '@/lib/utils';
 import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 
 const AdminStudents = () => {
@@ -562,7 +562,7 @@ const AdminStudents = () => {
               {bn ? 'শিক্ষার্থী ব্যবস্থাপনা' : 'Student Management'}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-              {bn ? `মোট ${formatDigits(sortedFiltered.length, true)} জন শিক্ষার্থী` : `Total ${sortedFiltered.length} students`}
+              {bn ? `মোট ${formatDigits(sortedFiltered.length, true)} জন শিক্ষার্থী প্রদর্শিত হচ্ছে` : `Showing ${sortedFiltered.length} students`}
             </p>
           </div>
           <div className="flex gap-2 items-center flex-wrap w-full sm:w-auto justify-end">
@@ -570,7 +570,7 @@ const AdminStudents = () => {
               variant="outline"
               size="sm"
               onClick={() => navigate('/admin/reports')}
-              className="h-8 text-xs flex items-center gap-1.5"
+              className="h-8 text-xs flex items-center gap-1.5 rounded-xl border-border/80 shadow-xs"
             >
               <BarChart3 className="w-3.5 h-3.5 text-primary" />
               {bn ? 'রিপোর্ট' : 'Reports'}
@@ -579,7 +579,7 @@ const AdminStudents = () => {
               variant="outline"
               size="sm"
               onClick={() => navigate('/admin/classes')}
-              className="h-8 text-xs flex items-center gap-1.5"
+              className="h-8 text-xs flex items-center gap-1.5 rounded-xl border-border/80 shadow-xs"
             >
               <Layers className="w-3.5 h-3.5 text-primary" />
               {bn ? 'শ্রেণী ও বিভাগ' : 'Classes'}
@@ -588,7 +588,7 @@ const AdminStudents = () => {
               variant="outline"
               size="sm"
               onClick={handleExportStudents}
-              className="h-8 text-xs flex items-center gap-1.5"
+              className="h-8 text-xs flex items-center gap-1.5 rounded-xl border-border/80 shadow-xs"
             >
               <Download className="w-3.5 h-3.5 text-primary" />
               {bn ? 'এক্সপোর্ট' : 'Export'}
@@ -601,23 +601,149 @@ const AdminStudents = () => {
           </div>
         </div>
 
-        {/* Filter Bar (Matching Staff Style) */}
-        <div className="card-elevated p-2.5 sm:p-4 space-y-2 lg:space-y-0 flex flex-col lg:flex-row gap-2 lg:gap-3 items-stretch lg:items-center">
-          <div className="flex flex-col sm:flex-row gap-2 flex-1">
+        {/* Metric Summary Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => setFilterStatus('all')}
+            className={cn(
+              "p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden",
+              filterStatus === 'all'
+                ? "bg-primary/10 border-primary shadow-xs ring-1 ring-primary/40"
+                : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'মোট শিক্ষার্থী' : 'Total'}</span>
+              <Users className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <div className="text-xl font-bold font-display text-foreground mt-1">
+              {formatDigits(allCount, bn)}
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterStatus('active')}
+            className={cn(
+              "p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden",
+              filterStatus === 'active'
+                ? "bg-emerald-500/10 border-emerald-500 shadow-xs ring-1 ring-emerald-500/40"
+                : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'সক্রিয়' : 'Active'}</span>
+              <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+            </div>
+            <div className="text-xl font-bold font-display text-emerald-600 dark:text-emerald-400 mt-1">
+              {formatDigits(activeCount, bn)}
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterStatus('pending')}
+            className={cn(
+              "p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden",
+              filterStatus === 'pending'
+                ? "bg-amber-500/10 border-amber-500 shadow-xs ring-1 ring-amber-500/40"
+                : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'অপেক্ষমাণ' : 'Pending'}</span>
+              <Clock className="w-3.5 h-3.5 text-amber-600" />
+            </div>
+            <div className="text-xl font-bold font-display text-amber-600 dark:text-amber-400 mt-1">
+              {formatDigits(pendingCount, bn)}
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterStatus('new')}
+            className={cn(
+              "p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden",
+              filterStatus === 'new'
+                ? "bg-sky-500/10 border-sky-500 shadow-xs ring-1 ring-sky-500/40"
+                : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'নতুন ভর্তি' : 'New'}</span>
+              <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+            </div>
+            <div className="text-xl font-bold font-display text-sky-600 dark:text-sky-400 mt-1">
+              {formatDigits(newCount, bn)}
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterStatus('old')}
+            className={cn(
+              "p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden",
+              filterStatus === 'old'
+                ? "bg-violet-500/10 border-violet-500 shadow-xs ring-1 ring-violet-500/40"
+                : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'পুরাতন' : 'Old'}</span>
+              <History className="w-3.5 h-3.5 text-violet-600" />
+            </div>
+            <div className="text-xl font-bold font-display text-violet-600 dark:text-violet-400 mt-1">
+              {formatDigits(oldCount, bn)}
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterStatus('inactive')}
+            className={cn(
+              "p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden",
+              filterStatus === 'inactive'
+                ? "bg-rose-500/10 border-rose-500 shadow-xs ring-1 ring-rose-500/40"
+                : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'নিষ্ক্রিয়' : 'Inactive'}</span>
+              <UserX className="w-3.5 h-3.5 text-rose-600" />
+            </div>
+            <div className="text-xl font-bold font-display text-rose-600 dark:text-rose-400 mt-1">
+              {formatDigits(inactiveCount, bn)}
+            </div>
+          </button>
+        </div>
+
+        {/* Filter Bar */}
+        <div className="card-elevated p-3 sm:p-4 flex flex-col md:flex-row gap-2.5 items-stretch md:items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-2.5 flex-1">
             <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder={bn ? 'নাম, আইডি, রোল, ফোন দিয়ে খুঁজুন...' : 'Search by name, ID, roll, phone...'}
-                className="pl-8 h-8 sm:h-9 text-xs sm:text-sm bg-background"
+                placeholder={bn ? 'নাম, আইডি, রোল, মোবাইল নম্বর দিয়ে খুঁজুন...' : 'Search by name, ID, roll, phone...'}
+                className="pl-9 h-9 text-xs sm:text-sm bg-background border-border/80 rounded-xl"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs p-1 cursor-pointer"
+                >
+                  ✕
+                </button>
+              )}
             </div>
             <Select value={filterDivisionId} onValueChange={(v) => { setFilterDivisionId(v); setFilterClassId('all'); }}>
-              <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm w-full sm:w-[130px] shrink-0">
+              <SelectTrigger className="h-9 text-xs sm:text-sm w-full sm:w-[140px] shrink-0 bg-background border-border/80 rounded-xl">
                 <SelectValue placeholder={bn ? 'বিভাগ' : 'Division'} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 <SelectItem value="all">{bn ? 'সকল বিভাগ' : 'All Divisions'}</SelectItem>
                 {divisions.map((d: any) => (
                   <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>
@@ -625,10 +751,10 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterSessionId} onValueChange={setFilterSessionId}>
-              <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm w-full sm:w-[120px] shrink-0">
+              <SelectTrigger className="h-9 text-xs sm:text-sm w-full sm:w-[130px] shrink-0 bg-background border-border/80 rounded-xl">
                 <SelectValue placeholder={bn ? 'সেশন' : 'Session'} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 <SelectItem value="all">{bn ? 'সকল সেশন' : 'All Sessions'}</SelectItem>
                 {academicSessions.map((s: any) => (
                   <SelectItem key={s.id} value={s.id}>{bn ? (s.name_bn || s.name) : s.name}</SelectItem>
@@ -636,10 +762,10 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterClassId} onValueChange={setFilterClassId}>
-              <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm w-full sm:w-[130px] shrink-0">
+              <SelectTrigger className="h-9 text-xs sm:text-sm w-full sm:w-[140px] shrink-0 bg-background border-border/80 rounded-xl">
                 <SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 <SelectItem value="all">{bn ? 'সকল শ্রেণী' : 'All Classes'}</SelectItem>
                 {filteredClasses.map((c: any) => (
                   <SelectItem key={c.id} value={c.id}>
@@ -650,63 +776,23 @@ const AdminStudents = () => {
             </Select>
           </div>
 
-          {/* Scrollable Compact Filter Chips on Mobile & Desktop */}
-          <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar shrink-0">
-            <button
-              type="button"
-              onClick={() => setFilterStatus('all')}
-              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                filterStatus === 'all' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
-              }`}
+          {(filterDivisionId !== 'all' || filterSessionId !== 'all' || filterClassId !== 'all' || filterStatus !== 'all' || search) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFilterDivisionId('all');
+                setFilterSessionId('all');
+                setFilterClassId('all');
+                setFilterStatus('all');
+                setSearch('');
+              }}
+              className="h-9 text-xs text-muted-foreground hover:text-foreground shrink-0 rounded-xl cursor-pointer"
             >
-              {bn ? 'সবগুলো' : 'All'} ({allCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterStatus('active')}
-              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                filterStatus === 'active' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
-              }`}
-            >
-              {bn ? 'সক্রিয়' : 'Active'} ({activeCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterStatus('pending')}
-              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                filterStatus === 'pending' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
-              }`}
-            >
-              {bn ? 'অপেক্ষমাণ' : 'Pending'} ({pendingCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterStatus('old')}
-              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                filterStatus === 'old' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
-              }`}
-            >
-              {bn ? 'পুরাতন' : 'Old'} ({oldCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterStatus('new')}
-              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                filterStatus === 'new' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
-              }`}
-            >
-              {bn ? 'নতুন' : 'New'} ({newCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterStatus('inactive')}
-              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                filterStatus === 'inactive' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
-              }`}
-            >
-              {bn ? 'নিষ্ক্রিয়' : 'Inactive'} ({inactiveCount})
-            </button>
-          </div>
+              <RotateCcw className="w-3.5 h-3.5 mr-1" />
+              {bn ? 'রিসেট' : 'Reset'}
+            </Button>
+          )}
         </div>
 
         {/* Student List Card */}

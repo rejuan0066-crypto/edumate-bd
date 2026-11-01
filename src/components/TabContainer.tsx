@@ -102,16 +102,12 @@ const TabContainer = ({ groups, tabs, paramKey = 'tab', childParamKey = 'sub', c
 
   // ── Single-level mode ──
   if (tabs && !groups) {
-    const activeId = searchParams.get(paramKey) || '';
-    const activeTab = activeId ? tabs.find(t => t.id === activeId) : null;
+    const rawActiveId = searchParams.get(paramKey);
+    const activeTab = (rawActiveId ? tabs.find(t => t.id === rawActiveId) : null) || tabs[0] || null;
 
     const toggleTab = (id: string) => {
       const next = new URLSearchParams(searchParams);
-      if (activeId === id) {
-        next.delete(paramKey);
-      } else {
-        next.set(paramKey, id);
-      }
+      next.set(paramKey, id);
       setSearchParams(next, { replace: true });
     };
 
@@ -147,31 +143,22 @@ const TabContainer = ({ groups, tabs, paramKey = 'tab', childParamKey = 'sub', c
   // ── Multi-level mode ──
   if (!groups) return null;
 
-  const activeGroupId = searchParams.get(paramKey) || '';
-  const activeGroup = activeGroupId ? groups.find(g => g.id === activeGroupId) : null;
+  const rawGroupId = searchParams.get(paramKey);
+  const activeGroup = (rawGroupId ? groups.find(g => g.id === rawGroupId) : null) || groups[0] || null;
   const childTabs = activeGroup?.tabs || [];
-  const activeChildId = searchParams.get(childParamKey) || '';
-  const activeChild = activeChildId ? childTabs.find(t => t.id === activeChildId) : null;
+  const rawChildId = searchParams.get(childParamKey);
+  const activeChild = (rawChildId ? childTabs.find(t => t.id === rawChildId) : null) || childTabs[0] || null;
 
   const toggleGroup = (id: string) => {
     const next = new URLSearchParams(searchParams);
-    if (activeGroupId === id) {
-      next.delete(paramKey);
-      next.delete(childParamKey);
-    } else {
-      next.set(paramKey, id);
-      next.delete(childParamKey);
-    }
+    next.set(paramKey, id);
+    next.delete(childParamKey);
     setSearchParams(next, { replace: true });
   };
 
   const toggleChild = (id: string) => {
     const next = new URLSearchParams(searchParams);
-    if (activeChildId === id) {
-      next.delete(childParamKey);
-    } else {
-      next.set(childParamKey, id);
-    }
+    next.set(childParamKey, id);
     setSearchParams(next, { replace: true });
   };
 
