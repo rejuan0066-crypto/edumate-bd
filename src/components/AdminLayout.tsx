@@ -436,8 +436,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         style={sidebarStyle}
       >
         {/* Logo */}
-        <div className="px-4 py-4 flex items-center gap-3 border-b border-amber-600/25 shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0 shadow-md shadow-emerald-950/20 overflow-hidden ring-2 ring-amber-500/40">
+        <div className="p-4 border-b border-emerald-800/40 bg-gradient-to-b from-emerald-950 to-[#022c22] shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-white p-0.5 flex items-center justify-center shrink-0 shadow-md ring-2 ring-amber-500/50 overflow-hidden">
             {(websiteSettings.favicon_url || websiteSettings.logo_url) ? (
               <img
                 src={websiteSettings.favicon_url || websiteSettings.logo_url}
@@ -466,7 +466,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
               >
                 {language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name)}
               </h2>
-              <p className="text-[11px] text-sidebar-foreground/50 leading-relaxed truncate">{language === 'bn' ? 'ম্যানেজমেন্ট সিস্টেম' : 'Management System'}</p>
+              <p className="text-[11px] text-amber-400 font-medium leading-relaxed truncate">{language === 'bn' ? 'মাদ্রাসা ও এতিমখানা' : 'Madrasa & Orphanage'}</p>
             </div>
           )}
           {mobile && (
@@ -626,8 +626,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
         {/* Bottom - user profile + logout */}
         {(sidebarOpen || mobile) && (
-          <div className="px-2 py-1.5 border-t border-white/8 shrink-0">
-            <div className="flex items-center gap-2 px-1.5 py-1 rounded-lg bg-white/5 backdrop-blur-sm">
+          <div className="p-3 border-t border-emerald-900/50 bg-emerald-950/70 shrink-0">
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-xl bg-white/5 backdrop-blur-sm ring-1 ring-white/10">
               <div className="w-6 h-6 rounded-full bg-sidebar-primary flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-white/10">
                 {sidebarAvatar ? (
                   <img src={sidebarAvatar} alt="" className="w-full h-full object-cover" />
@@ -638,10 +638,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                 )}
               </div>
               <div className="flex-1 min-w-0 leading-none">
-                <p className="text-[11px] font-semibold text-sidebar-foreground truncate">
+                <p className="text-[11px] font-semibold text-white truncate">
                   {sidebarDisplayName}
                 </p>
-                <span className="text-[9px] text-sidebar-foreground/55 truncate block mt-0.5">{(() => {
+                <span className="text-[9px] text-emerald-400 truncate block mt-0.5">{(() => {
                   // Prefer the linked staff designation (actual job title) over generic role label
                   if (sidebarStaffPhoto?.designation) return sidebarStaffPhoto.designation;
                   const roleLabels: Record<string, { bn: string; en: string }> = {
@@ -692,7 +692,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                 </button>
               )}
               {/* Page label in header */}
-              <span className="text-xs sm:text-sm font-bold text-emerald-950 dark:text-emerald-100 truncate max-w-[160px] sm:max-w-none flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>{currentPageLabel}</span>
+              <span className="text-xs sm:text-sm font-bold text-emerald-900 dark:text-emerald-100 bg-emerald-50 dark:bg-emerald-950/60 px-3.5 py-1 rounded-full border border-emerald-200/80 dark:border-emerald-700/50 flex items-center gap-2 shadow-2xs truncate max-w-[220px] sm:max-w-none">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shrink-0"></span>
+                {currentPageLabel}
+              </span>
             </div>
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {/* Search */}
@@ -718,7 +721,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           <main className="flex-1 px-2.5 sm:px-6 md:px-8 pb-24 lg:pb-10 pt-2 sm:pt-4 w-full max-w-[1536px] mx-auto">
             <BackButton position="top" />
             {/* Modern SaaS Content Container */}
-            <div className="admin-page-card rounded-xl sm:rounded-2xl bg-card border border-border p-3.5 sm:p-6 lg:p-7 min-h-[65vh] w-full shadow-xs">
+            <div className="admin-page-card rounded-xl sm:rounded-2xl bg-card border border-border/80 p-3.5 sm:p-6 lg:p-7 min-h-[65vh] w-full shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-800 via-emerald-600 to-amber-600 z-10 pointer-events-none" />
               <div className="w-full min-w-0">
                 <AdminPageWithTabs>{children}</AdminPageWithTabs>
               </div>
