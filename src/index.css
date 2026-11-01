@@ -646,72 +646,27 @@
   .card-elevated {
     border-radius: 16px;
     background: hsl(var(--card));
-    border: 1px solid hsl(var(--border) / 0.85);
-    box-shadow: 0 2px 12px -2px rgba(6, 78, 59, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
-    position: relative;
-    overflow: hidden;
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
-  }
-  .card-elevated::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #064e3b 0%, #059669 45%, #b45309 85%, #f59e0b 100%);
-    z-index: 10;
-  }
-  .dark .card-elevated {
-    background: hsl(var(--card));
-    border-color: hsl(var(--border));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   }
   .card-elevated:hover {
-    box-shadow: var(--shadow-elevated);
-    transform: translateY(-2px);
+    box-shadow: 0 4px 14px -2px rgba(6, 78, 59, 0.08);
+    border-color: rgba(6, 78, 59, 0.2);
   }
 
   .stat-card {
-    border-radius: 16px;
+    border-radius: 14px;
     background: hsl(var(--card));
-    border: 1px solid hsl(var(--border) / 0.85);
-    box-shadow: 0 2px 10px -2px rgba(6, 78, 59, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
-    padding: 1rem 1.25rem;
-    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
-    position: relative;
-    overflow: hidden;
-  }
-  .stat-card::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #064e3b, #059669);
-    z-index: 5;
-  }
-  .stat-card:nth-child(2n)::after {
-    background: linear-gradient(90deg, #b45309, #f59e0b);
-  }
-  .stat-card:nth-child(3n)::after {
-    background: linear-gradient(90deg, #0d9488, #10b981);
-  }
-  .dark .stat-card {
-    background: hsl(var(--card));
-    border-color: hsl(var(--border));
-  }
-  .stat-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.04) 0%, transparent 60%);
-    border-radius: inherit;
-    pointer-events: none;
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03);
+    padding: 1rem 1.15rem;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   }
   .stat-card:hover {
-    box-shadow: var(--shadow-elevated);
-    transform: translateY(-2px);
+    box-shadow: 0 4px 12px -2px rgba(6, 78, 59, 0.08);
+    border-color: rgba(6, 78, 59, 0.25);
+    transform: translateY(-1px);
   }
 
   /* ── Button Styles ── */
@@ -960,33 +915,9 @@
     /* ── Admin Page Card (Institutional Theme Harmonized) ── */
   .admin-page-card {
     position: relative;
-    overflow: hidden;
     background-color: hsl(var(--card)) !important;
-    border-color: hsl(var(--border) / 0.85) !important;
-    box-shadow: 0 4px 20px -2px rgba(6, 78, 59, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02) !important;
-  }
-  .admin-page-card::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #064e3b 0%, #059669 45%, #b45309 85%, #f59e0b 100%);
-    z-index: 10;
-    border-top-left-radius: inherit;
-    border-top-right-radius: inherit;
-  }
-  .admin-page-card::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -20%;
-    width: 500px;
-    height: 500px;
-    border-radius: 50%;
-    background: radial-gradient(circle, hsl(160 84% 16% / 0.025) 0%, transparent 70%);
-    pointer-events: none;
+    border: 1px solid hsl(var(--border)) !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
   }
 
   /* Institutional table styling inside admin pages */

@@ -692,8 +692,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                 </button>
               )}
               {/* Page label in header */}
-              <span className="text-xs sm:text-sm font-bold text-emerald-900 dark:text-emerald-100 bg-emerald-50 dark:bg-emerald-950/60 px-3.5 py-1 rounded-full border border-emerald-200/80 dark:border-emerald-700/50 flex items-center gap-2 shadow-2xs truncate max-w-[220px] sm:max-w-none">
-                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shrink-0"></span>
+              <span className="text-sm sm:text-base font-bold text-emerald-950 dark:text-emerald-100 truncate max-w-[240px] sm:max-w-none flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>
                 {currentPageLabel}
               </span>
             </div>
@@ -722,8 +722,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
             <BackButton position="top" />
             {/* Modern SaaS Content Container */}
             <div className="admin-page-card rounded-xl sm:rounded-2xl bg-card border border-border/80 p-3.5 sm:p-6 lg:p-7 min-h-[65vh] w-full shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-800 via-emerald-600 to-amber-600 z-10 pointer-events-none" />
-              <div className="w-full min-w-0">
+                            <div className="w-full min-w-0">
                 <AdminPageWithTabs>{children}</AdminPageWithTabs>
               </div>
             </div>
