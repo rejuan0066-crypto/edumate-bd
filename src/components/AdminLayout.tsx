@@ -671,7 +671,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
   return (
     <AdminLayoutNestingContext.Provider value={true}>
-      <div className="min-h-screen bg-transparent w-full overflow-x-auto" style={{ ['--admin-sidebar-width' as string]: `${desktopSidebarWidth}px` }}>
+      <div className="min-h-screen bg-slate-50/80 dark:bg-background w-full overflow-x-auto" style={{ ['--admin-sidebar-width' as string]: `${desktopSidebarWidth}px` }}>
         {renderSidebar(false)}
         {mobileSidebarOpen && renderSidebar(true)}
 
@@ -718,7 +718,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           </header>
 
           {/* Content */}
-          <main className="flex-1 px-2.5 sm:px-6 md:px-8 pb-24 lg:pb-10 pt-2 sm:pt-4 w-full max-w-[1536px] mx-auto">
+          <main className="flex-1 px-2.5 sm:px-6 md:px-8 pb-24 lg:pb-10 pt-2 sm:pt-4 w-full max-w-[1536px] mx-auto bg-slate-50/50 dark:bg-transparent">
             <BackButton position="top" />
             {/* Modern SaaS Content Container */}
             <div className="admin-page-card rounded-xl sm:rounded-2xl bg-card border border-border/80 p-3.5 sm:p-6 lg:p-7 min-h-[65vh] w-full shadow-sm relative overflow-hidden">

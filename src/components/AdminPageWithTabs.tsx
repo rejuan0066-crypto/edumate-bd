@@ -143,16 +143,16 @@ const AdminPageWithTabs = ({ children }: Props) => {
                   onClick={() => toggleTab(tab.id)}
                   className={cn(
                     'relative flex items-center justify-center px-5 py-2.5 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-                    'border-[1.5px] border-[hsl(var(--aqua)_/_0.38)] shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.32),0_0_12px_-7px_hsl(var(--aqua)_/_0.45)]',
+                    'border-[1.5px] border-emerald-900/20 shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.32),0_0_12px_-7px_hsl(var(--aqua)_/_0.45)]',
                     active
-                      ? 'text-primary-foreground border-[hsl(var(--aqua)_/_0.62)]'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 hover:border-[hsl(var(--aqua)_/_0.55)]',
+                      ? 'text-white border-emerald-800'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 hover:border-emerald-600/30',
                   )}
                 >
                   {active && (
                     <motion.span
                       layoutId="admin-page-tab-bg"
-                      className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-primary/85 shadow-[0_4px_14px_-2px_hsl(var(--primary)/0.45)]"
+                      className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-800 to-emerald-700 shadow-sm shadow-emerald-900/30"
                       transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                     />
                   )}
