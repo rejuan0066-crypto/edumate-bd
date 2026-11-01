@@ -36,7 +36,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-1.5rem)] sm:w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-5 p-5 sm:p-7 duration-200 max-h-[92dvh] sm:max-h-[90vh] rounded-2xl border border-border bg-card text-card-foreground shadow-2xl",
+        "fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-1.5rem)] sm:w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-5 p-5 sm:p-7 duration-200 max-h-[92dvh] sm:max-h-[90vh] rounded-2xl border border-border bg-card text-card-foreground shadow-2xl relative overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-1.5 before:bg-gradient-to-r before:from-emerald-800 before:via-emerald-600 before:to-amber-500 before:z-20",
         "overflow-y-auto scrollbar-thin",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=open]:slide-in-from-left-1/2",
         className,
@@ -44,7 +44,7 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-3 top-3 sm:right-4 sm:top-4 w-8 h-8 rounded-full flex items-center justify-center bg-muted text-foreground/80 transition-all hover:bg-destructive/15 hover:text-destructive active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:pointer-events-none">
+      <DialogPrimitive.Close className="absolute right-3 top-3 sm:right-4 sm:top-4 w-8 h-8 rounded-full flex items-center justify-center bg-muted text-foreground/80 transition-all hover:bg-destructive/15 hover:text-destructive active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:pointer-events-none z-30">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>

@@ -436,8 +436,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         style={sidebarStyle}
       >
         {/* Logo */}
-        <div className="px-4 py-5 flex items-center gap-3 border-b border-sidebar-border/30 shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0 shadow-lg shadow-sidebar-primary/25 overflow-hidden">
+        <div className="px-4 py-4 flex items-center gap-3 border-b border-amber-600/25 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0 shadow-md shadow-emerald-950/20 overflow-hidden ring-2 ring-amber-500/40">
             {(websiteSettings.favicon_url || websiteSettings.logo_url) ? (
               <img
                 src={websiteSettings.favicon_url || websiteSettings.logo_url}
@@ -692,12 +692,12 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                 </button>
               )}
               {/* Page label in header */}
-              <span className="text-xs sm:text-sm font-semibold text-foreground/90 truncate max-w-[150px] sm:max-w-none">{currentPageLabel}</span>
+              <span className="text-xs sm:text-sm font-bold text-emerald-950 dark:text-emerald-100 truncate max-w-[160px] sm:max-w-none flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>{currentPageLabel}</span>
             </div>
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {/* Search */}
               {adminTheme.headerShowSearch && (
-                <div className="hidden md:flex items-center gap-2 bg-card rounded-xl px-3 py-1.5 text-xs text-foreground font-medium min-w-[200px] border border-border shadow-xs">
+                <div className="hidden md:flex items-center gap-2 bg-card rounded-xl px-3 py-1.5 text-xs text-foreground font-medium min-w-[200px] border border-border shadow-xs focus-within:ring-2 focus-within:ring-emerald-700/25 focus-within:border-emerald-700 transition-all">
                   <Search className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
                   <span className="flex-1 truncate">{language === 'bn' ? 'শিক্ষার্থী, শিক্ষক, ক্লাস খুঁজুন...' : 'Search students, teachers...'}</span>
                   <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-bold text-foreground">

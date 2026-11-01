@@ -121,7 +121,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 8%;
 
-    --primary: 160 84% 30%;
+    --primary: 160 84% 18%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 200 18% 94%;
@@ -130,7 +130,7 @@
     --muted: 210 14% 92%;
     --muted-foreground: 220 20% 25%;
 
-    --accent: 42 85% 55%;
+    --accent: 38 92% 50%;
     --accent-foreground: 220 20% 10%;
 
     --destructive: 350 65% 52%;
@@ -138,7 +138,7 @@
 
     --border: 220 14% 90%;
     --input: 220 14% 90%;
-    --ring: 160 84% 30%;
+    --ring: 160 84% 20%;
 
     --radius: 1.25rem;
 
@@ -763,11 +763,11 @@
     transition: transform 0.15s ease, color 0.15s ease;
   }
 
-  /* Active state — clearly filled, clean SaaS contrast */
+    /* Active state — clearly filled, institutional emerald & gold */
   .sidebar-item.active {
-    @apply font-semibold;
-    color: hsl(var(--primary));
-    background: hsl(var(--primary) / 0.1);
+    @apply font-bold;
+    color: hsl(160 84% 18%);
+    background: hsl(160 84% 18% / 0.09);
   }
   .sidebar-item.active::before {
     content: '';
@@ -775,13 +775,14 @@
     left: 0;
     top: 50%;
     transform: translateY(-50%);
-    width: 3px;
-    height: 60%;
+    width: 4px;
+    height: 70%;
     border-radius: 0 4px 4px 0;
-    background: hsl(var(--primary));
+    background: #b45309;
+    box-shadow: 0 0 8px rgba(180, 83, 9, 0.35);
   }
   .sidebar-item.active .sidebar-icon {
-    color: hsl(var(--primary));
+    color: hsl(160 84% 18%);
   }
   /* Expanded parent group */
   .sidebar-item.group-open {
@@ -932,12 +933,25 @@
     color: white;
   }
 
-  /* ── Admin Page Card ── */
+    /* ── Admin Page Card (Institutional Theme Harmonized) ── */
   .admin-page-card {
     position: relative;
     overflow: hidden;
     background-color: hsl(var(--card)) !important;
-    border-color: hsl(var(--border)) !important;
+    border-color: hsl(var(--border) / 0.85) !important;
+    box-shadow: 0 4px 20px -2px rgba(6, 78, 59, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02) !important;
+  }
+  .admin-page-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #064e3b 0%, #059669 45%, #b45309 85%, #f59e0b 100%);
+    z-index: 10;
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
   }
   .admin-page-card::before {
     content: '';
@@ -947,8 +961,30 @@
     width: 500px;
     height: 500px;
     border-radius: 50%;
-    background: radial-gradient(circle, hsl(var(--primary) / 0.02) 0%, transparent 70%);
+    background: radial-gradient(circle, hsl(160 84% 16% / 0.025) 0%, transparent 70%);
     pointer-events: none;
+  }
+
+  /* Institutional table styling inside admin pages */
+  .admin-page-card table thead th {
+    background-color: rgba(6, 78, 59, 0.035);
+    color: #064e3b;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(6, 78, 59, 0.12);
+  }
+  .dark .admin-page-card table thead th {
+    background-color: rgba(6, 78, 59, 0.18);
+    color: #a7f3d0;
+    border-bottom-color: rgba(6, 78, 59, 0.3);
+  }
+  .admin-page-card table tbody tr {
+    transition: background-color 0.15s ease;
+  }
+  .admin-page-card table tbody tr:hover {
+    background-color: rgba(6, 78, 59, 0.03);
+  }
+  .dark .admin-page-card table tbody tr:hover {
+    background-color: rgba(6, 78, 59, 0.14);
   }
 
   /* ── Slim Scrollbar (utility class) ── */
