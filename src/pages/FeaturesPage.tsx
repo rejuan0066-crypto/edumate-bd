@@ -77,7 +77,7 @@ const FeaturesPage = () => {
   ];
 
   return (
-    <PublicLayout>
+    <PublicLayout showBackButton={false}>
       <Seo
         title={`একাডেমিক বৈশিষ্ট্য ও সুবিধাসমূহ — ${instName}`}
         description={`${instName} এর আধুনিক সুযোগ-সুবিধা, আবাসিক হোস্টেল, মানসম্মত হিফজ পরিবেশ ও অনন্য সেবাসমূহ।`}

@@ -65,7 +65,7 @@ const ManagementPage = () => {
   });
 
   return (
-    <PublicLayout>
+    <PublicLayout showBackButton={false}>
       <Seo
         title={`পরিচালনা পরিষদ ও অধ্যক্ষের বাণী — ${instName}`}
         description={`${instName} এর প্রতিষ্ঠাতা, প্রিন্সিপাল মহোদয়ের বিশেষ বাণী এবং পরিচালনা পরিষদের তথ্যাবলী।`}
