@@ -1215,11 +1215,11 @@ const AdminWebsite = () => {
                 </div>
                 <div>
                   <Label>{language === 'bn' ? 'বাণী (বাংলা)' : 'Message (Bangla)'}</Label>
-                  <Textarea className="bg-background mt-1 min-h-[100px]" value={form.principal_message_bn} onChange={e => updateField('principal_message_bn', e.target.value)} />
+                  <Textarea className="bg-background mt-1 min-h-[220px] text-base leading-relaxed p-4 rounded-xl shadow-xs" value={form.principal_message_bn} onChange={e => updateField('principal_message_bn', e.target.value)} />
                 </div>
                 <div>
                   <Label>{language === 'bn' ? 'বাণী (ইংরেজি)' : 'Message (English)'}</Label>
-                  <Textarea className="bg-background mt-1 min-h-[100px]" value={form.principal_message_en} onChange={e => updateField('principal_message_en', e.target.value)} />
+                  <Textarea className="bg-background mt-1 min-h-[220px] text-base leading-relaxed p-4 rounded-xl shadow-xs" value={form.principal_message_en} onChange={e => updateField('principal_message_en', e.target.value)} />
                 </div>
                 <Button className="btn-primary-gradient" onClick={() => saveSection(['principal_name', 'principal_name_en', 'principal_title_bn', 'principal_title_en', 'principal_message_bn', 'principal_message_en', 'principal_photo_url'])} disabled={saving}>
                   <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সংরক্ষণ' : 'Save'}
@@ -1265,11 +1265,11 @@ const AdminWebsite = () => {
                 </div>
                 <div>
                   <Label>{language === 'bn' ? 'বাণী (বাংলা)' : 'Message (Bangla)'}</Label>
-                  <Textarea className="bg-background mt-1 min-h-[100px]" value={form.admin_message_bn} onChange={e => updateField('admin_message_bn', e.target.value)} />
+                  <Textarea className="bg-background mt-1 min-h-[220px] text-base leading-relaxed p-4 rounded-xl shadow-xs" value={form.admin_message_bn} onChange={e => updateField('admin_message_bn', e.target.value)} />
                 </div>
                 <div>
                   <Label>{language === 'bn' ? 'বাণী (ইংরেজি)' : 'Message (English)'}</Label>
-                  <Textarea className="bg-background mt-1 min-h-[100px]" value={form.admin_message_en} onChange={e => updateField('admin_message_en', e.target.value)} />
+                  <Textarea className="bg-background mt-1 min-h-[220px] text-base leading-relaxed p-4 rounded-xl shadow-xs" value={form.admin_message_en} onChange={e => updateField('admin_message_en', e.target.value)} />
                 </div>
                 <Button className="btn-primary-gradient" onClick={() => saveSection(['admin_name', 'admin_title_bn', 'admin_title_en', 'admin_message_bn', 'admin_message_en', 'admin_photo_url', 'admin_email', 'admin_phone'])} disabled={saving}>
                   <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সংরক্ষণ' : 'Save'}
@@ -1283,28 +1283,28 @@ const AdminWebsite = () => {
                 </h3>
                 <div>
                   <Label>{language === 'bn' ? 'বিবরণ (বাংলা)' : 'Description (Bangla)'}</Label>
-                  <Textarea className="bg-background mt-1 min-h-[120px]" value={form.about_content_bn} onChange={e => updateField('about_content_bn', e.target.value)} />
+                  <Textarea className="bg-background mt-1 min-h-[280px] text-base leading-relaxed p-4 rounded-xl shadow-xs" value={form.about_content_bn} onChange={e => updateField('about_content_bn', e.target.value)} />
                 </div>
                 <div>
                   <Label>{language === 'bn' ? 'বিবরণ (ইংরেজি)' : 'Description (English)'}</Label>
-                  <Textarea className="bg-background mt-1 min-h-[120px]" value={form.about_content_en} onChange={e => updateField('about_content_en', e.target.value)} />
+                  <Textarea className="bg-background mt-1 min-h-[280px] text-base leading-relaxed p-4 rounded-xl shadow-xs" value={form.about_content_en} onChange={e => updateField('about_content_en', e.target.value)} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>{language === 'bn' ? 'মিশন (বাংলা)' : 'Mission (Bangla)'}</Label>
-                    <Textarea className="bg-background mt-1 min-h-[80px]" value={form.about_mission_bn} onChange={e => updateField('about_mission_bn', e.target.value)} />
+                    <Textarea className="bg-background mt-1 min-h-[130px] text-sm sm:text-base leading-relaxed p-3.5 rounded-xl shadow-xs" value={form.about_mission_bn} onChange={e => updateField('about_mission_bn', e.target.value)} />
                   </div>
                   <div>
                     <Label>{language === 'bn' ? 'মিশন (ইংরেজি)' : 'Mission (English)'}</Label>
-                    <Textarea className="bg-background mt-1 min-h-[80px]" value={form.about_mission_en} onChange={e => updateField('about_mission_en', e.target.value)} />
+                    <Textarea className="bg-background mt-1 min-h-[130px] text-sm sm:text-base leading-relaxed p-3.5 rounded-xl shadow-xs" value={form.about_mission_en} onChange={e => updateField('about_mission_en', e.target.value)} />
                   </div>
                   <div>
                     <Label>{language === 'bn' ? 'ভিশন (বাংলা)' : 'Vision (Bangla)'}</Label>
-                    <Textarea className="bg-background mt-1 min-h-[80px]" value={form.about_vision_bn} onChange={e => updateField('about_vision_bn', e.target.value)} />
+                    <Textarea className="bg-background mt-1 min-h-[130px] text-sm sm:text-base leading-relaxed p-3.5 rounded-xl shadow-xs" value={form.about_vision_bn} onChange={e => updateField('about_vision_bn', e.target.value)} />
                   </div>
                   <div>
                     <Label>{language === 'bn' ? 'ভিশন (ইংরেজি)' : 'Vision (English)'}</Label>
-                    <Textarea className="bg-background mt-1 min-h-[80px]" value={form.about_vision_en} onChange={e => updateField('about_vision_en', e.target.value)} />
+                    <Textarea className="bg-background mt-1 min-h-[130px] text-sm sm:text-base leading-relaxed p-3.5 rounded-xl shadow-xs" value={form.about_vision_en} onChange={e => updateField('about_vision_en', e.target.value)} />
                   </div>
                 </div>
                 <div>
