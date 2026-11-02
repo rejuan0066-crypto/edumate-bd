@@ -90,46 +90,6 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
         </div>
       </div>
 
-      {/* 2. GRAND INSTITUTIONAL BRAND HEADER */}
-      <header className="site-header">
-        <div className="inst-container">
-          <div className="header-inner">
-            <Link to="/" className="brand-section">
-              <div className="brand-crest">
-                <img
-                  src={logoUrl}
-                  alt={instName}
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    if (!img.dataset.fallback) {
-                      img.dataset.fallback = 'true';
-                      img.src = '/loader-logo.png';
-                    }
-                  }}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              </div>
-              <div className="brand-names">
-                <h1>{instName}</h1>
-                {instNameEn && <div className="english-title">{instNameEn}</div>}
-                <div className="sub-tag">{address}</div>
-              </div>
-            </Link>
-
-            <div className="header-cta-group">
-              <Link to="/login" className="btn-portal-outline">
-                <LogIn className="w-4 h-4 inline mr-1.5" />
-                <span>লগইন</span>
-              </Link>
-              <Link to="/admission" className="btn-portal-solid">
-                <FileSignature className="w-4 h-4 inline mr-1.5" />
-                <span>অনলাইন ভর্তি আবেদন</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* 3. MULTI-LEVEL INSTITUTIONAL NAVBAR */}
       <nav className="nav-bar">
         <div className="inst-container">
@@ -306,6 +266,46 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
           </ul>
         </div>
       </nav>
+
+      {/* 2. GRAND INSTITUTIONAL BRAND HEADER */}
+      <header className="site-header">
+        <div className="inst-container">
+          <div className="header-inner">
+            <Link to="/" className="brand-section">
+              <div className="brand-crest">
+                <img
+                  src={logoUrl}
+                  alt={instName}
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (!img.dataset.fallback) {
+                      img.dataset.fallback = 'true';
+                      img.src = '/loader-logo.png';
+                    }
+                  }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+              <div className="brand-names">
+                <h1>{instName}</h1>
+                {instNameEn && <div className="english-title">{instNameEn}</div>}
+                <div className="sub-tag">{address}</div>
+              </div>
+            </Link>
+
+            <div className="header-cta-group">
+              <Link to="/login" className="btn-portal-outline">
+                <LogIn className="w-4 h-4 inline mr-1.5" />
+                <span>লগইন</span>
+              </Link>
+              <Link to="/admission" className="btn-portal-solid">
+                <FileSignature className="w-4 h-4 inline mr-1.5" />
+                <span>অনলাইন ভর্তি আবেদন</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
     </>
   );
 };
