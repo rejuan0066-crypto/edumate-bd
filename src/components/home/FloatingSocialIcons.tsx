@@ -29,7 +29,7 @@ export default function FloatingSocialIcons() {
   const { settings } = useWebsiteSettings();
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
 
   // Normalize phone for WhatsApp & Call
   const rawPhone = settings.phone || '';
@@ -162,7 +162,7 @@ export default function FloatingSocialIcons() {
 
   return (
     <div
-      className="fixed right-2 sm:right-4 top-1/2 -translate-y-1/2 z-40 flex flex-col items-end gap-2 pointer-events-none select-none"
+      className="fixed right-2 sm:right-4 bottom-5 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 z-40 flex flex-col items-end gap-2 pointer-events-none select-none"
       aria-label={bn ? 'ভাসমান সোশ্যাল মিডিয়া লিংক' : 'Floating Social Media Links'}
     >
       {/* Collapse/Expand Toggle Pill (on mobile or desktop) */}

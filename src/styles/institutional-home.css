@@ -25,16 +25,26 @@
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .institutional-root * {
   box-sizing: border-box;
+  max-width: 100%;
 }
 
 .institutional-root .inst-container {
   max-width: 1240px;
+  width: 100%;
   margin: 0 auto;
   padding: 0 20px;
+}
+@media (max-width: 640px) {
+  .institutional-root .inst-container {
+    padding: 0 12px;
+  }
 }
 
 /* 1. TOP OFFICIAL DIRECTORY BAR */
@@ -44,6 +54,7 @@
   font-size: 12.5px;
   padding: 6px 0;
   border-bottom: 2px solid var(--gold);
+  width: 100%;
 }
 .institutional-root .top-bar-inner {
   display: flex;
@@ -51,6 +62,23 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
+  width: 100%;
+}
+@media (max-width: 768px) {
+  .institutional-root .top-bar-inner {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    padding: 4px 0;
+  }
+  .institutional-root .top-right {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 11.5px;
+  }
 }
 .institutional-root .bismillah {
   font-family: 'Amiri', serif;
@@ -100,9 +128,9 @@
   text-decoration: none;
 }
 .institutional-root .brand-crest {
-  width: 120px;
-  height: 120px;
-  border-radius: 22px;
+  width: clamp(84px, 18vw, 120px);
+  height: clamp(84px, 18vw, 120px);
+  border-radius: clamp(16px, 3.5vw, 24px);
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   border: 3px solid var(--gold);
   display: flex;
@@ -120,15 +148,19 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  width: 100%;
+  max-width: 100%;
+  padding: 0 8px;
 }
 .institutional-root .brand-names h1 {
-  font-size: clamp(26px, 3.6vw, 38px);
+  font-size: clamp(20px, 5vw, 38px);
   font-weight: 800;
   color: var(--primary-dark);
-  line-height: 1.25;
+  line-height: 1.3;
   letter-spacing: -0.3px;
   margin: 0;
   text-align: center;
+  word-break: break-word;
 }
 .institutional-root .brand-names .arabic-title {
   font-family: 'Amiri', serif;
@@ -139,27 +171,53 @@
 }
 .institutional-root .brand-names .english-title {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: clamp(16px, 2vw, 21px);
+  font-size: clamp(13px, 3vw, 20px);
   color: var(--gold);
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   margin-top: 4px;
   text-align: center;
+  word-break: break-word;
 }
 .institutional-root .brand-names .sub-tag {
-  font-size: 14px;
+  font-size: clamp(11.5px, 2.5vw, 14px);
   color: var(--text-muted);
   margin-top: 4px;
   font-weight: 500;
   text-align: center;
+  word-break: break-word;
 }
 .institutional-root .header-cta-group {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-top: 4px;
+  margin-top: 6px;
+  width: 100%;
+  padding: 0 8px;
+}
+.institutional-root .btn-portal-outline,
+.institutional-root .btn-portal-solid {
+  font-size: clamp(12px, 2.8vw, 14px);
+  padding: 9px 18px;
+  border-radius: 8px;
+  text-align: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .institutional-root .header-cta-group {
+    flex-direction: column;
+    width: 100%;
+    max-width: 320px;
+    margin: 8px auto 0;
+    gap: 8px;
+  }
+  .institutional-root .btn-portal-outline,
+  .institutional-root .btn-portal-solid {
+    width: 100%;
+  }
 }
 .institutional-root .btn-portal-outline {
   border: 1.5px solid var(--primary);
