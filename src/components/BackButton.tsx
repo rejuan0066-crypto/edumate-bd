@@ -15,24 +15,35 @@ const BackButton = forwardRef<HTMLButtonElement, BackButtonProps>(({ position = 
   if (location.pathname === '/' || location.pathname === '/admin') return null;
 
   return (
-    <div className={position === 'top' ? 'hidden sm:block mb-3' : 'mt-6 pb-4'}>
+    <div className={position === 'top' ? 'block mb-3.5' : 'mt-6 pb-4'}>
       <button
         ref={ref}
-        onClick={() => navigate(-1)}
-        className="group inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium
-          bg-card/80 backdrop-blur-md
-          border border-border/40
-          rounded-full shadow-xs
-          text-muted-foreground
-          hover:bg-background/90 hover:text-emerald-600 hover:border-emerald-200/50
-          active:scale-[0.97]
-          transition-all duration-200 ease-out"
+        type="button"
+        onClick={() => {
+          if (window.history.length > 1) {
+            navigate(-1);
+          } else {
+            navigate('/');
+          }
+        }}
+        className="group inline-flex items-center gap-2.5 pl-2 pr-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold
+          bg-white/95 dark:bg-card/90 backdrop-blur-md
+          border border-slate-200/90 dark:border-border/80
+          rounded-full shadow-2xs hover:shadow-xs
+          text-slate-700 dark:text-foreground
+          hover:bg-emerald-50/70 hover:border-emerald-300/80 hover:text-emerald-900 dark:hover:bg-emerald-950/40 dark:hover:border-emerald-700 dark:hover:text-emerald-300
+          active:scale-[0.98]
+          transition-all duration-200 ease-out cursor-pointer select-none"
       >
-        <ArrowLeft
-          className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5"
-          strokeWidth={2}
-        />
-        {language === 'bn' ? 'পেছনে যান' : 'Go Back'}
+        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100/80 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 group-hover:bg-emerald-800 group-hover:text-white transition-all duration-200 shrink-0 shadow-2xs">
+          <ArrowLeft
+            className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5"
+            strokeWidth={2.2}
+          />
+        </span>
+        <span className="tracking-wide">
+          {language === 'bn' ? 'পেছনে ফিরে যান' : 'Go Back'}
+        </span>
       </button>
     </div>
   );
