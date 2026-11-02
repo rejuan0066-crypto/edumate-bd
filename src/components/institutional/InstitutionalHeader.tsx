@@ -23,6 +23,7 @@ interface InstitutionalHeaderProps {
 export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const isHomePage = location.pathname === '/';
   const { settings } = useWebsiteSettings();
 
   const instName = settings.institution_name || 'আল আরাবিয়া ছোবহানিয়া মাদ্রাসা ও এতিমখানা';
@@ -85,6 +86,44 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
               <span>
                 <MapPin className="w-3 h-3 inline mr-1" /> বিশ্বনাথ, সিলেট
               </span>
+              {!isHomePage && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginLeft: '6px' }}>
+                  <Link
+                    to="/login"
+                    style={{
+                      background: 'rgba(255,255,255,0.15)',
+                      color: '#fef08a',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      fontSize: '11px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <LogIn className="w-3 h-3" /> লগইন
+                  </Link>
+                  <Link
+                    to="/admission"
+                    style={{
+                      background: 'var(--gold, #b45309)',
+                      color: '#ffffff',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      fontSize: '11px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <FileSignature className="w-3 h-3" /> ভর্তি আবেদন
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -267,45 +306,47 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
         </div>
       </nav>
 
-      {/* 2. GRAND INSTITUTIONAL BRAND HEADER */}
-      <header className="site-header">
-        <div className="inst-container">
-          <div className="header-inner">
-            <Link to="/" className="brand-section">
-              <div className="brand-crest">
-                <img
-                  src={logoUrl}
-                  alt={instName}
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    if (!img.dataset.fallback) {
-                      img.dataset.fallback = 'true';
-                      img.src = '/loader-logo.png';
-                    }
-                  }}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              </div>
-              <div className="brand-names">
-                <h1>{instName}</h1>
-                {instNameEn && <div className="english-title">{instNameEn}</div>}
-                <div className="sub-tag">{address}</div>
-              </div>
-            </Link>
+      {/* 2. GRAND INSTITUTIONAL BRAND HEADER - ONLY VISIBLE ON HOMEPAGE */}
+      {isHomePage && (
+        <header className="site-header">
+          <div className="inst-container">
+            <div className="header-inner">
+              <Link to="/" className="brand-section">
+                <div className="brand-crest">
+                  <img
+                    src={logoUrl}
+                    alt={instName}
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (!img.dataset.fallback) {
+                        img.dataset.fallback = 'true';
+                        img.src = '/loader-logo.png';
+                      }
+                    }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                </div>
+                <div className="brand-names">
+                  <h1>{instName}</h1>
+                  {instNameEn && <div className="english-title">{instNameEn}</div>}
+                  <div className="sub-tag">{address}</div>
+                </div>
+              </Link>
 
-            <div className="header-cta-group">
-              <Link to="/login" className="btn-portal-outline">
-                <LogIn className="w-4 h-4 inline mr-1.5" />
-                <span>লগইন</span>
-              </Link>
-              <Link to="/admission" className="btn-portal-solid">
-                <FileSignature className="w-4 h-4 inline mr-1.5" />
-                <span>অনলাইন ভর্তি আবেদন</span>
-              </Link>
+              <div className="header-cta-group">
+                <Link to="/login" className="btn-portal-outline">
+                  <LogIn className="w-4 h-4 inline mr-1.5" />
+                  <span>লগইন</span>
+                </Link>
+                <Link to="/admission" className="btn-portal-solid">
+                  <FileSignature className="w-4 h-4 inline mr-1.5" />
+                  <span>অনলাইন ভর্তি আবেদন</span>
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
     </>
   );
 };
