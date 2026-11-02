@@ -162,28 +162,28 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
                 <HomeIcon className="w-3.5 h-3.5 inline mr-1" /> প্রচ্ছদ
               </Link>
             </li>
-            <li className={`nav-item ${isActive('/about') ? 'active' : ''}`}>
+            <li className={`nav-item ${isActive('/about') || isActive('/history') || isActive('/vision') || isActive('/management') || isActive('/features') ? 'active' : ''}`}>
               <Link to="/about" onClick={() => setMobileMenuOpen(false)}>
                 প্রতিষ্ঠান পরিচিতি <ChevronDown className="w-3 h-3 inline ml-1" />
               </Link>
               <ul className="dropdown-menu">
                 <li>
-                  <Link to="/about#history" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to="/history" onClick={() => setMobileMenuOpen(false)}>
                     মাদরাসার সংক্ষিপ্ত ইতিহাস
                   </Link>
                 </li>
                 <li>
-                  <Link to="/about#vision" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to="/vision" onClick={() => setMobileMenuOpen(false)}>
                     লক্ষ্য, উদ্দেশ্য ও ভিশন
                   </Link>
                 </li>
                 <li>
-                  <Link to="/about#principal-message" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to="/management" onClick={() => setMobileMenuOpen(false)}>
                     পরিচালনা পরিষদ ও অধ্যক্ষের বাণী
                   </Link>
                 </li>
                 <li>
-                  <Link to="/about#features" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to="/features" onClick={() => setMobileMenuOpen(false)}>
                     একাডেমিক বৈশিষ্ট্য ও সুবিধা
                   </Link>
                 </li>

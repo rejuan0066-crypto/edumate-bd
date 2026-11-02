@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
+import BackButton from '@/components/BackButton';
 
 const About = () => {
   const { language } = useLanguage();
@@ -84,6 +85,36 @@ const About = () => {
       />
 
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-12">
+        <BackButton position="top" />
+
+        {/* Sub Navigation Pills */}
+        <div className="flex flex-wrap gap-2 pb-2 border-b border-slate-200">
+          <Link
+            to="/history"
+            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 border border-slate-200 transition-colors"
+          >
+            ১. মাদরাসার সংক্ষিপ্ত ইতিহাস
+          </Link>
+          <Link
+            to="/vision"
+            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 border border-slate-200 transition-colors"
+          >
+            ২. লক্ষ্য, উদ্দেশ্য ও ভিশন
+          </Link>
+          <Link
+            to="/management"
+            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 border border-slate-200 transition-colors"
+          >
+            ৩. পরিচালনা পরিষদ ও অধ্যক্ষের বাণী
+          </Link>
+          <Link
+            to="/features"
+            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 border border-slate-200 transition-colors"
+          >
+            ৪. একাডেমিক বৈশিষ্ট্য ও সুবিধা
+          </Link>
+        </div>
+
         {/* 2. ABOUT & HISTORY SECTION */}
         <section id="history" className="scroll-mt-24">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">

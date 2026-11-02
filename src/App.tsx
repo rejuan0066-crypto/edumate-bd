@@ -35,6 +35,10 @@ const DeviceRegistrar = () => {
 
 // Lazy-loaded public pages (rarely visited on first PWA boot)
 const About = lazy(() => import("./pages/About"));
+const HistoryPage = lazy(() => import("./pages/HistoryPage"));
+const VisionPage = lazy(() => import("./pages/VisionPage"));
+const ManagementPage = lazy(() => import("./pages/ManagementPage"));
+const FeaturesPage = lazy(() => import("./pages/FeaturesPage"));
 const Gallery = lazy(() => import("./pages/Gallery"));
 const NoticePage = lazy(() => import("./pages/NoticePage"));
 const Contact = lazy(() => import("./pages/Contact"));
@@ -379,6 +383,14 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
+                  <Route path="/history" element={<HistoryPage />} />
+                  <Route path="/about/history" element={<HistoryPage />} />
+                  <Route path="/vision" element={<VisionPage />} />
+                  <Route path="/about/vision" element={<VisionPage />} />
+                  <Route path="/management" element={<ManagementPage />} />
+                  <Route path="/about/management" element={<ManagementPage />} />
+                  <Route path="/features" element={<FeaturesPage />} />
+                  <Route path="/about/features" element={<FeaturesPage />} />
                   <Route path="/gallery" element={<Gallery />} />
                   <Route path="/notices" element={<NoticePage />} />
                   <Route path="/contact" element={<Contact />} />
