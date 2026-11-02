@@ -130,15 +130,15 @@
 .institutional-root .brand-crest {
   width: clamp(84px, 18vw, 120px);
   height: clamp(84px, 18vw, 120px);
-  border-radius: clamp(16px, 3.5vw, 24px);
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  border: 3px solid var(--gold);
+  border-radius: 50% !important;
+  background: transparent;
+  border: none !important;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-size: 52px;
-  box-shadow: 0 6px 20px rgba(6, 78, 59, 0.25);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
   overflow: hidden;
   margin: 0 auto;
@@ -1019,7 +1019,8 @@
   .institutional-root .brand-crest {
     width: 104px;
     height: 104px;
-    border-radius: 20px;
+    border-radius: 50% !important;
+    border: none !important;
     margin: 0 auto;
   }
   .institutional-root .brand-names {

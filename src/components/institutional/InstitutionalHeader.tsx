@@ -312,7 +312,15 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
           <div className="inst-container">
             <div className="header-inner">
               <Link to="/" className="brand-section">
-                <div className="brand-crest">
+                <div
+                  className="brand-crest"
+                  style={{
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: 'transparent',
+                    overflow: 'hidden',
+                  }}
+                >
                   <img
                     src={logoUrl}
                     alt={instName}
@@ -323,7 +331,13 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
                         img.src = '/loader-logo.png';
                       }
                     }}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '50%',
+                      border: 'none',
+                    }}
                   />
                 </div>
                 <div className="brand-names">
