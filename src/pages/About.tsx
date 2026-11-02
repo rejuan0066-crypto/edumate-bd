@@ -55,8 +55,6 @@ const About = () => {
   const address = settings.address || 'খাজাঞ্চি রোড, এমএইচ সেন্টার, বিশ্বনাথ, সিলেট';
   const phone = settings.phone || '01749842401';
   const email = settings.email || 'info@subhania.edu.bd';
-  const estYear = settings.est_year || '২০১৮';
-  const regNumber = settings.reg_number || '১২৪/সিলেট';
 
   const principalName = settings.principal_name || 'আলহাজ্ব আব্দুছ ছোবহান';
   const principalTitle = settings.principal_title_bn || 'প্রতিষ্ঠাতা ও প্রিন্সিপাল';
@@ -85,29 +83,7 @@ const About = () => {
         path="/about"
       />
 
-      {/* 1. INSTITUTIONAL HERO BANNER */}
-      <section className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 text-white py-12 px-4 border-b-4 border-amber-600">
-        <div className="max-w-6xl mx-auto text-center space-y-3">
-          <div className="inline-flex items-center gap-2 bg-emerald-800/80 text-amber-300 text-xs sm:text-sm px-4 py-1 rounded-full font-medium border border-amber-500/30">
-            <span>স্থাপিত: {estYear} খ্রি.</span>
-            <span>•</span>
-            <span>রেজিস্ট্রেশন নং: {regNumber}</span>
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-amber-200 tracking-tight font-display">
-            {instName}
-          </h1>
-          <p className="text-emerald-100/90 text-sm sm:text-base max-w-2xl mx-auto">
-            প্রতিষ্ঠান পরিচিতি, লক্ষ্য-উদ্দেশ্য, পরিচালনা পরিষদ ও ঐতিহাসিক পটভূমি
-          </p>
-          <div className="pt-2 flex items-center justify-center gap-2 text-xs text-emerald-200">
-            <Link to="/" className="hover:text-amber-300 underline">হোম</Link>
-            <span>/</span>
-            <span className="text-amber-300 font-semibold">প্রতিষ্ঠান পরিচিতি</span>
-          </div>
-        </div>
-      </section>
-
-      <div className="max-w-6xl mx-auto px-4 py-10 space-y-12">
+      <div className="max-w-6xl mx-auto px-4 py-8 space-y-12">
         {/* 2. ABOUT & HISTORY SECTION */}
         <section id="history" className="scroll-mt-24">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
