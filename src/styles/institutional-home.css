@@ -108,28 +108,25 @@
 .institutional-root .site-header {
   background: #ffffff;
   border-bottom: 1px solid var(--border);
-  padding: 24px 0 20px;
+  padding: 18px 0;
 }
 .institutional-root .header-inner {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 16px;
+  gap: 20px;
+  width: 100%;
 }
 .institutional-root .brand-section {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 14px;
+  gap: 20px;
   text-decoration: none;
+  min-width: 0;
 }
 .institutional-root .brand-crest {
-  width: clamp(84px, 18vw, 120px);
-  height: clamp(84px, 18vw, 120px);
+  width: clamp(76px, 9vw, 110px);
+  height: clamp(76px, 9vw, 110px);
   border-radius: 50% !important;
   background: transparent;
   border: none !important;
@@ -137,65 +134,61 @@
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 52px;
+  font-size: 48px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
   overflow: hidden;
-  margin: 0 auto;
+  margin: 0;
 }
 .institutional-root .brand-names {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  width: 100%;
-  max-width: 100%;
-  padding: 0 8px;
+  align-items: flex-start;
+  text-align: left;
+  min-width: 0;
 }
 .institutional-root .brand-names h1 {
-  font-size: clamp(20px, 5vw, 38px);
+  font-size: clamp(20px, 2.6vw, 34px);
   font-weight: 800;
   color: var(--primary-dark);
-  line-height: 1.3;
+  line-height: 1.25;
   letter-spacing: -0.3px;
   margin: 0;
-  text-align: center;
+  text-align: left;
   word-break: break-word;
 }
 .institutional-root .brand-names .arabic-title {
   font-family: 'Amiri', serif;
-  font-size: 22px;
+  font-size: 20px;
   color: var(--gold);
   line-height: 1.2;
-  text-align: center;
+  text-align: left;
 }
 .institutional-root .brand-names .english-title {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: clamp(13px, 3vw, 20px);
+  font-size: clamp(13px, 1.4vw, 18px);
   color: var(--gold);
   font-weight: 700;
   letter-spacing: 0.3px;
-  margin-top: 4px;
-  text-align: center;
+  margin-top: 3px;
+  text-align: left;
   word-break: break-word;
 }
 .institutional-root .brand-names .sub-tag {
-  font-size: clamp(11.5px, 2.5vw, 14px);
+  font-size: clamp(11.5px, 1.2vw, 13.5px);
   color: var(--text-muted);
-  margin-top: 4px;
+  margin-top: 3px;
   font-weight: 500;
-  text-align: center;
+  text-align: left;
   word-break: break-word;
 }
 .institutional-root .header-cta-group {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 6px;
-  width: 100%;
-  padding: 0 8px;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 .institutional-root .btn-portal-outline,
 .institutional-root .btn-portal-solid {
@@ -1017,8 +1010,8 @@
   }
   .institutional-root .brand-section { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; width: 100%; }
   .institutional-root .brand-crest {
-    width: 104px;
-    height: 104px;
+    width: 96px;
+    height: 96px;
     border-radius: 50% !important;
     border: none !important;
     margin: 0 auto;
@@ -1031,20 +1024,20 @@
     width: 100%;
   }
   .institutional-root .brand-names h1 {
-    font-size: 28px;
+    font-size: clamp(20px, 5.5vw, 26px);
     line-height: 1.3;
     text-align: center;
   }
   .institutional-root .brand-names .english-title {
-    font-size: 16px;
+    font-size: clamp(12.5px, 3.5vw, 15px);
     text-align: center;
   }
   .institutional-root .brand-names .sub-tag {
-    font-size: 13.5px;
+    font-size: 12.5px;
     text-align: center;
   }
-  .institutional-root .header-inner { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 16px; width: 100%; }
-  .institutional-root .header-cta-group { justify-content: center; width: 100%; }
+  .institutional-root .header-inner { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; width: 100%; }
+  .institutional-root .header-cta-group { justify-content: flex-end; width: 100%; margin-top: 4px; }
   .institutional-root .nav-list { flex-direction: column; }
   .institutional-root .nav-item > a { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
   .institutional-root .dropdown-menu { position: static; width: 100%; box-shadow: none; border-radius: 0; }
