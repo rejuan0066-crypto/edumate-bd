@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWebsiteSettings, FALLBACK_LOGO_URL } from '@/hooks/useWebsiteSettings';
 import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
-import { GraduationCap, Edit2, Save, X, Upload, Link2 } from 'lucide-react';
+import { GraduationCap, Edit2, Save, X, Upload, Link2, MapPin, Phone, Mail, Calendar, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -480,21 +480,25 @@ const DashboardInstitutionCard = () => {
     ? (language === 'bn' ? 'প্রতিষ্ঠানের তথ্য সেট করতে "সম্পাদনা" বাটনে ক্লিক করুন' : 'Click "Edit" to set up institution info')
     : (language === 'bn' ? 'প্রতিষ্ঠানের তথ্য এখনো সেট করা হয়নি' : 'Institution info not configured yet');
 
-  return (
-    <div className="card-elevated p-3 sm:p-5 lg:p-8 relative">
+    return (
+    <div className="relative rounded-3xl border border-emerald-600/25 bg-gradient-to-br from-emerald-500/[0.04] via-card to-emerald-600/[0.02] dark:from-emerald-950/40 dark:via-card dark:to-slate-900/60 p-5 sm:p-7 lg:p-8 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md hover:border-emerald-600/35">
+      {/* Decorative ambient backdrop */}
+      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-56 h-56 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-48 h-48 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
+
       {isAdmin && (
         <Button
           size="sm"
           variant="outline"
           onClick={() => setEditing(true)}
-          className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 h-8 px-2 sm:h-9 sm:px-3"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 h-8 px-3 rounded-xl border-emerald-600/30 hover:bg-emerald-50 text-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/60 shadow-2xs font-semibold"
         >
-          <Edit2 className="w-4 h-4 sm:mr-1" />
-          <span className="hidden sm:inline">{language === 'bn' ? 'সম্পাদনা' : 'Edit'}</span>
+          <Edit2 className="w-3.5 h-3.5 mr-1.5" />
+          <span>{language === 'bn' ? 'সম্পাদনা' : 'Edit'}</span>
         </Button>
       )}
-      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-5 lg:gap-6 pr-10 sm:pr-24">
-        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden bg-white p-1 shadow-xs border border-slate-200 dark:border-slate-700">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 relative z-1 pr-0 sm:pr-20">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden bg-white dark:bg-slate-900 p-1.5 shadow-md ring-2 ring-emerald-500/25 border border-emerald-500/20">
           {displayLogo ? (
             <img
               src={displayLogo}
@@ -508,69 +512,86 @@ const DashboardInstitutionCard = () => {
               }}
             />
           ) : (
-            <div className="w-full h-full rounded-xl bg-primary flex items-center justify-center">
-              <GraduationCap className="w-9 h-9 lg:w-12 lg:h-12 text-primary-foreground" />
+            <div className="w-full h-full rounded-xl bg-gradient-to-br from-emerald-700 to-emerald-900 flex items-center justify-center shadow-inner">
+              <GraduationCap className="w-9 h-9 sm:w-11 sm:h-11 text-white" />
             </div>
           )}
         </div>
-        <div className="flex-1 min-w-0 w-full flex flex-col items-center text-center">
+        <div className="flex-1 min-w-0 w-full flex flex-col items-center sm:items-start text-center sm:text-left">
           {hasName ? (
             <>
               {(institution as any)?.name_ar && (
                 <p
                   dir="rtl"
                   lang="ar"
-                  className="text-lg sm:text-2xl font-semibold text-center text-emerald-800 dark:text-emerald-400 leading-tight mb-1 break-words max-w-full"
+                  className="text-lg sm:text-2xl font-semibold text-emerald-700 dark:text-emerald-400 leading-tight mb-1"
                   style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
                 >
                   {(institution as any).name_ar}
                 </p>
               )}
-              <h1 className="text-lg sm:text-2xl font-bold text-center text-slate-900 dark:text-white leading-snug break-words max-w-full tracking-tight">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight leading-snug">
                 {displayName}
               </h1>
               {institution?.name_en && institution?.name && (
-                <p className="text-xs sm:text-sm font-medium text-center text-slate-500 dark:text-slate-400 leading-snug break-words max-w-full mt-0.5">
+                <p className="text-xs sm:text-sm font-semibold text-emerald-700/90 dark:text-emerald-400/90 mt-0.5">
                   {language === 'bn' ? institution.name_en : institution.name}
                 </p>
               )}
             </>
           ) : (
-            <h1 className="text-lg sm:text-2xl lg:text-3xl font-display font-semibold text-center text-muted-foreground/80 break-words max-w-full">
+            <h1 className="text-lg sm:text-2xl font-display font-semibold text-muted-foreground/80">
               {language === 'bn' ? 'প্রতিষ্ঠানের নাম যোগ করা হয়নি' : 'Institution name not set'}
             </h1>
           )}
-          <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 space-y-0.5 w-full mt-1.5">
-            {institution?.address && <p className="text-center text-sm sm:text-lg lg:text-xl break-words">{institution.address}</p>}
-            {institution?.phone && <p className="text-center text-xs sm:text-base lg:text-lg break-words">{institution.phone}</p>}
-            {institution?.email && <p className="text-center text-xs sm:text-base lg:text-lg font-serif break-all">{institution.email}</p>}
+
+          {/* Contact & Meta Badges */}
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-3 w-full">
+            {institution?.address && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs font-medium text-slate-700 dark:text-slate-300 shadow-2xs">
+                <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>{institution.address}</span>
+              </span>
+            )}
+            {institution?.phone && (
+              <a href={`tel:${institution.phone}`} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs font-medium text-slate-700 dark:text-slate-300 hover:border-emerald-500/50 shadow-2xs transition-colors">
+                <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>{institution.phone}</span>
+              </a>
+            )}
+            {institution?.email && (
+              <a href={`mailto:${institution.email}`} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs font-medium text-slate-700 dark:text-slate-300 hover:border-emerald-500/50 shadow-2xs transition-colors">
+                <Mail className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>{institution.email}</span>
+              </a>
+            )}
             {(() => {
               const inst: any = institution || {};
               const est = language === 'bn' ? (inst.established_year || inst.established_year_en) : (inst.established_year_en || inst.established_year);
               const reg = language === 'bn' ? (inst.registration_number || inst.registration_number_en) : (inst.registration_number_en || inst.registration_number);
               if (!est && !reg) return null;
               return (
-                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-1 text-[11px] sm:text-xs lg:text-sm">
+                <>
                   {est && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/8 text-primary/90 font-medium">
-                      <span className="opacity-70">{language === 'bn' ? 'স্থাপিত:' : 'Est.'}</span>
-                      <span>{est}</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-800/60 text-xs font-semibold shadow-2xs">
+                      <Calendar className="w-3 h-3" />
+                      <span>{language === 'bn' ? `স্থাপিত: ${est}` : `Est: ${est}`}</span>
                     </span>
                   )}
                   {reg && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/8 text-primary/90 font-medium">
-                      <span className="opacity-70">{language === 'bn' ? 'রেজি/EIIN:' : 'Reg/EIIN:'}</span>
-                      <span>{reg}</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-100/70 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300/60 dark:border-amber-800/60 text-xs font-semibold shadow-2xs">
+                      <Sparkles className="w-3 h-3" />
+                      <span>{language === 'bn' ? `রেজি/EIIN: ${reg}` : `Reg: ${reg}`}</span>
                     </span>
                   )}
-                </div>
+                </>
               );
             })()}
             {!hasAnyContact && (
-              <p className="text-center text-xs lg:text-sm italic text-muted-foreground/70 mt-1">{setupHint}</p>
+              <p className="text-xs italic text-muted-foreground/70 mt-1">{setupHint}</p>
             )}
           </div>
-          {institution?.other_info && <p className="text-xs text-muted-foreground mt-0.5 break-words max-w-full">{institution.other_info}</p>}
+          {institution?.other_info && <p className="text-xs text-muted-foreground mt-2">{institution.other_info}</p>}
         </div>
       </div>
     </div>

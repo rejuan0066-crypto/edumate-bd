@@ -741,7 +741,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
             <button
               type="button"
               onClick={() => setStatusFilter('all')}
-              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+              className={`h-8 px-3.5 rounded-xl text-xs font-semibold shadow-2xs whitespace-nowrap transition-all ${
                 statusFilter === 'all' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
               }`}
             >
@@ -750,7 +750,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
             <button
               type="button"
               onClick={() => setStatusFilter('active')}
-              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+              className={`h-8 px-3.5 rounded-xl text-xs font-semibold shadow-2xs whitespace-nowrap transition-all ${
                 statusFilter === 'active' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
               }`}
             >
@@ -759,7 +759,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
             <button
               type="button"
               onClick={() => setStatusFilter('resigned')}
-              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1 transition-all ${
+              className={`h-8 px-3.5 rounded-xl text-xs font-semibold shadow-2xs whitespace-nowrap flex items-center gap-1 transition-all ${
                 statusFilter === 'resigned' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
               }`}
             >
@@ -773,7 +773,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
             <button
               type="button"
               onClick={() => setStatusFilter('pending')}
-              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1 transition-all ${
+              className={`h-8 px-3.5 rounded-xl text-xs font-semibold shadow-2xs whitespace-nowrap flex items-center gap-1 transition-all ${
                 statusFilter === 'pending' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
               }`}
             >
@@ -787,7 +787,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
             <button
               type="button"
               onClick={() => setStatusFilter('inactive')}
-              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+              className={`h-8 px-3.5 rounded-xl text-xs font-semibold shadow-2xs whitespace-nowrap transition-all ${
                 statusFilter === 'inactive' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
               }`}
             >

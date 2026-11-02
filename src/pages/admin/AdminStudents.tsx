@@ -607,7 +607,7 @@ const AdminStudents = () => {
             type="button"
             onClick={() => setFilterStatus('all')}
             className={cn(
-              "p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden",
+              "p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer relative overflow-hidden hover:shadow-md hover:-translate-y-0.5",
               filterStatus === 'all'
                 ? "bg-primary/10 border-primary shadow-xs ring-1 ring-primary/40"
                 : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
@@ -617,7 +617,7 @@ const AdminStudents = () => {
               <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'মোট শিক্ষার্থী' : 'Total'}</span>
               <Users className="w-3.5 h-3.5 text-primary" />
             </div>
-            <div className="text-xl font-bold font-display text-foreground mt-1">
+            <div className="text-2xl font-black font-display tracking-tight text-foreground mt-1">
               {formatDigits(allCount, bn)}
             </div>
           </button>
@@ -626,7 +626,7 @@ const AdminStudents = () => {
             type="button"
             onClick={() => setFilterStatus('active')}
             className={cn(
-              "p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden",
+              "p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer relative overflow-hidden hover:shadow-md hover:-translate-y-0.5",
               filterStatus === 'active'
                 ? "bg-emerald-500/10 border-emerald-500 shadow-xs ring-1 ring-emerald-500/40"
                 : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
@@ -636,7 +636,7 @@ const AdminStudents = () => {
               <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'সক্রিয়' : 'Active'}</span>
               <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
             </div>
-            <div className="text-xl font-bold font-display text-emerald-600 dark:text-emerald-400 mt-1">
+            <div className="text-2xl font-black font-display tracking-tight text-emerald-600 dark:text-emerald-400 mt-1">
               {formatDigits(activeCount, bn)}
             </div>
           </button>
@@ -645,7 +645,7 @@ const AdminStudents = () => {
             type="button"
             onClick={() => setFilterStatus('pending')}
             className={cn(
-              "p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden",
+              "p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer relative overflow-hidden hover:shadow-md hover:-translate-y-0.5",
               filterStatus === 'pending'
                 ? "bg-amber-500/10 border-amber-500 shadow-xs ring-1 ring-amber-500/40"
                 : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
@@ -655,7 +655,7 @@ const AdminStudents = () => {
               <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'অপেক্ষমাণ' : 'Pending'}</span>
               <Clock className="w-3.5 h-3.5 text-amber-600" />
             </div>
-            <div className="text-xl font-bold font-display text-amber-600 dark:text-amber-400 mt-1">
+            <div className="text-2xl font-black font-display tracking-tight text-amber-600 dark:text-amber-400 mt-1">
               {formatDigits(pendingCount, bn)}
             </div>
           </button>
@@ -664,7 +664,7 @@ const AdminStudents = () => {
             type="button"
             onClick={() => setFilterStatus('new')}
             className={cn(
-              "p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden",
+              "p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer relative overflow-hidden hover:shadow-md hover:-translate-y-0.5",
               filterStatus === 'new'
                 ? "bg-sky-500/10 border-sky-500 shadow-xs ring-1 ring-sky-500/40"
                 : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
@@ -674,7 +674,7 @@ const AdminStudents = () => {
               <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'নতুন ভর্তি' : 'New'}</span>
               <Sparkles className="w-3.5 h-3.5 text-sky-600" />
             </div>
-            <div className="text-xl font-bold font-display text-sky-600 dark:text-sky-400 mt-1">
+            <div className="text-2xl font-black font-display tracking-tight text-sky-600 dark:text-sky-400 mt-1">
               {formatDigits(newCount, bn)}
             </div>
           </button>
@@ -683,7 +683,7 @@ const AdminStudents = () => {
             type="button"
             onClick={() => setFilterStatus('old')}
             className={cn(
-              "p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden",
+              "p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer relative overflow-hidden hover:shadow-md hover:-translate-y-0.5",
               filterStatus === 'old'
                 ? "bg-violet-500/10 border-violet-500 shadow-xs ring-1 ring-violet-500/40"
                 : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
@@ -693,7 +693,7 @@ const AdminStudents = () => {
               <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'পুরাতন' : 'Old'}</span>
               <History className="w-3.5 h-3.5 text-violet-600" />
             </div>
-            <div className="text-xl font-bold font-display text-violet-600 dark:text-violet-400 mt-1">
+            <div className="text-2xl font-black font-display tracking-tight text-violet-600 dark:text-violet-400 mt-1">
               {formatDigits(oldCount, bn)}
             </div>
           </button>
@@ -702,7 +702,7 @@ const AdminStudents = () => {
             type="button"
             onClick={() => setFilterStatus('inactive')}
             className={cn(
-              "p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden",
+              "p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer relative overflow-hidden hover:shadow-md hover:-translate-y-0.5",
               filterStatus === 'inactive'
                 ? "bg-rose-500/10 border-rose-500 shadow-xs ring-1 ring-rose-500/40"
                 : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
@@ -712,7 +712,7 @@ const AdminStudents = () => {
               <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'নিষ্ক্রিয়' : 'Inactive'}</span>
               <UserX className="w-3.5 h-3.5 text-rose-600" />
             </div>
-            <div className="text-xl font-bold font-display text-rose-600 dark:text-rose-400 mt-1">
+            <div className="text-2xl font-black font-display tracking-tight text-rose-600 dark:text-rose-400 mt-1">
               {formatDigits(inactiveCount, bn)}
             </div>
           </button>

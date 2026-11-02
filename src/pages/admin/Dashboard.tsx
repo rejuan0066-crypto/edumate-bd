@@ -276,13 +276,13 @@ const DashboardInner = () => {
         `}</style>
         <div className={`grid sec-grid-${section.id}`} style={{ gridTemplateColumns: `repeat(${mobileCols}, 1fr)`, gap: `${gap}px` }}>
           {filtered.map((s, i) => (
-            <div key={i} onClick={s.onClick} className={`stat-card flex items-center gap-3 ${hoverCssId} ${s.onClick ? 'cursor-pointer' : ''} ${cardExtra}`}>
-              <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
-                <s.icon className={`w-5 h-5 ${s.color}`} />
+            <div key={i} onClick={s.onClick} className={`stat-card flex items-center gap-3.5 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/80 backdrop-blur-xs shadow-xs hover:shadow-md hover:border-emerald-600/35 transition-all duration-300 ${hoverCssId} ${s.onClick ? 'cursor-pointer active:scale-[0.98]' : ''} ${cardExtra}`}>
+              <div className={`w-12 h-12 rounded-2xl ${s.bg} flex items-center justify-center shrink-0 ring-1 ring-inset ring-black/5 dark:ring-white/10 shadow-2xs`}>
+                <s.icon className={`w-6 h-6 ${s.color}`} />
               </div>
-              <div className="min-w-0">
-                <p className="text-lg font-bold text-foreground leading-tight">{s.value}</p>
-                <p className="text-[11px] text-muted-foreground leading-tight truncate">{s.label}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none mb-1">{s.value}</p>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-snug truncate">{s.label}</p>
               </div>
             </div>
           ))}
