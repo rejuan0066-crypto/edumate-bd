@@ -53,7 +53,7 @@ export const InstitutionalFooter = ({ onDepartmentSelect }: InstitutionalFooterP
             <h4>গুরুত্বপূর্ণ লিংক</h4>
             <ul>
               <li>
-                <Link to="/admission">ভর্তি নির্দেশিকা ও তথ্য</Link>
+                <Link to="/admission?mode=guidelines">ভর্তি নির্দেশিকা ও তথ্য</Link>
               </li>
               <li>
                 <a href="/#prayer-calendar">নামাজের সময়সূচী ও ক্যালেন্ডার</a>

@@ -23,6 +23,7 @@ import { Json } from '@/integrations/supabase/types';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { Skeleton } from '@/components/ui/skeleton';
 import ImageUpload from '@/components/ImageUpload';
+import AdmissionGuidelinesManager from '@/components/admin/AdmissionGuidelinesManager';
 import { useAuth } from '@/hooks/useAuth';
 import { Lock } from 'lucide-react';
 import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
@@ -651,6 +652,9 @@ const AdminWebsite = () => {
             </TabsTrigger>
             <TabsTrigger value="form-settings" className="text-xs py-2 px-2.5">
               <SlidersHorizontal className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'ফর্ম সেটিংস' : 'Form Settings'}
+            </TabsTrigger>
+            <TabsTrigger value="admission-guidelines" className="text-xs py-2 px-2.5">
+              <FileText className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'ভর্তি নির্দেশিকা' : 'Admission Guidelines'}
             </TabsTrigger>
             <TabsTrigger value="login-page" className="text-xs py-2 px-2.5">
               <LogIn className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'লগইন পেইজ' : 'Login Page'}
@@ -2117,6 +2121,11 @@ const AdminWebsite = () => {
           {/* Form Settings Tab */}
           <TabsContent value="form-settings">
             <FormSettingsTab language={language} />
+          </TabsContent>
+
+          {/* Admission Guidelines Tab */}
+          <TabsContent value="admission-guidelines">
+            <AdmissionGuidelinesManager />
           </TabsContent>
 
           {/* Login Page Tab */}

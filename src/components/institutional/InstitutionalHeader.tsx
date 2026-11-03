@@ -234,7 +234,7 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
               </Link>
               <ul className="dropdown-menu">
                 <li>
-                  <Link to="/admission" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to="/admission?mode=guidelines" onClick={() => setMobileMenuOpen(false)}>
                     ভর্তি নির্দেশিকা ও নিয়মাবলী
                   </Link>
                 </li>

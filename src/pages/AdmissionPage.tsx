@@ -22,8 +22,10 @@ import { uploadToCloudinary } from '@/lib/cloudinary';
 import {
   Search, Loader2, AlertCircle, CheckCircle, Plus,
   Printer, Download, RotateCcw, ArrowLeft, ArrowRight,
-  GraduationCap, User, UserCheck, Heart, MapPin, ShieldCheck, Sparkles, BookOpen, ChevronRight
+  GraduationCap, User, UserCheck, Heart, MapPin, ShieldCheck, Sparkles, BookOpen, ChevronRight, FileText
 } from 'lucide-react';
+import AdmissionGuidelinesView from '@/components/admission/AdmissionGuidelinesView';
+import { useAdmissionGuidelines } from '@/hooks/useAdmissionGuidelines';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { generateStudentApplicationNo } from '@/lib/applicationIdGenerator';
@@ -42,8 +44,10 @@ const AdmissionPage = () => {
   const bn = language === 'bn';
   const { fields: configFields, isLoaded, isFieldActive, getField, getFieldsBySection, getCustomFields, sections } = useAdmissionFormConfig();
 
+  const { guidelines: guidelinesData } = useAdmissionGuidelines();
+
   // Form state
-  const [pageMode, setPageMode] = useState<'apply' | 'track'>('apply');
+  const [pageMode, setPageMode] = useState<'apply' | 'track' | 'guidelines'>('apply');
   // Admission flow: 'division' (Step 1) -> 'class' (Step 2) -> 'form' (Step 3)
   const [admissionFlowStep, setAdmissionFlowStep] = useState<'division' | 'class' | 'form'>('division');
   const [currentStep, setCurrentStep] = useState(0);
@@ -276,6 +280,7 @@ const AdmissionPage = () => {
 
   useEffect(() => {
     if (urlMode === 'track') setPageMode('track');
+    else if (urlMode === 'guidelines' || urlMode === 'rules' || urlMode === 'info') setPageMode('guidelines');
   }, [urlMode]);
 
   useEffect(() => {
@@ -1873,14 +1878,14 @@ const AdmissionPage = () => {
       <div className="container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
         {/* Mode Switcher Tabs */}
         <div className="flex justify-center mb-6">
-          <div className="inline-flex p-1.5 rounded-2xl bg-muted/70 border border-border/80 shadow-xs">
+          <div className="inline-flex flex-wrap justify-center p-1.5 rounded-2xl bg-muted/70 border border-border/80 shadow-xs gap-1">
             <button
               type="button"
               onClick={() => setPageMode('apply')}
-              className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+              className={`px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
                 pageMode === 'apply'
                   ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
               }`}
             >
               <GraduationCap className="w-4 h-4" />
@@ -1888,11 +1893,23 @@ const AdmissionPage = () => {
             </button>
             <button
               type="button"
+              onClick={() => setPageMode('guidelines')}
+              className={`px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+                pageMode === 'guidelines'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              {bn ? 'ভর্তি নির্দেশিকা ও নিয়মাবলী' : 'Admission Guidelines'}
+            </button>
+            <button
+              type="button"
               onClick={() => setPageMode('track')}
-              className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+              className={`px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
                 pageMode === 'track'
                   ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
               }`}
             >
               <Search className="w-4 h-4" />
@@ -1900,6 +1917,14 @@ const AdmissionPage = () => {
             </button>
           </div>
         </div>
+
+        {/* GUIDELINES MODE */}
+        {pageMode === 'guidelines' && (
+          <AdmissionGuidelinesView
+            guidelines={guidelinesData}
+            onSwitchToApply={() => setPageMode('apply')}
+          />
+        )}
 
         {/* TRACKING MODE */}
         {pageMode === 'track' && (
