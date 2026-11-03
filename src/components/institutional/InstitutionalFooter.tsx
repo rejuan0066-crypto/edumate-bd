@@ -11,7 +11,7 @@ interface InstitutionalFooterProps {
 export const InstitutionalFooter = ({ onDepartmentSelect }: InstitutionalFooterProps) => {
   const { settings } = useWebsiteSettings();
 
-  const instName = settings.institution_name || 'আল আরাবিয়া ছোবহানিয়া মাদ্রাসা ও এতিমখানা';
+  const instName = settings.institution_name || 'আল আরাবিয়া ছোহবানিয়া মাদ্রাসা ও এতিমখানা';
   const phone = settings.phone || '01749842401';
   const email = settings.email || 'info@subhania.edu.bd';
   const address = settings.address || 'খাজাঞ্চি রোড, এমএইচ সেন্টার, বিশ্বনাথ, সিলেট, বাংলাদেশ';
@@ -128,7 +128,7 @@ export const InstitutionalFooter = ({ onDepartmentSelect }: InstitutionalFooterP
         </div>
 
         <div className="copyright-strip">
-          © ২০২৬ {instName} • সর্বস্বত্ব সংরক্ষিত • কারিগরি সহায়তায়: এডুমেট বিডি
+          © ২০২৬ {instName} • সর্বস্বত্ব সংরক্ষিত • কারিগরি সহায়তায়: {instName}
         </div>
       </div>
     </footer>
