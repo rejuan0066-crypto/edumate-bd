@@ -103,7 +103,7 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
                       gap: '4px',
                     }}
                   >
-                    <LogIn className="w-3 h-3" /> মাদ্রাসা পোর্টাল
+                    <LogIn className="w-3 h-3" /> লগইন
                   </a>
                   <Link
                     to="/admission"
@@ -365,7 +365,7 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
               <div className="header-cta-group">
                 <a href="https://portal-subhaniabd.vercel.app" className="btn-portal-outline">
                   <LogIn className="w-4 h-4 inline mr-1.5" />
-                  <span>মাদ্রাসা পোর্টাল</span>
+                  <span>লগইন</span>
                 </a>
                 <Link to="/admission" className="btn-portal-solid">
                   <FileSignature className="w-4 h-4 inline mr-1.5" />
