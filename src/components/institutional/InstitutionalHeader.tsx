@@ -340,10 +340,25 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
                     }}
                   />
                 </div>
-                <div className="brand-names">
-                  <h1>{instName}</h1>
-                  {instNameEn && <div className="english-title">{instNameEn}</div>}
-                  <div className="sub-tag">{address}</div>
+                <div
+                  className="brand-names"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                  }}
+                >
+                  <h1 style={{ textAlign: 'center' }}>{instName}</h1>
+                  {instNameEn && (
+                    <div className="english-title" style={{ textAlign: 'center' }}>
+                      {instNameEn}
+                    </div>
+                  )}
+                  <div className="sub-tag" style={{ textAlign: 'center' }}>
+                    {address}
+                  </div>
                 </div>
               </Link>
 

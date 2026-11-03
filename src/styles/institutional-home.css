@@ -108,25 +108,28 @@
 .institutional-root .site-header {
   background: #ffffff;
   border-bottom: 1px solid var(--border);
-  padding: 18px 0;
+  padding: 20px 0;
 }
 .institutional-root .header-inner {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  gap: 20px;
+  position: relative;
   width: 100%;
 }
 .institutional-root .brand-section {
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: 20px;
   text-decoration: none;
   min-width: 0;
+  margin: 0 auto;
 }
 .institutional-root .brand-crest {
-  width: clamp(76px, 9vw, 110px);
-  height: clamp(76px, 9vw, 110px);
+  width: clamp(84px, 10vw, 120px);
+  height: clamp(84px, 10vw, 120px);
   border-radius: 50% !important;
   background: transparent;
   border: none !important;
@@ -134,7 +137,7 @@
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 48px;
+  font-size: 50px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
   overflow: hidden;
@@ -143,43 +146,44 @@
 .institutional-root .brand-names {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   min-width: 0;
 }
 .institutional-root .brand-names h1 {
-  font-size: clamp(20px, 2.6vw, 34px);
-  font-weight: 800;
+  font-size: clamp(24px, 3.8vw, 42px);
+  font-weight: 900;
   color: var(--primary-dark);
   line-height: 1.25;
   letter-spacing: -0.3px;
   margin: 0;
-  text-align: left;
+  text-align: center;
   word-break: break-word;
 }
 .institutional-root .brand-names .arabic-title {
   font-family: 'Amiri', serif;
-  font-size: 20px;
+  font-size: 22px;
   color: var(--gold);
   line-height: 1.2;
-  text-align: left;
+  text-align: center;
 }
 .institutional-root .brand-names .english-title {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: clamp(13px, 1.4vw, 18px);
+  font-size: clamp(15px, 2vw, 22px);
   color: var(--gold);
   font-weight: 700;
-  letter-spacing: 0.3px;
-  margin-top: 3px;
-  text-align: left;
+  letter-spacing: 0.4px;
+  margin-top: 4px;
+  text-align: center;
   word-break: break-word;
 }
 .institutional-root .brand-names .sub-tag {
-  font-size: clamp(11.5px, 1.2vw, 13.5px);
+  font-size: clamp(12.5px, 1.4vw, 16px);
   color: var(--text-muted);
-  margin-top: 3px;
-  font-weight: 500;
-  text-align: left;
+  margin-top: 4px;
+  font-weight: 600;
+  text-align: center;
   word-break: break-word;
 }
 .institutional-root .header-cta-group {
@@ -188,7 +192,31 @@
   justify-content: flex-end;
   gap: 12px;
   flex-shrink: 0;
-  margin-left: auto;
+}
+@media (min-width: 1024px) {
+  .institutional-root .header-cta-group {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 10;
+  }
+}
+@media (max-width: 1023px) {
+  .institutional-root .header-inner {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .institutional-root .brand-section {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .institutional-root .header-cta-group {
+    justify-content: center;
+    width: 100%;
+    margin-top: 4px;
+  }
 }
 .institutional-root .btn-portal-outline,
 .institutional-root .btn-portal-solid {
@@ -1024,16 +1052,19 @@
     width: 100%;
   }
   .institutional-root .brand-names h1 {
-    font-size: clamp(20px, 5.5vw, 26px);
-    line-height: 1.3;
+    font-size: clamp(22px, 6vw, 32px);
+    font-weight: 900;
+    line-height: 1.25;
     text-align: center;
   }
   .institutional-root .brand-names .english-title {
-    font-size: clamp(12.5px, 3.5vw, 15px);
+    font-size: clamp(14px, 4vw, 18px);
+    font-weight: 700;
     text-align: center;
   }
   .institutional-root .brand-names .sub-tag {
-    font-size: 12.5px;
+    font-size: clamp(12px, 3.5vw, 14px);
+    font-weight: 600;
     text-align: center;
   }
   .institutional-root .header-inner { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; width: 100%; }
