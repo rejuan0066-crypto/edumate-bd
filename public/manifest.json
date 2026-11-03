@@ -1,15 +1,15 @@
 {
-  "name": "Subhania Madrasah",
-  "short_name": "Subhania",
+  "name": "আল আরাবিয়া ছোবহানিয়া মাদ্রাসা ও এতিমখানা",
+  "short_name": "ছোবহানিয়া মাদ্রাসা",
   "id": "/?source=pwa",
-  "description": "Islamic Education Management System",
+  "description": "আল আরাবিয়া ছোবহানিয়া মাদ্রাসা ও এতিমখানা - শিক্ষা ও প্রতিষ্ঠান ব্যবস্থাপনা",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
-  "background_color": "#0f766e",
-  "theme_color": "#0f766e",
+  "background_color": "#ffffff",
+  "theme_color": "#064e3b",
   "icons": [
     {
       "src": "/app-icon-192.png",
@@ -40,4 +40,3 @@
   "lang": "bn",
   "prefer_related_applications": false
 }
-

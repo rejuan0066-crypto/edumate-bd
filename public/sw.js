@@ -12,7 +12,7 @@
 // Stale caches are cleaned ONLY by version bump on activate (targeted), never by
 // blanket clears on every load. Bump CACHE_VERSION whenever you change SW logic.
 
-const CACHE_VERSION = 'v122';
+const CACHE_VERSION = 'v124';
 const OFFLINE_URL = '/offline.html';
 const SHELL_CACHE = `subhania-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `subhania-assets-${CACHE_VERSION}`;
@@ -234,12 +234,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Images / fonts (icons, logos, placeholders) → stale-while-revalidate
-  if (isImage(request, url) || request.destination === 'font') {
-    event.respondWith(staleWhileRevalidate(request, IMAGE_CACHE));
-    return;
-  }
-
   // Branded manifest / icons written by the app take priority (same-origin URLs,
   // which Android Chrome requires for install — a data: manifest is NOT installable)
   if (
@@ -259,6 +253,12 @@ self.addEventListener('fetch', (event) => {
         return staleWhileRevalidate(request, SHELL_CACHE);
       })()
     );
+    return;
+  }
+
+  // Images / fonts (icons, logos, placeholders) → stale-while-revalidate
+  if (isImage(request, url) || request.destination === 'font') {
+    event.respondWith(staleWhileRevalidate(request, IMAGE_CACHE));
     return;
   }
   if (url.pathname.endsWith('.webmanifest')) {

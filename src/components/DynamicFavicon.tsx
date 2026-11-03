@@ -36,10 +36,10 @@ const DynamicFavicon = () => {
   const faviconSrc = (rawFavicon && !rawFavicon.includes('wwhunyzobtuibhvkipwk')) ? rawFavicon : '/loader-logo.png';
   const rawAppIcon = settings.logo_url || settings.favicon_url;
   const appIconSrc = (rawAppIcon && !rawAppIcon.includes('wwhunyzobtuibhvkipwk')) ? rawAppIcon : '/loader-logo.png';
-  const rawName = settings.institution_name_en || settings.institution_name || 'Madrasah';
-  const appName = trimWordAware(rawName, 30);
-  const shortName = trimWordAware(rawName, 12);
-  const themeColor = (settings as any).theme_color || '#0f766e';
+  const rawName = settings.institution_name || settings.institution_name_en || 'আল আরাবিয়া ছোবহানিয়া মাদ্রাসা ও এতিমখানা';
+  const appName = trimWordAware(rawName, 35);
+  const shortName = trimWordAware(settings.institution_name || 'ছোবহানিয়া মাদ্রাসা', 14);
+  const themeColor = (settings as any).theme_color || '#064e3b';
 
   // Update when settings load from DB
   useEffect(() => {
