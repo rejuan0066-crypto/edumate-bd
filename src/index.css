@@ -713,15 +713,17 @@
     transform: translateY(0) scale(0.97);
   }
 
-  /* Sidebar - clean minimalist SaaS border & solid surface */
+  /* Sidebar - solid pure bright white SaaS surface */
   .sidebar-glass {
     background: #ffffff !important;
-    border-right: 1px solid #e2e8f0 !important;
-    box-shadow: 1px 0 12px 0 rgba(0, 0, 0, 0.04);
-    color: #1e293b !important;
+    background-color: #ffffff !important;
+    border-right: 1px solid #f1f5f9 !important;
+    box-shadow: 2px 0 16px 0 rgba(0, 0, 0, 0.04);
+    color: #0f172a !important;
   }
   .dark .sidebar-glass {
     background: #0f172a !important;
+    background-color: #0f172a !important;
     border-right: 1px solid #1e293b !important;
     color: #f1f5f9 !important;
   }
@@ -742,15 +744,15 @@
     padding: 8px 12px;
     margin-bottom: 2px;
     font-size: var(--sidebar-font-size, 13px);
-    color: #475569;
+    color: #1e293b;
     line-height: 1.4;
   }
   .sidebar-item .sidebar-icon {
     color: #059669;
   }
   .sidebar-item:hover {
-    color: #0f172a;
-    background: #f1f5f9;
+    color: #000000;
+    background: #f8fafc;
   }
   .sidebar-item:hover .sidebar-icon {
     color: #047857;
@@ -830,7 +832,7 @@
   .sidebar-group-label {
     @apply font-bold uppercase tracking-wider px-3 py-1.5 mt-4 mb-1 first:mt-0;
     font-size: 10.5px;
-    color: #64748b !important;
+    color: #475569 !important;
   }
   .dark .sidebar-group-label { color: #94a3b8 !important; }
 
@@ -875,7 +877,7 @@
     @apply flex items-center gap-2 rounded-lg transition-all duration-150 font-normal relative cursor-pointer;
     padding: 6px 10px;
     font-size: 12px;
-    color: #64748b;
+    color: #334155;
     line-height: 1.4;
     margin-bottom: 1px;
   }
@@ -883,8 +885,8 @@
     color: #059669;
   }
   .sidebar-sub-item:hover {
-    color: #0f172a;
-    background: #f1f5f9;
+    color: #000000;
+    background: #f8fafc;
   }
   .sidebar-sub-item:hover .sidebar-icon {
     color: #047857;
@@ -989,23 +991,23 @@
   /* ── Sidebar Scrollbar ── */
   .sidebar-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+    scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
   }
   .sidebar-scrollbar::-webkit-scrollbar {
-    width: 4px;
+    width: 3px;
   }
   .sidebar-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-    margin: 8px 0;
+    background: transparent !important;
+    margin: 4px 0;
   }
   .sidebar-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.35);
+    background: rgba(148, 163, 184, 0.25);
     border-radius: 9999px;
     border: none;
     transition: background 0.3s ease;
   }
   .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(100, 116, 139, 0.6);
+    background: rgba(100, 116, 139, 0.5);
   }
 }
 

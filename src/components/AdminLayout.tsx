@@ -432,7 +432,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         />
       )}
       <div
-        className={`${mobile ? 'w-[280px] max-w-[85vw] animate-in slide-in-from-left duration-300' : sidebarOpen ? sidebarWidthClass : 'w-16'} sidebar-glass flex flex-col h-[100dvh] max-h-[100dvh] transition-all duration-500 ${mobile ? 'order-first shadow-2xl' : ''}`}
+        className={`${mobile ? 'w-[280px] max-w-[85vw] animate-in slide-in-from-left duration-300' : sidebarOpen ? sidebarWidthClass : 'w-16'} sidebar-glass bg-white dark:bg-slate-900 flex flex-col h-[100dvh] max-h-[100dvh] transition-all duration-500 ${mobile ? 'order-first shadow-2xl' : ''}`}
         style={sidebarStyle}
       >
         {/* Logo & Header */}
@@ -487,8 +487,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         <nav
           ref={(element) => restoreMenuScroll(element, mobile)}
           onScroll={(event) => persistMenuScroll(mobile, event.currentTarget.scrollTop)}
-          className="flex-1 min-h-0 py-3 px-3 space-y-0.5 overflow-y-auto overscroll-contain sidebar-scrollbar select-none cursor-default"
-          style={{ scrollbarGutter: 'stable' }}
+          className="flex-1 min-h-0 py-3 px-3 space-y-0.5 overflow-y-auto overscroll-contain sidebar-scrollbar select-none cursor-default bg-white dark:bg-slate-900"
           data-current-path={location.pathname}
         >
           {(() => {
@@ -633,7 +632,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
         {/* Bottom - user profile + logout */}
         {(sidebarOpen || mobile) && (
-          <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900 shrink-0">
+          <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
             <div className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-2xs">
               <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-emerald-300 dark:ring-emerald-700">
                 {sidebarAvatar ? (
