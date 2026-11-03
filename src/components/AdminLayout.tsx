@@ -745,9 +745,13 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
               <DarkModeToggle />
               <NotificationPanel />
               <div className="hidden sm:flex items-center gap-1.5"><BijoyToggle /><LanguageToggle /></div>
-              <Link to="/" className="hidden sm:inline-flex p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title={t('home')}>
+              <a
+                href="https://subhaniabd.vercel.app"
+                className="hidden sm:inline-flex p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                title={language === 'bn' ? 'মূল ওয়েবসাইট' : 'Main Website'}
+              >
                 <Globe className="w-5 h-5" />
-              </Link>
+              </a>
             </div>
           </header>
 
