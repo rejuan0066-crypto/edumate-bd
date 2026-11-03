@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Seo } from '@/components/Seo';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -141,6 +141,19 @@ const DEPT_METADATA_MAP: Record<string, Omit<DeptDetail, 'title'>> = {
 const toBnNum = (n: number) => n.toString().replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[+d]);
 
 const Home = () => {
+  // If visited via dedicated portal domain (e.g. portal-subhaniabd.vercel.app),
+  // immediately route to login/dashboard just like bems.befaqbd.org!
+  const isPortalDomain = typeof window !== 'undefined' && (
+    window.location.hostname.startsWith('portal-') ||
+    window.location.hostname.startsWith('portal.') ||
+    window.location.hostname.startsWith('ems-') ||
+    window.location.hostname.startsWith('ems.')
+  );
+
+  if (isPortalDomain) {
+    return <Navigate to="/login" replace />;
+  }
+
   const { settings } = useWebsiteSettings();
   const { data: principal } = usePrincipalOfficer();
 

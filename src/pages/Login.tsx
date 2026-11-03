@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { GraduationCap, Lock, User, Loader2, Eye, EyeOff, ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
+import { GraduationCap, Lock, User, Loader2, Eye, EyeOff, ArrowLeft, ArrowRight, ShieldCheck, Globe } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import LanguageToggle from '@/components/LanguageToggle';
 import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
@@ -265,6 +265,18 @@ const Login = () => {
       {settings.login_bg_image_url && (
         <div className="absolute inset-0 bg-black/45 backdrop-blur-[3px]" />
       )}
+
+      {/* Main Website Link in top left */}
+      <div className="absolute top-4 left-4 z-20">
+        <a
+          href="https://subhaniabd.vercel.app"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:bg-white hover:text-emerald-700 transition-all active:scale-95"
+          title="মূল ওয়েবসাইটে ফিরে যান"
+        >
+          <Globe className="w-3.5 h-3.5 text-emerald-600" />
+          <span>{language === 'bn' ? 'মূল ওয়েবসাইট' : 'Main Website'}</span>
+        </a>
+      </div>
 
       {/* Language Toggle in top right */}
       <div className="absolute top-4 right-4 z-20">

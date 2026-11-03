@@ -365,7 +365,7 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
               <div className="header-cta-group">
                 <Link to="/login" className="btn-portal-outline">
                   <LogIn className="w-4 h-4 inline mr-1.5" />
-                  <span>লগইন</span>
+                  <span>মাদ্রাসা পোর্টাল</span>
                 </Link>
                 <Link to="/admission" className="btn-portal-solid">
                   <FileSignature className="w-4 h-4 inline mr-1.5" />
