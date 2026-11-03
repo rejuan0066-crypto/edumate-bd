@@ -296,7 +296,7 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
             </li>
             <li className={`nav-item ${isActive('/donation') ? 'active' : ''}`}>
               <Link to="/donation" onClick={() => setMobileMenuOpen(false)}>
-                এতিমখানা লিল্লাহ ফান্ড
+                দান
               </Link>
             </li>
             <li className={`nav-item ${isActive('/quran') ? 'active' : ''}`}>
