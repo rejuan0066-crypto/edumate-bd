@@ -149,7 +149,7 @@ export default function BulkSalaryWorkflowDialog() {
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setSelected(new Set()); setResults({}); } }}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="border-amber-400 text-amber-700 hover:bg-amber-50">
+        <Button type="button" size="sm" variant="outline" className="border-amber-400 text-amber-700 hover:bg-amber-50 cursor-pointer touch-manipulation active:scale-95 font-semibold shadow-xs">
           <Zap className="h-3.5 w-3.5 mr-1" /> {bn ? 'বাল্ক অটো-ওয়ার্কফ্লো' : 'Bulk Auto-Workflow'}
         </Button>
       </DialogTrigger>

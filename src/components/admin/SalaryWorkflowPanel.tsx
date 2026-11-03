@@ -434,15 +434,15 @@ export default function SalaryWorkflowPanel({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="ghost" onClick={() => setHistoryOpen(true)}>
+              <Button type="button" size="sm" variant="ghost" className="cursor-pointer touch-manipulation active:scale-95" onClick={() => setHistoryOpen(true)}>
                 <History className="h-3.5 w-3.5 mr-1" /> {bn ? 'ইতিহাস' : 'History'}
               </Button>
               {sheetStage !== 'draft' && sheetStage !== 'paid' && canReset && (
-                <Button size="sm" variant="ghost" onClick={() => setActionDialog({ type: 'reset' })}>
+                <Button type="button" size="sm" variant="ghost" className="cursor-pointer touch-manipulation active:scale-95" onClick={() => setActionDialog({ type: 'reset' })}>
                   <RotateCcw className="h-3.5 w-3.5 mr-1" /> {bn ? 'রিসেট' : 'Reset'}
                 </Button>
               )}
-              <Button size="sm" variant="outline" onClick={handlePrint}>
+              <Button type="button" size="sm" variant="outline" className="cursor-pointer touch-manipulation active:scale-95" onClick={handlePrint}>
                 {bn ? 'PDF প্রিন্ট' : 'Print PDF'}
               </Button>
             </div>
@@ -476,40 +476,82 @@ export default function SalaryWorkflowPanel({
           {/* Action buttons */}
           <div className="flex flex-wrap gap-2 pt-1">
             {canSendToVerifier && (
-              <Button size="sm" onClick={() => setActionDialog({ type: 'send_to_verifier' })}>
+              <Button
+                type="button"
+                size="sm"
+                className="cursor-pointer touch-manipulation active:scale-95"
+                onClick={() => {
+                  setSelectedTargetId(verifiers[0]?.id || '');
+                  setActionDialog({ type: 'send_to_verifier' });
+                }}
+              >
                 <Send className="h-3 w-3 mr-1" /> {bn ? 'যাচাইয়ের জন্য পাঠান' : 'Send for Verification'}
               </Button>
             )}
             {canVerify && (
-              <Button size="sm" onClick={() => setActionDialog({ type: 'verify' })}>
+              <Button
+                type="button"
+                size="sm"
+                className="cursor-pointer touch-manipulation active:scale-95"
+                onClick={() => setActionDialog({ type: 'verify' })}
+              >
                 <ShieldCheck className="h-3 w-3 mr-1" /> {bn ? 'যাচাই সম্পন্ন করুন' : 'Verify'}
               </Button>
             )}
             {canSendToApprover && (
-              <Button size="sm" onClick={() => setActionDialog({ type: 'send_to_approver' })}>
+              <Button
+                type="button"
+                size="sm"
+                className="cursor-pointer touch-manipulation active:scale-95"
+                onClick={() => {
+                  setSelectedTargetId(approvers[0]?.id || '');
+                  setActionDialog({ type: 'send_to_approver' });
+                }}
+              >
                 <Send className="h-3 w-3 mr-1" /> {bn ? 'অনুমোদনের জন্য পাঠান' : 'Send for Approval'}
               </Button>
             )}
             {canApprove && (
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setActionDialog({ type: 'approve' })}>
+              <Button
+                type="button"
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer touch-manipulation active:scale-95"
+                onClick={() => setActionDialog({ type: 'approve' })}
+              >
                 <BadgeCheck className="h-3 w-3 mr-1" /> {bn ? 'অনুমোদন করুন' : 'Approve'}
               </Button>
             )}
             {canMarkPaid && (
-              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => setActionDialog({ type: 'mark_paid' })}>
+              <Button
+                type="button"
+                size="sm"
+                className="bg-green-600 hover:bg-green-700 cursor-pointer touch-manipulation active:scale-95 font-semibold shadow-xs"
+                onClick={() => {
+                  setSelectedTargetId(treasurers[0]?.id || '');
+                  setActionDialog({ type: 'mark_paid' });
+                }}
+              >
                 <Wallet className="h-3 w-3 mr-1" /> {bn ? 'পরিশোধ সম্পন্ন (কোষাধ্যক্ষ)' : 'Mark Paid (Treasurer)'}
               </Button>
             )}
             {canAutoAdvance && sheetStage !== 'paid' && verifiers.length > 0 && approvers.length > 0 && treasurers.length > 0 && (
               <Button
+                type="button"
                 size="sm"
                 variant="outline"
-                className="border-amber-400 text-amber-700 hover:bg-amber-50"
+                className="border-amber-400 text-amber-700 hover:bg-amber-50 cursor-pointer touch-manipulation active:scale-95 font-semibold shadow-xs"
                 disabled={autoAdvanceMutation.isPending}
                 onClick={async () => {
-                  if ((await confirm({ description: bn
-                    ? 'ডিফল্ট যাচাইকারী/অনুমোদনকারী/কোষাধ্যক্ষ ব্যবহার করে সকল ধাপ এক ক্লিকে সম্পন্ন করবেন? এটি বেতন পরিশোধিত হিসেবে চিহ্নিত করবে।'
-                    : 'Auto-advance through all stages using default verifier/approver/treasurer? This will mark salaries as Paid.', variant: 'destructive' }))) {
+                  const ok = await confirm({
+                    title: bn ? 'সকল ধাপ অটো-সম্পন্ন' : 'Auto-Advance All Stages',
+                    description: bn
+                      ? 'ডিফল্ট যাচাইকারী, অনুমোদনকারী ও কোষাধ্যক্ষ ব্যবহার করে সকল ধাপ এক ক্লিকে সম্পন্ন করবেন? এটি বেতন পরিশোধিত হিসেবে চিহ্নিত করবে।'
+                      : 'Auto-advance through all stages using default verifier/approver/treasurer? This will mark salaries as Paid.',
+                    confirmText: bn ? 'হ্যাঁ, পরিশোধ সম্পন্ন করুন' : 'Yes, Complete',
+                    cancelText: bn ? 'বাতিল' : 'Cancel',
+                    variant: 'warning',
+                  });
+                  if (ok) {
                     autoAdvanceMutation.mutate();
                   }
                 }}

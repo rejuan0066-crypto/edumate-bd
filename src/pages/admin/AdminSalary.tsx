@@ -4446,8 +4446,10 @@ const AdminSalary = () => {
 
               <div className="flex gap-2 shrink-0 flex-wrap">
                 <Button
+                  type="button"
                   size="sm"
                   variant="outline"
+                  className="cursor-pointer touch-manipulation active:scale-95"
                   onClick={async () => {
                     await Promise.all([
                       queryClient.invalidateQueries({ queryKey: ['salary-attendance'] }),
@@ -4460,13 +4462,23 @@ const AdminSalary = () => {
                   <RefreshCw className="h-3 w-3 mr-1" />
                   {bn ? 'উপস্থিতি রিফ্রেশ' : 'Refresh Attendance'}
                 </Button>
-                {canAddItem && <Button size="sm" onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
-                  <Calculator className="h-3 w-3 mr-1" /> {bn ? 'জেনারেট' : 'Generate'}
-                </Button>}
+                {canAddItem && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="cursor-pointer touch-manipulation active:scale-95"
+                    onClick={() => generateMutation.mutate()}
+                    disabled={generateMutation.isPending}
+                  >
+                    <Calculator className="h-3 w-3 mr-1" /> {bn ? 'জেনারেট' : 'Generate'}
+                  </Button>
+                )}
                 {canAddItem && salaryRecords.length > 0 && (
                   <Button
+                    type="button"
                     size="sm"
                     variant="outline"
+                    className="cursor-pointer touch-manipulation active:scale-95"
                     onClick={() => recalculateAllMutation.mutate()}
                     disabled={recalculateAllMutation.isPending}
                     title={bn ? 'সর্বশেষ সেটিং দিয়ে সব বকেয়া বেতন আবার হিসাব করুন' : 'Recalculate all pending salaries with latest settings'}
@@ -4475,13 +4487,21 @@ const AdminSalary = () => {
                     {bn ? 'পুনরায় হিসাব' : 'Recalculate'}
                   </Button>
                 )}
-                <Button size="sm" variant="outline" onClick={() => setAuditLogOpen(true)} title={bn ? 'বেতন জেনারেশন অডিট লগ' : 'Salary generation audit log'}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="cursor-pointer touch-manipulation active:scale-95"
+                  onClick={() => setAuditLogOpen(true)}
+                  title={bn ? 'বেতন জেনারেশন অডিট লগ' : 'Salary generation audit log'}
+                >
                   <FileText className="h-3 w-3 mr-1" /> {bn ? 'অডিট লগ' : 'Audit Log'}
                 </Button>
                 <Button
+                  type="button"
                   size="sm"
                   variant="outline"
-                  className="border-emerald-400/80 bg-emerald-50/80 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700/50 font-medium"
+                  className="border-emerald-400/80 bg-emerald-50/80 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700/50 font-medium cursor-pointer touch-manipulation active:scale-95"
                   onClick={() => setSignedHubOpen(true)}
                   title={bn ? 'স্বাক্ষরিত মূল শীট ও সকল স্টাফের স্লিপ সংরক্ষণ কেন্দ্র' : 'Signed Slips & Master Sheet Vault'}
                 >
@@ -4494,9 +4514,10 @@ const AdminSalary = () => {
                   )}
                 </Button>
                 <Button
+                  type="button"
                   size="sm"
                   variant="outline"
-                  className="border-blue-400/80 bg-blue-50/80 hover:bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-700/50 font-medium"
+                  className="border-blue-400/80 bg-blue-50/80 hover:bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-700/50 font-medium cursor-pointer touch-manipulation active:scale-95"
                   onClick={() => setExpenseSyncModalOpen(true)}
                   title={bn ? 'হিসাব ব্যবস্থাপনায় (খরচ) বেতন যুক্ত বা বাদ দেওয়ার নিয়ন্ত্রণ' : 'Manage & Sync Salary in Expense Accounts'}
                 >
@@ -4508,13 +4529,35 @@ const AdminSalary = () => {
                     </Badge>
                   )}
                 </Button>
-                <Button size="sm" variant="outline" onClick={exportExcel}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="cursor-pointer touch-manipulation active:scale-95"
+                  onClick={exportExcel}
+                >
                   <Download className="h-3 w-3 mr-1" /> Excel
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => exportPDF()} disabled={pdfLoading} title={bn ? 'সরাসরি PDF ডাউনলোড করুন' : 'Download PDF directly'}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="cursor-pointer touch-manipulation active:scale-95"
+                  onClick={() => exportPDF()}
+                  disabled={pdfLoading}
+                  title={bn ? 'সরাসরি PDF ডাউনলোড করুন' : 'Download PDF directly'}
+                >
                   <Download className="h-3 w-3 mr-1" /> {pdfLoading ? '...' : (bn ? 'PDF ডাউনলোড' : 'Download PDF')}
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => setSigDialogOpen(true)} disabled={pdfLoading} title={bn ? 'স্বাক্ষর কাস্টমাইজ করে PDF' : 'PDF with custom signatures'}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="cursor-pointer touch-manipulation active:scale-95"
+                  onClick={() => setSigDialogOpen(true)}
+                  disabled={pdfLoading}
+                  title={bn ? 'স্বাক্ষর কাস্টমাইজ করে PDF' : 'PDF with custom signatures'}
+                >
                   <FileText className="h-3 w-3" />
                 </Button>
               </div>
@@ -8287,6 +8330,7 @@ const AdminSalary = () => {
             onCloseAutoFocus={(e) => {
               e.preventDefault();
               restoreSalaryScrollPosition();
+              document.body.style.pointerEvents = 'auto';
             }}
             className="!fixed !top-0 !left-0 !translate-x-0 !translate-y-0 sm:!top-[50%] sm:!left-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] !w-full sm:!w-full !h-[100dvh] sm:!h-auto !max-w-full sm:!max-w-4xl !max-h-[100dvh] sm:!max-h-[95vh] flex flex-col p-0 gap-0 overflow-hidden !rounded-none sm:!rounded-2xl !border-0 sm:!border bg-background shadow-2xl z-50"
           >
