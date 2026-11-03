@@ -8,6 +8,7 @@ import AdminLayout from "@/components/AdminLayout";
 import RouteShimmer from "@/components/RouteShimmer";
 import { AdminUrlMask, UserPathRedirect } from "@/components/AdminUrlMask";
 import PageTitleManager from "@/components/PageTitleManager";
+import DomainRoleRouter from "@/components/DomainRoleRouter";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -363,6 +364,7 @@ const App = () => (
               <DynamicFavicon />
               <UpdatePrompt />
               <BrowserRouter>
+                <DomainRoleRouter />
                 <AuthCallbackListener />
                 <VisitorTracker />
                 <SessionTimeoutManager />
