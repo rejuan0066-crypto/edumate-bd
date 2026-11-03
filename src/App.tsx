@@ -398,6 +398,8 @@ const App = () => (
                   <Route path="/results" element={<ResultFind />} />
                   <Route path="/student-info" element={<StudentInfoPage />} />
                   <Route path="/admission" element={<AdmissionPage />} />
+                  <Route path="/admission/guidelines" element={<AdmissionPage />} />
+                  <Route path="/admission-guidelines" element={<AdmissionPage />} />
                   <Route path="/application-tracking" element={<ApplicationTrackingPage />} />
                   <Route path="/track-application" element={<ApplicationTrackingPage />} />
                   <Route path="/admission-tests" element={<AdmissionTestsPublic />} />

@@ -234,7 +234,13 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
               </Link>
               <ul className="dropdown-menu">
                 <li>
-                  <Link to="/admission?mode=guidelines" onClick={() => setMobileMenuOpen(false)}>
+                  <Link
+                    to="/admission?mode=guidelines"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
                     ভর্তি নির্দেশিকা ও নিয়মাবলী
                   </Link>
                 </li>
@@ -244,7 +250,13 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
                   </Link>
                 </li>
                 <li>
-                  <Link to="/admission" onClick={() => setMobileMenuOpen(false)}>
+                  <Link
+                    to="/admission"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
                     অনলাইন ভর্তি আবেদন ফরম
                   </Link>
                 </li>

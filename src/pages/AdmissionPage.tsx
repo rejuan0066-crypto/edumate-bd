@@ -2,7 +2,7 @@ import { normalizeGender } from '@/lib/ocrCardParser';
 import PublicLayout from '@/components/PublicLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmissionFormConfig, SECTION_INFO, type AdmissionFieldConfig } from '@/hooks/useAdmissionFormConfig';
@@ -46,8 +46,63 @@ const AdmissionPage = () => {
 
   const { guidelines: guidelinesData } = useAdmissionGuidelines();
 
-  // Form state
-  const [pageMode, setPageMode] = useState<'apply' | 'track' | 'guidelines'>('apply');
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlClassId = searchParams.get('class');
+  const urlMode = searchParams.get('mode') || searchParams.get('tab');
+
+  const isGuidelineRoute = useMemo(() => {
+    return (
+      location.pathname.includes('guideline') ||
+      urlMode === 'guidelines' ||
+      urlMode === 'rules' ||
+      urlMode === 'info'
+    );
+  }, [location.pathname, urlMode]);
+
+  const isTrackRoute = useMemo(() => {
+    return urlMode === 'track';
+  }, [urlMode]);
+
+  // Form state initialized synchronously with current route
+  const [pageMode, setPageMode] = useState<'apply' | 'track' | 'guidelines'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname;
+      const s = new URLSearchParams(window.location.search);
+      const m = s.get('mode') || s.get('tab');
+      if (p.includes('guideline') || m === 'guidelines' || m === 'rules' || m === 'info') return 'guidelines';
+      if (m === 'track') return 'track';
+    }
+    return 'apply';
+  });
+
+  // Keep pageMode synchronized when URL search params or pathname change
+  useEffect(() => {
+    if (isGuidelineRoute) {
+      setPageMode('guidelines');
+    } else if (isTrackRoute) {
+      setPageMode('track');
+    } else {
+      setPageMode('apply');
+    }
+  }, [isGuidelineRoute, isTrackRoute]);
+
+  // Smooth mode switcher that also keeps browser URL in sync
+  const switchPageMode = useCallback((mode: 'apply' | 'track' | 'guidelines') => {
+    setPageMode(mode);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (mode === 'apply') {
+        next.delete('mode');
+        next.delete('tab');
+      } else {
+        next.set('mode', mode);
+      }
+      return next;
+    }, { replace: true });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [setSearchParams]);
+
   // Admission flow: 'division' (Step 1) -> 'class' (Step 2) -> 'form' (Step 3)
   const [admissionFlowStep, setAdmissionFlowStep] = useState<'division' | 'class' | 'form'>('division');
   const [currentStep, setCurrentStep] = useState(0);
@@ -274,14 +329,6 @@ const AdmissionPage = () => {
   }, [academicSessions]);
 
   // Auto-prefill from URL: ?class=<classId> → admission_class + division + running session/year
-  const [searchParams] = useSearchParams();
-  const urlClassId = searchParams.get('class');
-  const urlMode = searchParams.get('mode');
-
-  useEffect(() => {
-    if (urlMode === 'track') setPageMode('track');
-    else if (urlMode === 'guidelines' || urlMode === 'rules' || urlMode === 'info') setPageMode('guidelines');
-  }, [urlMode]);
 
   useEffect(() => {
     if (!urlClassId) return;
@@ -1881,7 +1928,7 @@ const AdmissionPage = () => {
           <div className="inline-flex flex-wrap justify-center p-1.5 rounded-2xl bg-muted/70 border border-border/80 shadow-xs gap-1">
             <button
               type="button"
-              onClick={() => setPageMode('apply')}
+              onClick={() => switchPageMode('apply')}
               className={`px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
                 pageMode === 'apply'
                   ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20'
@@ -1893,7 +1940,7 @@ const AdmissionPage = () => {
             </button>
             <button
               type="button"
-              onClick={() => setPageMode('guidelines')}
+              onClick={() => switchPageMode('guidelines')}
               className={`px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
                 pageMode === 'guidelines'
                   ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20'
@@ -1905,7 +1952,7 @@ const AdmissionPage = () => {
             </button>
             <button
               type="button"
-              onClick={() => setPageMode('track')}
+              onClick={() => switchPageMode('track')}
               className={`px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
                 pageMode === 'track'
                   ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20'
@@ -1922,13 +1969,13 @@ const AdmissionPage = () => {
         {pageMode === 'guidelines' && (
           <AdmissionGuidelinesView
             guidelines={guidelinesData}
-            onSwitchToApply={() => setPageMode('apply')}
+            onSwitchToApply={() => switchPageMode('apply')}
           />
         )}
 
         {/* TRACKING MODE */}
         {pageMode === 'track' && (
-          <ApplicationTrackingBox targetType="student" onSwitchToApply={() => setPageMode('apply')} />
+          <ApplicationTrackingBox targetType="student" onSwitchToApply={() => switchPageMode('apply')} />
         )}
 
         {/* APPLY MODE */}
