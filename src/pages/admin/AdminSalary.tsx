@@ -4964,13 +4964,14 @@ const AdminSalary = () => {
                               )}
 
                               {/* Action Buttons Group - Large 40x40px touch targets with 18-20px icons */}
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 {/* Print Slip */}
                                 {isFeatureAllowed('action_payslip_print') !== false && (
                                   <Button
+                                    type="button"
                                     size="icon"
                                     variant="outline"
-                                    className="h-10 w-10 rounded-xl bg-card hover:bg-emerald-50 hover:text-emerald-700 text-foreground border-border/80 shadow-2xs transition-transform active:scale-95"
+                                    className="h-10 w-10 rounded-xl bg-card hover:bg-emerald-50 hover:text-emerald-700 text-foreground border-border/80 shadow-2xs transition-transform active:scale-95 touch-manipulation cursor-pointer shrink-0"
                                     title={bn ? 'বেতন স্লিপ প্রিন্ট ও ডাউনলোড' : 'Print Slip'}
                                     onClick={() => printSlip(s, rec)}
                                   >
@@ -4981,9 +4982,10 @@ const AdminSalary = () => {
                                 {/* Edit Button (Only if unpaid) */}
                                 {canEditItem && rec.status !== 'paid' && (
                                   <Button
+                                    type="button"
                                     size="icon"
                                     variant="outline"
-                                    className="h-10 w-10 rounded-xl bg-card hover:bg-blue-50 hover:text-blue-700 text-foreground border-border/80 shadow-2xs transition-transform active:scale-95"
+                                    className="h-10 w-10 rounded-xl bg-card hover:bg-blue-50 hover:text-blue-700 text-foreground border-border/80 shadow-2xs transition-transform active:scale-95 touch-manipulation cursor-pointer shrink-0"
                                     title={bn ? 'বেতন তথ্য সম্পাদনা' : 'Edit'}
                                     onClick={() => {
                                       const live = calculateSalary(s);
@@ -5024,9 +5026,10 @@ const AdminSalary = () => {
                                 {/* Recalculate (Only if unpaid) */}
                                 {canEditItem && rec.status !== 'paid' && (
                                   <Button
+                                    type="button"
                                     size="icon"
                                     variant="outline"
-                                    className="h-10 w-10 rounded-xl bg-card hover:bg-indigo-50 hover:text-indigo-700 text-foreground border-border/80 shadow-2xs transition-transform active:scale-95"
+                                    className="h-10 w-10 rounded-xl bg-card hover:bg-indigo-50 hover:text-indigo-700 text-foreground border-border/80 shadow-2xs transition-transform active:scale-95 touch-manipulation cursor-pointer shrink-0"
                                     title={bn ? 'পুনরায় হিসাব করুন' : 'Recalculate'}
                                     disabled={recalculateSingleMutation.isPending}
                                     onClick={() => recalculateSingleMutation.mutate(s.id)}
@@ -5038,9 +5041,10 @@ const AdminSalary = () => {
                                 {/* WhatsApp (Only if paid) */}
                                 {rec.status === 'paid' && s.phone && (
                                   <Button
+                                    type="button"
                                     size="icon"
                                     variant="outline"
-                                    className="h-10 w-10 rounded-xl bg-emerald-50/80 hover:bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-800 shadow-2xs transition-transform active:scale-95"
+                                    className="h-10 w-10 rounded-xl bg-emerald-50/80 hover:bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-800 shadow-2xs transition-transform active:scale-95 touch-manipulation cursor-pointer shrink-0"
                                     title={bn ? 'হোয়াটসঅ্যাপে স্লিপ পাঠান' : 'Send WhatsApp'}
                                     onClick={() => {
                                       const monthNameObj = MONTHS.find(m => m.value === selectedMonth);
@@ -5071,9 +5075,10 @@ const AdminSalary = () => {
                                   if (staffExpense) {
                                     return (
                                       <Button
+                                        type="button"
                                         size="icon"
                                         variant="outline"
-                                        className="h-10 w-10 rounded-xl bg-emerald-50 hover:bg-red-50 text-emerald-600 hover:text-red-600 border-emerald-300 hover:border-red-300 shadow-2xs transition-transform active:scale-95"
+                                        className="h-10 w-10 rounded-xl bg-emerald-50 hover:bg-red-50 text-emerald-600 hover:text-red-600 border-emerald-300 hover:border-red-300 shadow-2xs transition-transform active:scale-95 touch-manipulation cursor-pointer shrink-0"
                                         title={bn ? 'হিসাব থেকে বাদ দিন' : 'Remove from expense'}
                                         disabled={removeStaffExpenseMutation.isPending}
                                         onClick={() => removeStaffExpenseMutation.mutate({ staffId: s.id, staffName: s.name_bn || s.name_en || 'Staff' })}
@@ -5086,7 +5091,7 @@ const AdminSalary = () => {
                                     return (
                                       <span
                                         title={bn ? 'মাসিক একক ভাউচারে অন্তর্ভুক্ত' : 'In consolidated expense'}
-                                        className="h-10 px-2.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center font-mono text-xs font-semibold"
+                                        className="h-10 px-2.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center font-mono text-xs font-semibold shrink-0"
                                       >
                                         <Building2 className="h-4 w-4 mr-1" />
                                       </span>
@@ -5094,9 +5099,10 @@ const AdminSalary = () => {
                                   }
                                   return (
                                     <Button
+                                      type="button"
                                       size="icon"
                                       variant="outline"
-                                      className="h-10 w-10 rounded-xl bg-amber-50/80 hover:bg-emerald-50 text-amber-700 hover:text-emerald-700 border-amber-300 hover:border-emerald-300 shadow-2xs transition-transform active:scale-95"
+                                      className="h-10 w-10 rounded-xl bg-amber-50/80 hover:bg-emerald-50 text-amber-700 hover:text-emerald-700 border-amber-300 hover:border-emerald-300 shadow-2xs transition-transform active:scale-95 touch-manipulation cursor-pointer shrink-0"
                                       title={bn ? 'হিসাবে খরচ যোগ করুন' : 'Add to expense'}
                                       disabled={addStaffExpenseMutation.isPending}
                                       onClick={() => addStaffExpenseMutation.mutate({ staffId: s.id, recordId: rec.id })}
@@ -5109,9 +5115,10 @@ const AdminSalary = () => {
                                 {/* Delete / Ungenerate */}
                                 {canDeleteItem && isFeatureAllowed('action_delete_salary') !== false && (
                                   <Button
+                                    type="button"
                                     size="icon"
                                     variant="outline"
-                                    className="h-10 w-10 rounded-xl bg-red-50/80 hover:bg-red-100 text-red-600 border-red-200 dark:bg-red-950/40 dark:border-red-900 shadow-2xs transition-transform active:scale-95"
+                                    className="h-10 w-10 rounded-xl bg-red-50/80 hover:bg-red-100 text-red-600 border-red-200 dark:bg-red-950/40 dark:border-red-900 shadow-2xs transition-transform active:scale-95 touch-manipulation cursor-pointer shrink-0"
                                     title={bn ? 'আনজেনারেট (মুছুন)' : 'Ungenerate'}
                                     disabled={isRecordPending(rec.id)}
                                     onClick={() => setUngenerateConfirmId(rec.id)}
@@ -5191,7 +5198,7 @@ const AdminSalary = () => {
                         <th className="px-2 py-2 text-right font-semibold text-emerald-600 whitespace-nowrap min-w-[85px]">{bn ? 'নিট বেতন' : 'Net'}</th>
                         <th className="px-1.5 py-2 text-center font-medium whitespace-nowrap min-w-[80px]">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
                         <th className="px-1.5 py-2 text-center font-medium whitespace-nowrap min-w-[75px]">{bn ? 'স্বাক্ষরিত স্লিপ' : 'Signed Slip'}</th>
-                        <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[120px] sticky right-0 bg-muted/95 backdrop-blur-sm z-20 shadow-[-3px_0_6px_rgba(0,0,0,0.06)]">{bn ? 'অ্যাকশন' : 'Actions'}</th>
+                        <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[150px] sticky right-0 bg-muted/95 z-30 shadow-[-3px_0_6px_rgba(0,0,0,0.06)] border-l border-border/60 pointer-events-auto">{bn ? 'অ্যাকশন' : 'Actions'}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -5589,29 +5596,31 @@ const AdminSalary = () => {
                                 );
                               })()}
                             </td>
-                            <td className="px-2 py-1.5 text-center sticky right-0 bg-card group-hover:bg-muted/90 backdrop-blur-sm z-10 shadow-[-3px_0_6px_rgba(0,0,0,0.06)]">
-                              <div className="flex gap-1 justify-center items-center">
+                            <td className="px-2 py-1.5 text-center sticky right-0 bg-card dark:bg-slate-900 group-hover:bg-muted/90 z-20 shadow-[-3px_0_6px_rgba(0,0,0,0.06)] border-l border-border/60 pointer-events-auto">
+                              <div className="flex gap-1.5 justify-center items-center pointer-events-auto">
                                 {!rec && canAddItem && (
                                   <Button
+                                    type="button"
                                     size="icon"
                                     variant="ghost"
-                                    className="h-6 w-6 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30 disabled:opacity-40"
+                                    className="min-h-[34px] min-w-[34px] sm:h-7 sm:w-7 p-1 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30 disabled:opacity-40 rounded-lg active:scale-95 touch-manipulation cursor-pointer flex items-center justify-center shrink-0"
                                     title={isHardBlocked
                                       ? (bn ? `জেনারেট করা যাবে না: ${eligibilityReason}` : `Cannot generate: ${eligibilityReason}`)
                                       : (bn ? 'এই স্টাফের বেতন জেনারেট করুন' : 'Generate salary')}
                                     disabled={generateSingleMutation.isPending || isHardBlocked}
                                     onClick={() => generateSingleMutation.mutate(s.id)}
                                   >
-                                    <Calculator className="h-3.5 w-3.5" />
+                                    <Calculator className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                   </Button>
                                 )}
                                 {rec && (
                                   <>
                                     {canEditItem && rec.status !== 'paid' && (
                                       <Button 
+                                        type="button"
                                         size="icon" 
                                         variant="ghost" 
-                                        className={`h-6 w-6 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                                        className={`min-h-[34px] min-w-[34px] sm:h-7 sm:w-7 p-1 rounded-lg active:scale-95 touch-manipulation cursor-pointer flex items-center justify-center shrink-0 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
                                         disabled={isRecordPending(rec.id)}
                                         onClick={() => {
                                           const live = calculateSalary(s);
@@ -5646,37 +5655,40 @@ const AdminSalary = () => {
                                           });
                                         }}
                                       >
-                                        <Edit2 className="h-3 w-3" />
+                                        <Edit2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 text-blue-600" />
                                       </Button>
                                     )}
                                     {canEditItem && rec.status !== 'paid' && (
                                       <Button
+                                        type="button"
                                         size="icon"
                                         variant="ghost"
-                                        className="h-6 w-6 text-indigo-600 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/30 disabled:opacity-40"
+                                        className="min-h-[34px] min-w-[34px] sm:h-7 sm:w-7 p-1 text-indigo-600 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/30 disabled:opacity-40 rounded-lg active:scale-95 touch-manipulation cursor-pointer flex items-center justify-center shrink-0"
                                         title={bn ? 'তারিখ/যোগদান পরিবর্তনের পর শুধু এই স্টাফের বেতন পুনরায় হিসাব করুন' : 'Recalculate salary for this staff only'}
                                         disabled={recalculateSingleMutation.isPending}
                                         onClick={() => recalculateSingleMutation.mutate(s.id)}
                                       >
-                                        <RefreshCw className={`h-3 w-3 ${recalculateSingleMutation.isPending ? 'animate-spin' : ''}`} />
+                                        <RefreshCw className={`h-4 w-4 sm:h-3.5 sm:w-3.5 ${recalculateSingleMutation.isPending ? 'animate-spin' : ''}`} />
                                       </Button>
                                     )}
                                     {isFeatureAllowed('action_payslip_print') !== false && (
                                       <Button
+                                        type="button"
                                         size="icon"
                                         variant="ghost"
-                                        className="h-6 w-6 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100/60 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
+                                        className="min-h-[34px] min-w-[34px] sm:h-7 sm:w-7 p-1 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100/60 dark:text-emerald-400 dark:hover:bg-emerald-900/30 rounded-lg active:scale-95 touch-manipulation cursor-pointer flex items-center justify-center shrink-0"
                                         title={bn ? 'বেতন স্লিপ দেখুন, প্রিন্ট ও ডাউনলোড করুন' : 'View, Print & Download Salary Slip'}
                                         onClick={() => printSlip(s, rec)}
                                       >
-                                        <Printer className="h-3 w-3" />
+                                        <Printer className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                       </Button>
                                     )}
                                     {rec.status !== 'paid' ? (
                                       <Button 
+                                        type="button"
                                         size="icon" 
                                         variant="ghost" 
-                                        className={`h-6 w-6 text-yellow-600 hover:bg-yellow-100/60 dark:hover:bg-yellow-900/30 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                                        className={`min-h-[34px] min-w-[34px] sm:h-7 sm:w-7 p-1 text-yellow-600 hover:bg-yellow-100/60 dark:hover:bg-yellow-900/30 rounded-lg active:scale-95 touch-manipulation cursor-pointer flex items-center justify-center shrink-0 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
                                         disabled={isRecordPending(rec.id)}
                                         title={bn ? 'পরিশোধিত করুন' : 'Mark Paid'} 
                                         onClick={() => {
@@ -5691,25 +5703,27 @@ const AdminSalary = () => {
                                           setShowPayMsgEdit(false);
                                         }}
                                       >
-                                        <Clock className="h-3.5 w-3.5" />
+                                        <Clock className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                       </Button>
                                     ) : (
                                       <Button 
+                                        type="button"
                                         size="icon" 
                                         variant="ghost" 
-                                        className={`h-6 w-6 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                                        className={`min-h-[34px] min-w-[34px] sm:h-7 sm:w-7 p-1 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30 rounded-lg active:scale-95 touch-manipulation cursor-pointer flex items-center justify-center shrink-0 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
                                         disabled={isRecordPending(rec.id)}
                                         title={bn ? 'অপরিশোধিত করুন' : 'Mark Unpaid'} 
                                         onClick={() => setUnpaidConfirmId(rec.id)}
                                       >
-                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                        <CheckCircle2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                       </Button>
                                     )}
                                     {rec.status === 'paid' && s.phone && (
                                       <Button
+                                        type="button"
                                         size="icon"
                                         variant="ghost"
-                                        className="h-6 w-6 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/30"
+                                        className="min-h-[34px] min-w-[34px] sm:h-7 sm:w-7 p-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/30 rounded-lg active:scale-95 touch-manipulation cursor-pointer flex items-center justify-center shrink-0"
                                         title={bn ? 'কর্মীর WhatsApp-এ বেতন নোটিফিকেশন পাঠান' : 'Send salary notification via WhatsApp'}
                                         onClick={() => {
                                           const monthNameObj = MONTHS.find(m => m.value === selectedMonth);
@@ -5730,7 +5744,7 @@ const AdminSalary = () => {
                                           window.open(waUrl, '_blank');
                                         }}
                                       >
-                                        <MessageCircle className="h-3 w-3" />
+                                        <MessageCircle className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                       </Button>
                                     )}
                                     {rec.status === 'paid' && (() => {
@@ -5738,14 +5752,15 @@ const AdminSalary = () => {
                                       if (staffExpense) {
                                         return (
                                           <Button
+                                            type="button"
                                             size="icon"
                                             variant="ghost"
-                                            className="h-6 w-6 text-emerald-600 hover:text-red-600 hover:bg-red-100/60 dark:hover:bg-red-950/30"
+                                            className="min-h-[34px] min-w-[34px] sm:h-7 sm:w-7 p-1 text-emerald-600 hover:text-red-600 hover:bg-red-100/60 dark:hover:bg-red-950/30 rounded-lg active:scale-95 touch-manipulation cursor-pointer flex items-center justify-center shrink-0"
                                             title={bn ? 'হিসাব ব্যবস্থাপনায় খরচ যুক্ত আছে। ক্লিক করলে হিসাব থেকে বাদ দেওয়া হবে।' : 'Linked in expenses. Click to remove from expenses.'}
                                             disabled={removeStaffExpenseMutation.isPending}
                                             onClick={() => removeStaffExpenseMutation.mutate({ staffId: s.id, staffName: s.name_bn || s.name_en || 'Staff' })}
                                           >
-                                            <Landmark className="h-3 w-3" />
+                                            <Landmark className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                           </Button>
                                         );
                                       }
@@ -5761,27 +5776,29 @@ const AdminSalary = () => {
                                       }
                                       return (
                                         <Button
+                                          type="button"
                                           size="icon"
                                           variant="ghost"
-                                          className="h-6 w-6 text-amber-600 hover:text-emerald-700 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/30"
+                                          className="min-h-[34px] min-w-[34px] sm:h-7 sm:w-7 p-1 text-amber-600 hover:text-emerald-700 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/30 rounded-lg active:scale-95 touch-manipulation cursor-pointer flex items-center justify-center shrink-0"
                                           title={bn ? 'হিসাবে এখনো যুক্ত হয়নি। ক্লিক করে হিসাব ব্যবস্থাপনায় খরচ যোগ করুন।' : 'Not in expenses. Click to add to expenses.'}
                                           disabled={addStaffExpenseMutation.isPending}
                                           onClick={() => addStaffExpenseMutation.mutate({ staffId: s.id, recordId: rec.id })}
                                         >
-                                          <Plus className="h-3 w-3" />
+                                          <Plus className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                         </Button>
                                       );
                                     })()}
                                     {canDeleteItem && isFeatureAllowed('action_delete_salary') !== false && (
                                       <Button 
+                                        type="button"
                                         size="icon" 
                                         variant="ghost" 
-                                        className={`h-6 w-6 text-red-600 hover:bg-red-100/60 dark:hover:bg-red-900/30 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                                        className={`min-h-[34px] min-w-[34px] sm:h-7 sm:w-7 p-1 text-red-600 hover:bg-red-100/60 dark:hover:bg-red-900/30 rounded-lg active:scale-95 touch-manipulation cursor-pointer flex items-center justify-center shrink-0 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
                                         disabled={isRecordPending(rec.id)}
                                         title={bn ? 'আনজেনারেট (মুছুন)' : 'Ungenerate'} 
                                         onClick={() => setUngenerateConfirmId(rec.id)}
                                       >
-                                        <Trash2 className="h-3.5 w-3.5" />
+                                        <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                       </Button>
                                     )}
                                   </>
@@ -8271,35 +8288,34 @@ const AdminSalary = () => {
               e.preventDefault();
               restoreSalaryScrollPosition();
             }}
-            className="max-w-4xl max-h-[95vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl border bg-background shadow-2xl"
+            className="!fixed !top-0 !left-0 !translate-x-0 !translate-y-0 sm:!top-[50%] sm:!left-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] !w-full sm:!w-full !h-[100dvh] sm:!h-auto !max-w-full sm:!max-w-4xl !max-h-[100dvh] sm:!max-h-[95vh] flex flex-col p-0 gap-0 overflow-hidden !rounded-none sm:!rounded-2xl !border-0 sm:!border bg-background shadow-2xl z-50"
           >
             {/* Header with sticky action bar */}
-            <div className="p-4 sm:p-5 border-b bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 text-white flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-emerald-950 grid place-items-center shadow-md flex-shrink-0">
-                  <Printer className="h-5 w-5" />
+            <div className="p-3 sm:p-5 pr-14 sm:pr-5 border-b bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 text-white flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-emerald-950 grid place-items-center shadow-md flex-shrink-0">
+                  <Printer className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base sm:text-lg font-bold truncate">
+                    <h3 className="text-sm sm:text-lg font-bold truncate">
                       {slipModal?.staff?.name_bn || slipModal?.staff?.name_en}
                     </h3>
-                    <Badge variant="outline" className="text-[10px] bg-white/10 text-amber-300 border-white/20">
+                    <Badge variant="outline" className="text-[10px] bg-white/10 text-amber-300 border-white/20 shrink-0">
                       {slipModal?.slipId}
                     </Badge>
                   </div>
-                  <p className="text-xs text-emerald-200/90 truncate">
+                  <p className="text-[11px] sm:text-xs text-emerald-200/90 truncate">
                     {bn ? 'বেতন স্লিপ প্রিভিউ ও প্রিন্ট' : 'Salary Slip Preview & Print'} • {slipModal?.monthLabel}
                   </p>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 ml-auto flex-wrap sm:flex-nowrap">
+              {/* Action Buttons: hidden on mobile (accessible in bottom thumb bar), visible on desktop */}
+              <div className="hidden sm:flex items-center gap-2 ml-auto shrink-0">
                 <Button
                   size="sm"
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md gap-1.5 px-3.5"
-                  
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md gap-1.5 px-3.5 cursor-pointer active:scale-95 touch-manipulation"
                   onClick={handlePrintSlip}
                 >
                   <Printer className="h-4 w-4" />
@@ -8308,7 +8324,7 @@ const AdminSalary = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5 cursor-pointer active:scale-95 touch-manipulation"
                   disabled={slipModalLoading === 'view'}
                   onClick={async () => {
                     if (!slipModal) return;
@@ -8329,7 +8345,7 @@ const AdminSalary = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5 cursor-pointer active:scale-95 touch-manipulation"
                   disabled={slipModalLoading === 'download'}
                   onClick={async () => {
                     if (!slipModal) return;
@@ -8351,7 +8367,7 @@ const AdminSalary = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5 cursor-pointer active:scale-95 touch-manipulation"
                   disabled={slipModalLoading === 'share'}
                   onClick={async () => {
                     if (!slipModal) return;
@@ -8368,7 +8384,7 @@ const AdminSalary = () => {
                   }}
                 >
                   <Share2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">{bn ? 'শেয়ার করুন' : 'Share'}</span>
+                  <span>{bn ? 'শেয়ার করুন' : 'Share'}</span>
                 </Button>
               </div>
             </div>
@@ -8426,36 +8442,35 @@ const AdminSalary = () => {
               );
             })()}
 
-            {/* Slip Interactive Preview Body */}
-            <div className="flex-1 overflow-auto p-3 sm:p-5 bg-slate-100 dark:bg-slate-950 flex justify-center items-start min-h-[350px] max-h-[75vh]">
+            {/* Slip Interactive Preview Body - Full viewport height on mobile, comfortable card on desktop */}
+            <div className="flex-1 overflow-auto p-1.5 sm:p-5 bg-slate-100 dark:bg-slate-950 flex justify-center items-start min-h-0 w-full">
               {slipModal && (
-                <div className="w-full max-w-[820px] bg-white rounded-xl shadow-lg border border-slate-200 overflow-x-auto flex flex-col items-center">
+                <div className="w-full max-w-[840px] bg-white rounded-none sm:rounded-xl shadow-lg border-0 sm:border border-slate-200 overflow-x-auto flex flex-col items-center">
                   <iframe
                     ref={previewIframeRef}
                     srcDoc={slipModal.html}
                     title="Salary Slip Preview"
-                    className="w-full min-h-[750px] border-0 bg-white"
-                    style={{ height: '780px' }}
+                    className="w-full border-0 bg-white"
+                    style={{ height: 'calc(100dvh - 130px)', minHeight: '620px' }}
                   />
                 </div>
               )}
             </div>
 
             {/* Mobile Footer for convenient thumb access */}
-            <div className="sm:hidden p-2.5 border-t bg-background grid grid-cols-4 gap-1.5">
+            <div className="sm:hidden p-2.5 border-t bg-background grid grid-cols-4 gap-2 shrink-0 z-10 shadow-lg">
               <Button
                 size="sm"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 px-1.5 text-xs"
-                
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 px-1 text-xs h-10 rounded-xl cursor-pointer active:scale-95 touch-manipulation shadow-xs"
                 onClick={handlePrintSlip}
               >
-                <Printer className="h-3.5 w-3.5" />
+                <Printer className="h-4 w-4" />
                 <span>{bn ? 'প্রিন্ট' : 'Print'}</span>
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-1 px-1.5 text-xs"
+                className="gap-1 px-1 text-xs h-10 rounded-xl cursor-pointer active:scale-95 touch-manipulation font-semibold"
                 disabled={slipModalLoading === 'view'}
                 onClick={async () => {
                   if (!slipModal) return;
@@ -8467,13 +8482,13 @@ const AdminSalary = () => {
                   }
                 }}
               >
-                <FileText className="h-3.5 w-3.5" />
+                <FileText className="h-4 w-4" />
                 <span>{bn ? 'PDF ভিউ' : 'PDF View'}</span>
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-1 px-1.5 text-xs"
+                className="gap-1 px-1 text-xs h-10 rounded-xl cursor-pointer active:scale-95 touch-manipulation font-semibold"
                 disabled={slipModalLoading === 'download'}
                 onClick={async () => {
                   if (!slipModal) return;
@@ -8486,20 +8501,27 @@ const AdminSalary = () => {
                   }
                 }}
               >
-                <Download className="h-3.5 w-3.5" />
+                <Download className="h-4 w-4" />
                 <span>PDF</span>
               </Button>
               <Button
                 size="sm"
-                variant="ghost"
-                className="px-2.5 text-xs font-semibold"
-                onClick={() => {
-                  const sid = slipModal?.staff?.id || lastPrintedStaffIdRef.current;
-                  setSlipModal(null);
-                  restoreSalaryScrollPosition(sid);
+                variant="outline"
+                className="gap-1 px-1 text-xs h-10 rounded-xl cursor-pointer active:scale-95 touch-manipulation font-semibold"
+                disabled={slipModalLoading === 'share'}
+                onClick={async () => {
+                  if (!slipModal) return;
+                  setSlipModalLoading('share');
+                  try {
+                    const shared = await shareSlipPdf(slipModal.html, slipModal.filename, bn ? 'বেতন স্লিপ' : 'Salary Slip');
+                    if (shared) toast.success(bn ? 'শেয়ার সম্পন্ন' : 'Shared successfully');
+                  } finally {
+                    setSlipModalLoading(null);
+                  }
                 }}
               >
-                {bn ? 'বন্ধ' : 'Close'}
+                <Share2 className="h-4 w-4" />
+                <span>{bn ? 'শেয়ার' : 'Share'}</span>
               </Button>
             </div>
           </DialogContent>
