@@ -24,6 +24,7 @@ import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { Skeleton } from '@/components/ui/skeleton';
 import ImageUpload from '@/components/ImageUpload';
 import AdmissionGuidelinesManager from '@/components/admin/AdmissionGuidelinesManager';
+import FeeStructureManager from '@/components/admin/FeeStructureManager';
 import { useAuth } from '@/hooks/useAuth';
 import { Lock } from 'lucide-react';
 import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
@@ -51,7 +52,7 @@ const INFO_LINK_ICONS = [
 const VALID_WEBSITE_TABS = [
   'institution', 'header', 'navigation', 'hero', 'content', 'gallery',
   'footer', 'sections', 'divisions', 'info-links', 'social', 'sync',
-  'form-settings', 'login-page'
+  'form-settings', 'admission-guidelines', 'fee-structure', 'login-page'
 ] as const;
 type WebsiteTab = typeof VALID_WEBSITE_TABS[number];
 
@@ -655,6 +656,9 @@ const AdminWebsite = () => {
             </TabsTrigger>
             <TabsTrigger value="admission-guidelines" className="text-xs py-2 px-2.5">
               <FileText className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'ভর্তি নির্দেশিকা' : 'Admission Guidelines'}
+            </TabsTrigger>
+            <TabsTrigger value="fee-structure" className="text-xs py-2 px-2.5">
+              <DollarSign className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'ফি বিবরণী' : 'Fee Structure'}
             </TabsTrigger>
             <TabsTrigger value="login-page" className="text-xs py-2 px-2.5">
               <LogIn className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'লগইন পেইজ' : 'Login Page'}
@@ -2126,6 +2130,11 @@ const AdminWebsite = () => {
           {/* Admission Guidelines Tab */}
           <TabsContent value="admission-guidelines">
             <AdmissionGuidelinesManager />
+          </TabsContent>
+
+          {/* Fee Structure Tab */}
+          <TabsContent value="fee-structure">
+            <FeeStructureManager />
           </TabsContent>
 
           {/* Login Page Tab */}

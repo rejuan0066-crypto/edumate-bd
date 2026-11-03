@@ -228,7 +228,7 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
                 )}
               </ul>
             </li>
-            <li className={`nav-item ${isActive('/admission') || isActive('/fee-payment') || isActive('/fees') ? 'active' : ''}`}>
+            <li className={`nav-item ${isActive('/admission') || isActive('/fee-payment') || isActive('/fee-structure') || isActive('/fees') ? 'active' : ''}`}>
               <Link to="/admission" onClick={() => setMobileMenuOpen(false)}>
                 ভর্তি ও পাঠ্যক্রম <ChevronDown className="w-3 h-3 inline ml-1" />
               </Link>
@@ -245,7 +245,13 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
                   </Link>
                 </li>
                 <li>
-                  <Link to="/fee-payment" onClick={() => setMobileMenuOpen(false)}>
+                  <Link
+                    to="/fee-structure"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
                     ফি ও খরচ বিবরণী
                   </Link>
                 </li>

@@ -54,6 +54,7 @@ const AdmissionTestMerit = lazy(() => import("./pages/AdmissionTestMerit"));
 const StaffApplicationPage = lazy(() => import("./pages/StaffApplicationPage"));
 const DonationPage = lazy(() => import("./pages/DonationPage"));
 const FeePaymentPage = lazy(() => import("./pages/FeePaymentPage"));
+const FeeStructurePage = lazy(() => import("./pages/FeeStructurePage"));
 const ParentPortal = lazy(() => import("./pages/ParentPortal"));
 const ParentPaymentReceipt = lazy(() => import("./pages/ParentPaymentReceipt"));
 const VerifyReceipt = lazy(() => import("./pages/VerifyReceipt"));
@@ -407,6 +408,9 @@ const App = () => (
                   <Route path="/admission-test/:id/merit" element={<AdmissionTestMerit />} />
                   <Route path="/staff-application" element={<StaffApplicationPage />} />
                   <Route path="/donation" element={<DonationPage />} />
+                  <Route path="/fee-structure" element={<FeeStructurePage />} />
+                  <Route path="/fees-structure" element={<FeeStructurePage />} />
+                  <Route path="/fee-breakdown" element={<FeeStructurePage />} />
                   <Route path="/fee-payment" element={<FeePaymentPage />} />
                   <Route path="/fees" element={<FeePaymentPage />} />
                   <Route path="/posts" element={<PostsPage />} />
