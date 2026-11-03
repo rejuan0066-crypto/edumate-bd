@@ -9,12 +9,12 @@ import { isAdminRole } from '@/lib/roles';
  * routing, permissions or page content changes.
  */
 export const AdminUrlMask = () => {
-  const { role, loading } = useAuth() as { role?: string | null; loading?: boolean };
+  const { role, loading, user } = useAuth() as { role?: string | null; loading?: boolean; user?: unknown };
   const location = useLocation();
 
   useEffect(() => {
-    // 1. While auth is loading or role is not yet resolved, do NOT touch the URL!
-    if (loading || !role) return;
+    // 1. While auth is loading or no user is logged in, do NOT touch the URL!
+    if (loading || !user) return;
 
     // 2. If the user is an admin (admin / super_admin):
     //    Ensure their address bar is ALWAYS on /admin. If it somehow starts with /user, unmask it!
@@ -28,7 +28,7 @@ export const AdminUrlMask = () => {
       return;
     }
 
-    // 3. Non-admin users (staff, teacher, student, parent, etc.):
+    // 3. Non-admin users (staff, teacher, student, parent, or custom role without admin):
     //    Mask the /admin address to /user in the address bar.
     if (!location.pathname.startsWith('/admin')) return;
 
@@ -37,7 +37,7 @@ export const AdminUrlMask = () => {
     if (current !== masked) {
       window.history.replaceState(window.history.state, '', masked);
     }
-  }, [role, loading, location.pathname, location.search, location.hash]);
+  }, [role, loading, user, location.pathname, location.search, location.hash]);
 
   return null;
 };

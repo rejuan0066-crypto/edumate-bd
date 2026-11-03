@@ -700,7 +700,20 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
               )}
               {/* Page label in header */}
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-xs text-slate-400 font-medium hidden sm:inline">{language === 'bn' ? 'অ্যাডমিন' : 'Admin'}</span>
+                <span className="text-xs text-slate-400 font-medium hidden sm:inline">{(() => {
+                  if (isAdminRole(role)) return language === 'bn' ? 'অ্যাডমিন' : 'Admin';
+                  if (sidebarStaffPhoto?.designation) return sidebarStaffPhoto.designation;
+                  const roleLabels: Record<string, { bn: string; en: string }> = {
+                    super_admin: { bn: 'সুপার অ্যাডমিন', en: 'Super Admin' },
+                    admin: { bn: 'অ্যাডমিন', en: 'Admin' },
+                    teacher: { bn: 'শিক্ষক', en: 'Teacher' },
+                    staff: { bn: 'স্টাফ', en: 'Staff' },
+                    accountant: { bn: 'হিসাবরক্ষক', en: 'Accountant' },
+                  };
+                  const r = roleLabels[role || ''];
+                  if (r) return language === 'bn' ? r.bn : r.en;
+                  return language === 'bn' ? 'প্যানেল' : 'Panel';
+                })()}</span>
                 <span className="text-xs text-slate-400 font-medium hidden sm:inline">/</span>
                 <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
                   {currentPageLabel}
