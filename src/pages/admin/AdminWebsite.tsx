@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
 import { usePersistentTab } from '@/hooks/usePersistentTab';
-import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, PanelTop, PanelBottom, Navigation, Menu, RefreshCw, CheckCircle, AlertCircle, Database, FileText, ChevronUp, ChevronDown, EyeOff, Link2, List, SlidersHorizontal, LogIn, Loader2, GraduationCap, BookOpen, Briefcase, Search, CheckCircle2, HeartHandshake, Landmark, Building2, CreditCard } from 'lucide-react';
+import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, PanelTop, PanelBottom, Navigation, Menu, RefreshCw, CheckCircle, AlertCircle, Database, FileText, ChevronUp, ChevronDown, EyeOff, Link2, List, SlidersHorizontal, LogIn, Loader2, GraduationCap, BookOpen, Briefcase, Search, CheckCircle2, HeartHandshake, Landmark, Building2, CreditCard, DollarSign } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import WebsitePageBuilder from '@/components/admin/WebsitePageBuilder';
@@ -50,7 +50,7 @@ const INFO_LINK_ICONS = [
 ];
 
 const VALID_WEBSITE_TABS = [
-  'institution', 'header', 'navigation', 'hero', 'content', 'gallery',
+  'institution', 'header', 'navigation', 'hero', 'content', 'donation', 'gallery',
   'footer', 'sections', 'divisions', 'info-links', 'social', 'sync',
   'form-settings', 'admission-guidelines', 'fee-structure', 'login-page'
 ] as const;

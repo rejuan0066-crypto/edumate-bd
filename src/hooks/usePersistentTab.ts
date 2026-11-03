@@ -97,28 +97,15 @@ export function usePersistentTab<T extends string>(
         } catch {}
       }
     } else {
-      // URL has no tab param: check if sessionStorage has a saved tab that should be mirrored to URL
-      try {
-        const stored = sessionStorage.getItem(storageKey);
-        if (isValid(stored) && stored !== defaultTab) {
-          setActiveTabState(stored);
-          setSearchParams(
-            prev => {
-              const next = new URLSearchParams(prev);
-              next.set(paramName, stored);
-              return next;
-            },
-            { replace: true }
-          );
-          return;
-        }
-      } catch {}
-
+      // URL has no tab param: revert to defaultTab
       if (activeTab !== defaultTab) {
         setActiveTabState(defaultTab);
+        try {
+          sessionStorage.setItem(storageKey, defaultTab);
+        } catch {}
       }
     }
-  }, [searchParams, paramName, isValid, activeTab, storageKey, defaultTab, syncWithUrl, setSearchParams]);
+  }, [searchParams, paramName, isValid, activeTab, storageKey, defaultTab, syncWithUrl]);
 
   return [activeTab, setActiveTab];
 }

@@ -254,7 +254,7 @@ export const FeeStructureManager: React.FC = () => {
           {bn ? '২. বিভাগ ও শ্রেণিভিত্তিক ফি চার্ট' : '2. Division & Class Fee Table'}
         </h3>
 
-        {form.divisions.map((divGroup, divIdx) => (
+        {(form.divisions || []).map((divGroup, divIdx) => (
           <div key={divGroup.id} className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
@@ -276,7 +276,7 @@ export const FeeStructureManager: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {divGroup.items.map((item, itemIdx) => (
+              {(divGroup.items || []).map((item, itemIdx) => (
                 <div key={item.id} className="p-3.5 rounded-xl border border-border/80 bg-muted/20 space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                     <div className="space-y-1 sm:col-span-1">
@@ -355,7 +355,7 @@ export const FeeStructureManager: React.FC = () => {
         </div>
 
         <div className="space-y-2.5">
-          {form.rules.map((rule, idx) => (
+          {(form.rules || []).map((rule, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold shrink-0">
                 {idx + 1}
