@@ -671,11 +671,11 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
   return (
     <AdminLayoutNestingContext.Provider value={true}>
-      <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 w-full overflow-x-auto relative z-0" style={{ ['--admin-sidebar-width' as string]: `${desktopSidebarWidth}px` }}>
+      <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 w-full max-w-full overflow-x-hidden relative z-0" style={{ ['--admin-sidebar-width' as string]: `${desktopSidebarWidth}px` }}>
         {renderSidebar(false)}
         {mobileSidebarOpen && renderSidebar(true)}
 
-        <div className={`flex min-h-screen flex-col ${mobileHeaderOffsetClass} ${desktopHeaderOffsetClass} lg:ml-[var(--admin-sidebar-width)]`}>
+        <div className={`flex min-h-screen flex-col w-full max-w-full lg:w-[calc(100%-var(--admin-sidebar-width))] lg:max-w-[calc(100vw-var(--admin-sidebar-width))] min-w-0 overflow-x-hidden ${mobileHeaderOffsetClass} ${desktopHeaderOffsetClass} lg:ml-[var(--admin-sidebar-width)]`}>
           {/* Top bar */}
           <header className={`admin-header-glass px-4 sm:px-6 lg:px-8 h-16 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 shadow-2xs fixed top-0 right-0 left-0 lg:left-[var(--admin-sidebar-width)] z-40 flex items-center justify-between gap-2`} style={{ ...headerStyle, boxShadow: undefined, fontSize: 'var(--header-font-size, 13px)', paddingTop: `calc(env(safe-area-inset-top) + ${headerTopPadding})` }}>
             <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
@@ -721,7 +721,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           </header>
 
           {/* Content */}
-          <main className="flex-1 px-3 sm:px-6 md:px-8 pb-24 lg:pb-12 pt-4 sm:pt-6 w-full max-w-[1536px] mx-auto">
+          <main className="flex-1 min-w-0 w-full max-w-full px-3 sm:px-6 md:px-8 pb-24 lg:pb-12 pt-4 sm:pt-6 max-w-[1536px] mx-auto overflow-x-hidden">
             <BackButton position="top" />
             {/* Modern SaaS Content Container */}
             <div className="admin-page-card rounded-xl sm:rounded-2xl bg-card border border-border/80 p-3.5 sm:p-6 lg:p-7 min-h-[65vh] w-full shadow-sm relative overflow-hidden">
