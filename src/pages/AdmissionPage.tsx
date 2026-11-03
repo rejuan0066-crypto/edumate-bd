@@ -571,53 +571,7 @@ const AdmissionPage = () => {
       case 'student_type':
       case 'student_category':
       case 'is_free':
-        return null;
-
       case 'residence_type':
-        return (
-          <div className="bg-white dark:bg-card border border-slate-200/90 dark:border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-foreground flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-emerald-600" />
-                {bn ? 'আবাসন ধরন (Residence)' : 'Residence'}
-              </span>
-              <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md">
-                {bn ? 'আবশ্যক' : 'Required'}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-muted/70 p-1.5 rounded-xl border border-slate-200 dark:border-border">
-              <button
-                type="button"
-                onClick={() => setForm(prev => ({ ...prev, residence_type: 'non-resident' }))}
-                className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
-                  form.residence_type === 'non-resident'
-                    ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 scale-[1.02]'
-                    : 'bg-white dark:bg-card text-slate-600 dark:text-muted-foreground hover:text-slate-900 font-semibold border border-slate-200/80 dark:border-border/60 shadow-2xs'
-                }`}
-              >
-                {form.residence_type === 'non-resident' && (
-                  <CheckCircle className="w-3.5 h-3.5 text-white shrink-0" />
-                )}
-                <span>{bn ? 'অনাবাসিক (Day Scholar)' : 'Non-Resident'}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm(prev => ({ ...prev, residence_type: 'resident' }))}
-                className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
-                  form.residence_type === 'resident'
-                    ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 scale-[1.02]'
-                    : 'bg-white dark:bg-card text-slate-600 dark:text-muted-foreground hover:text-slate-900 font-semibold border border-slate-200/80 dark:border-border/60 shadow-2xs'
-                }`}
-              >
-                {form.residence_type === 'resident' && (
-                  <CheckCircle className="w-3.5 h-3.5 text-white shrink-0" />
-                )}
-                <span>{bn ? 'আবাসিক (Hostel/Boarding)' : 'Resident'}</span>
-              </button>
-            </div>
-          </div>
-        );
-
       case 'roll_number':
       case 'registration_no':
         // Assigned by admin / office upon admission approval
@@ -1108,11 +1062,6 @@ const AdmissionPage = () => {
 
       return (
         <div key={sectionKey} className="space-y-5">
-          {/* Residence Type (Full Width) */}
-          <div>
-            {resField ? renderSystemField('residence_type', resField) : renderSystemField('residence_type', { label: 'Residence', label_bn: 'আবাসন ধরন', default_value: 'residence_type' } as any)}
-          </div>
-
           {/* Group 1: Academic Information (Exact Mockup Match) */}
           <div className="bg-white dark:bg-card border border-slate-200/90 dark:border-border rounded-2xl p-5 shadow-sm space-y-4">
             <div className="flex items-center justify-between pb-3.5 mb-2 border-b border-slate-100 dark:border-border/60">

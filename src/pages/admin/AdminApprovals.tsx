@@ -206,6 +206,7 @@ const AdminApprovals = () => {
   const [showEditAdmissionForm, setShowEditAdmissionForm] = useState(false);
   const [assignedCategory, setAssignedCategory] = useState('general');
   const [assignedIsFree, setAssignedIsFree] = useState(false);
+  const [assignedResidenceType, setAssignedResidenceType] = useState<string>('non-resident');
   const [studentReferralType, setStudentReferralType] = useState<string>('none');
   const [studentReferralName, setStudentReferralName] = useState('');
   const [studentReferralPhone, setStudentReferralPhone] = useState('');
@@ -802,6 +803,7 @@ const AdminApprovals = () => {
     setStudentApproverDate(defaultApproverDate);
     setAssignedCategory(s.student_category || (s.is_poor ? 'poor' : s.is_orphan ? 'orphan' : 'general'));
     setAssignedIsFree(!!s.is_free);
+    setAssignedResidenceType(s.residence_type || 'non-resident');
 
     const existingRef = s.extra_fields?.referral_info || {};
     const refType = existingRef.division_id ? `div_${existingRef.division_id}` : (existingRef.type || (s.referred_by ? 'staff' : 'none'));
@@ -934,6 +936,7 @@ const AdminApprovals = () => {
         registration_no: finalReg || null,
         student_id: studentApprovalModal?.student_id || finalReg || null,
         student_category: assignedCategory,
+        residence_type: assignedResidenceType || 'non-resident',
         is_free: assignedIsFree,
         is_orphan: assignedCategory === 'orphan',
         is_poor: assignedCategory === 'poor' || assignedCategory === 'insolvent',
@@ -1692,6 +1695,11 @@ const AdminApprovals = () => {
                                           </span>
                                         )}
                                         {displayNames.secondary && <span className="text-xs text-muted-foreground">{displayNames.secondary}</span>}
+                                        {s.residence_type && (
+                                          <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-medium">
+                                            {s.residence_type === 'resident' ? (bn ? 'আবাসিক' : 'Resident') : (bn ? 'অনাবাসিক' : 'Non-Resident')}
+                                          </span>
+                                        )}
                                       </div>
                                     </div>
                                   </>
@@ -3247,6 +3255,15 @@ const AdminApprovals = () => {
                             {studentApprovalModal.student_category === 'poor' ? 'অসচ্ছল' : studentApprovalModal.student_category}
                           </Badge>
                         )}
+                        {assignedResidenceType && (
+                          <Badge variant="outline" className={`text-[10px] py-0 px-1.5 font-semibold ${
+                            assignedResidenceType === 'resident'
+                              ? 'border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40'
+                              : 'border-slate-300 dark:border-border text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-muted/40'
+                          }`}>
+                            🏠 {assignedResidenceType === 'resident' ? (bn ? 'আবাসিক' : 'Resident') : (bn ? 'অনাবাসিক' : 'Non-Resident')}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -3529,6 +3546,43 @@ const AdminApprovals = () => {
                       </div>
                       <p className="text-[11px] text-muted-foreground">
                         {bn ? '💡 সক্রিয় করলে শিক্ষার্থীর মাসিক ফি ফ্রি প্রযোজ্য হবে।' : 'No monthly fee charged if active.'}
+                      </p>
+                    </div>
+
+                    {/* Residence Type Field */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Home className="w-3.5 h-3.5 text-primary" />
+                        <span>{bn ? 'আবাসন ধরন (Residence Type) *' : 'Residence Type *'}</span>
+                      </Label>
+                      <div className="grid grid-cols-2 gap-2 bg-muted/40 p-1.5 rounded-xl border border-border">
+                        <button
+                          type="button"
+                          onClick={() => setAssignedResidenceType('non-resident')}
+                          className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
+                            assignedResidenceType === 'non-resident'
+                              ? 'bg-emerald-600 text-white font-bold shadow-sm'
+                              : 'bg-background text-muted-foreground hover:text-foreground font-semibold border border-border/60'
+                          }`}
+                        >
+                          <Check className={`w-3.5 h-3.5 ${assignedResidenceType === 'non-resident' ? 'opacity-100' : 'opacity-0'}`} />
+                          <span>{bn ? 'অনাবাসিক (Non-Resident)' : 'Non-Resident'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAssignedResidenceType('resident')}
+                          className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
+                            assignedResidenceType === 'resident'
+                              ? 'bg-emerald-600 text-white font-bold shadow-sm'
+                              : 'bg-background text-muted-foreground hover:text-foreground font-semibold border border-border/60'
+                          }`}
+                        >
+                          <Check className={`w-3.5 h-3.5 ${assignedResidenceType === 'resident' ? 'opacity-100' : 'opacity-0'}`} />
+                          <span>{bn ? 'আবাসিক (Resident)' : 'Resident'}</span>
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        {bn ? '💡 এপ্রুভের সময় শিক্ষার্থীর আবাসন অবস্থা (অনাবাসিক বা আবাসিক) নির্বাচন করুন।' : 'Assign residential status on student approval.'}
                       </p>
                     </div>
 
