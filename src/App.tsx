@@ -218,7 +218,6 @@ const HideOnRoutes = ({ paths, children }: { paths: string[]; children: React.Re
 import RoutePrefetcher from "./components/RoutePrefetcher";
 import InstallPrompt from "./components/InstallPrompt";
 import NetworkStatusIndicator from "./components/NetworkStatusIndicator";
-import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
 import { supabase } from "@/integrations/supabase/client";
 
 let isRefreshingSession = false;
@@ -376,9 +375,6 @@ const App = () => (
                 </HideOnRoutes>
                 <InstallPrompt />
                 <NetworkStatusIndicator />
-                <HideOnRoutes paths={["/quran"]}>
-                  <FloatingWhatsAppButton />
-                </HideOnRoutes>
                 <Suspense fallback={<RouteShimmer />}>
                 <Routes>
                   <Route path="/" element={<Home />} />
