@@ -723,7 +723,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           </header>
 
           {/* Content */}
-          <main className="flex-1 min-w-0 w-full max-w-full px-3 sm:px-6 md:px-8 pb-24 lg:pb-12 pt-4 sm:pt-6 max-w-[1536px] mx-auto overflow-x-hidden">
+          <main className="flex-1 min-w-0 w-full max-w-full px-3 sm:px-6 md:px-8 pb-24 lg:pb-12 pt-4 sm:pt-6 overflow-x-hidden">
             <BackButton position="top" />
             {/* Modern SaaS Content Container */}
             <div className="admin-page-card rounded-xl sm:rounded-2xl bg-card border border-border/80 p-3.5 sm:p-6 lg:p-7 min-h-[65vh] w-full shadow-sm relative overflow-hidden">

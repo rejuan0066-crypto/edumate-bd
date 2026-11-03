@@ -36,10 +36,11 @@
 }
 
 .institutional-root .inst-container {
-  max-width: 1240px;
+  max-width: 100%;
   width: 100%;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 clamp(16px, 3.5vw, 48px);
+  box-sizing: border-box;
 }
 @media (max-width: 640px) {
   .institutional-root .inst-container {
