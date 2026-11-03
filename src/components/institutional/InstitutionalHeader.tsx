@@ -88,8 +88,8 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
               </span>
               {!isHomePage && (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginLeft: '6px' }}>
-                  <Link
-                    to="/login"
+                  <a
+                    href="https://portal-subhaniabd.vercel.app"
                     style={{
                       background: 'rgba(255,255,255,0.15)',
                       color: '#fef08a',
@@ -103,8 +103,8 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
                       gap: '4px',
                     }}
                   >
-                    <LogIn className="w-3 h-3" /> লগইন
-                  </Link>
+                    <LogIn className="w-3 h-3" /> মাদ্রাসা পোর্টাল
+                  </a>
                   <Link
                     to="/admission"
                     style={{
@@ -363,10 +363,10 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
               </Link>
 
               <div className="header-cta-group">
-                <Link to="/login" className="btn-portal-outline">
+                <a href="https://portal-subhaniabd.vercel.app" className="btn-portal-outline">
                   <LogIn className="w-4 h-4 inline mr-1.5" />
                   <span>মাদ্রাসা পোর্টাল</span>
-                </Link>
+                </a>
                 <Link to="/admission" className="btn-portal-solid">
                   <FileSignature className="w-4 h-4 inline mr-1.5" />
                   <span>অনলাইন ভর্তি আবেদন</span>
