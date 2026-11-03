@@ -437,42 +437,44 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
       >
         {/* Logo */}
         <div className="p-4 border-b border-emerald-800/40 bg-gradient-to-b from-emerald-950 to-[#022c22] shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-white p-0.5 flex items-center justify-center shrink-0 shadow-md ring-2 ring-amber-500/50 overflow-hidden">
-            {(websiteSettings.favicon_url || websiteSettings.logo_url) ? (
-              <img
-                src={websiteSettings.favicon_url || websiteSettings.logo_url}
-                alt="Logo"
-                onError={(e) => {
-                  const img = e.currentTarget;
-                  if (!img.dataset.fallback) {
-                    img.dataset.fallback = 'true';
-                    img.src = '/loader-logo.png';
-                  }
-                }}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-sm font-bold text-sidebar-primary-foreground">
-                {(language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name))?.charAt(0) || 'E'}
-              </span>
+          <div className="flex items-center justify-between">
+            <div className="w-10 h-10 rounded-xl bg-white p-0.5 flex items-center justify-center shrink-0 shadow-md ring-2 ring-amber-500/50 overflow-hidden">
+              {(websiteSettings.favicon_url || websiteSettings.logo_url) ? (
+                <img
+                  src={websiteSettings.favicon_url || websiteSettings.logo_url}
+                  alt="Logo"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (!img.dataset.fallback) {
+                      img.dataset.fallback = 'true';
+                      img.src = '/loader-logo.png';
+                    }
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-sm font-bold text-emerald-900">
+                  {(language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name))?.charAt(0) || 'E'}
+                </span>
+              )}
+            </div>
+            {mobile && (
+              <button onClick={() => setMobileSidebarOpen(false)} className="p-1.5 rounded-md hover:bg-white/10 text-white shrink-0" aria-label="Close menu">
+                <X className="w-5 h-5" />
+              </button>
             )}
           </div>
           {(sidebarOpen || mobile) && (
-            <div className="overflow-hidden flex-1 min-w-0">
+            <div className="overflow-hidden flex-1 min-w-0 mt-2.5">
               <h2
-                className="text-sm font-bold text-sidebar-foreground truncate leading-relaxed block max-w-full"
+                className="text-sm font-bold text-white truncate leading-relaxed block max-w-full"
                 title={language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name)}
                 style={{ whiteSpace: 'nowrap', overflowWrap: 'anywhere' }}
               >
                 {language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name)}
               </h2>
-              <p className="text-[11px] text-amber-400 font-medium leading-relaxed truncate">{language === 'bn' ? 'মাদ্রাসা ও এতিমখানা' : 'Madrasa & Orphanage'}</p>
+              <p className="text-[11px] text-white/90 font-medium leading-relaxed truncate">{language === 'bn' ? 'মাদ্রাসা ও এতিমখানা' : 'Madrasa & Orphanage'}</p>
             </div>
-          )}
-          {mobile && (
-            <button onClick={() => setMobileSidebarOpen(false)} className="ml-auto p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground shrink-0">
-              <X className="w-5 h-5" />
-            </button>
           )}
         </div>
 
