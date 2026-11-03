@@ -60,7 +60,7 @@ import {
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
-import { resolveThursdayHalfCategories, isThursdayDate, isSpecialDayDate, DAY_OF_WEEK_OPTIONS, getSpecialDayDeductionRateMode, getScheduleForDay } from '@/lib/thursdayHalfDay';
+import { resolveThursdayHalfCategories, isThursdayDate, isSpecialDayDate, DAY_OF_WEEK_OPTIONS, getSpecialDayDeductionRateMode, getScheduleForDay, shouldApplyThursdayHalfDay } from '@/lib/thursdayHalfDay';
 import { attendanceRecordsForDate, MISSING_ATTENDANCE_CONFLICT_OPTIONS } from '@/lib/attendanceRecords';
 import { cn } from '@/lib/utils';
 
