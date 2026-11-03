@@ -435,46 +435,51 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         className={`${mobile ? 'w-[280px] max-w-[85vw] animate-in slide-in-from-left duration-300' : sidebarOpen ? sidebarWidthClass : 'w-16'} sidebar-glass flex flex-col h-[100dvh] max-h-[100dvh] transition-all duration-500 ${mobile ? 'order-first shadow-2xl' : ''}`}
         style={sidebarStyle}
       >
-        {/* Logo */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-xl bg-white p-0.5 flex items-center justify-center shrink-0 shadow-xs ring-1 ring-slate-200 dark:ring-slate-700 overflow-hidden">
-              {(websiteSettings.favicon_url || websiteSettings.logo_url) ? (
-                <img
-                  src={websiteSettings.favicon_url || websiteSettings.logo_url}
-                  alt="Logo"
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    if (!img.dataset.fallback) {
-                      img.dataset.fallback = 'true';
-                      img.src = '/loader-logo.png';
-                    }
-                  }}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-sm font-bold text-emerald-900">
-                  {(language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name))?.charAt(0) || 'E'}
-                </span>
-              )}
-            </div>
-            {mobile && (
-              <button onClick={() => setMobileSidebarOpen(false)} className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 shrink-0" aria-label="Close menu">
-                <X className="w-5 h-5" />
-              </button>
+        {/* Logo & Header */}
+        <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white p-0.5 flex items-center justify-center shrink-0 shadow-xs ring-1 ring-slate-200 dark:ring-slate-700 overflow-hidden">
+            {(websiteSettings.favicon_url || websiteSettings.logo_url) ? (
+              <img
+                src={websiteSettings.favicon_url || websiteSettings.logo_url}
+                alt="Logo"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (!img.dataset.fallback) {
+                    img.dataset.fallback = 'true';
+                    img.src = '/loader-logo.png';
+                  }
+                }}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <span className="text-sm font-bold text-emerald-900">
+                {(language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name))?.charAt(0) || 'E'}
+              </span>
             )}
           </div>
+
           {(sidebarOpen || mobile) && (
-            <div className="overflow-hidden flex-1 min-w-0 mt-2.5">
+            <div className="overflow-hidden flex-1 min-w-0">
               <h2
-                className="text-sm font-bold text-slate-900 dark:text-white truncate leading-relaxed block max-w-full"
+                className="text-[13px] font-bold text-slate-900 dark:text-white truncate leading-snug"
                 title={language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name)}
-                style={{ whiteSpace: 'nowrap', overflowWrap: 'anywhere' }}
               >
                 {language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name)}
               </h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed truncate">{language === 'bn' ? 'মাদ্রাসা ও এতিমখানা' : 'Madrasa & Orphanage'}</p>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium leading-tight truncate mt-0.5">
+                {language === 'bn' ? 'ম্যানেজমেন্ট প্যানেল' : 'Management Panel'}
+              </p>
             </div>
+          )}
+
+          {mobile && (
+            <button
+              onClick={() => setMobileSidebarOpen(false)}
+              className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:text-slate-400 shrink-0 ml-auto"
+              aria-label="Close menu"
+            >
+              <X className="w-4 h-4" />
+            </button>
           )}
         </div>
 
