@@ -720,15 +720,15 @@
 
   /* Sidebar - clean minimalist SaaS border & solid surface */
   .sidebar-glass {
-    background: #022c22 !important;
-    border-right: 1px solid rgba(6, 78, 59, 0.45) !important;
-    box-shadow: 2px 0 16px 0 rgba(2, 44, 34, 0.25);
-    color: #e2e8f0 !important;
+    background: #ffffff !important;
+    border-right: 1px solid #e2e8f0 !important;
+    box-shadow: 1px 0 12px 0 rgba(0, 0, 0, 0.04);
+    color: #1e293b !important;
   }
   .dark .sidebar-glass {
-    background: #022c22 !important;
-    border-right: 1px solid rgba(6, 78, 59, 0.55) !important;
-    color: #e2e8f0 !important;
+    background: #0f172a !important;
+    border-right: 1px solid #1e293b !important;
+    color: #f1f5f9 !important;
   }
 
   /* ── Top header — clean solid surface ── */
@@ -747,41 +747,43 @@
     padding: 8px 12px;
     margin-bottom: 2px;
     font-size: var(--sidebar-font-size, 13px);
-    color: #cbd5e1;
+    color: #475569;
     line-height: 1.4;
   }
   .sidebar-item .sidebar-icon {
-    color: #34d399;
+    color: #059669;
   }
   .sidebar-item:hover {
-    color: #ffffff;
-    background: rgba(6, 78, 59, 0.45);
+    color: #0f172a;
+    background: #f1f5f9;
   }
   .sidebar-item:hover .sidebar-icon {
-    color: #6ee7b7;
+    color: #047857;
   }
   .sidebar-icon {
     transition: transform 0.15s ease, color 0.15s ease;
   }
 
-    /* Active state — clearly filled, institutional emerald & gold (Demo Match) */
+  /* Active state — clearly filled, institutional emerald & white */
   .sidebar-item.active {
-    @apply font-bold text-white;
-    color: #ffffff !important;
-    background: rgba(6, 78, 59, 0.9) !important;
-    box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.25);
-    border-left: 4px solid #f59e0b !important;
+    @apply font-bold;
+    color: #065f46 !important;
+    background: #ecfdf5 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    border-left: 4px solid #059669 !important;
   }
   .sidebar-item.active::before {
     content: none !important;
   }
   .sidebar-item.active .sidebar-icon {
-    color: #fde047 !important;
+    color: #059669 !important;
   }
+
   /* Expanded parent group */
   .sidebar-item.group-open {
-    background: hsl(var(--muted) / 0.4);
+    background: #f8fafc;
     @apply font-semibold;
+    color: #0f172a;
   }
   .dark .sidebar-item.group-open {
     background: hsl(var(--muted) / 0.25);
@@ -789,17 +791,17 @@
 
   .sidebar-item.has-active-child {
     @apply font-semibold;
-    color: hsl(var(--foreground));
-    background: hsl(var(--muted) / 0.35);
+    color: #065f46;
+    background: #f1f5f9;
   }
 
   /* ── Dark mode restores the original light-on-obsidian sidebar text ── */
   .dark .sidebar-item { color: hsl(210 15% 65%); border-color: hsl(160 80% 55% / 0.32); box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.12), 0 0 0 1px hsl(160 80% 55% / 0.08), 0 0 14px -8px hsl(160 80% 55% / 0.4); }
   .dark .sidebar-item:hover { color: hsl(0 0% 94%); background: hsl(160 40% 30% / 0.1); border-color: hsl(160 80% 55% / 0.52); box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.16), 0 0 0 1px hsl(160 80% 55% / 0.14), 0 0 18px -6px hsl(160 80% 55% / 0.45); }
   .dark .sidebar-item:hover .sidebar-icon { color: hsl(160 70% 55%); }
-  .dark .sidebar-item.active { color: hsl(0 0% 100%); background: hsl(160 60% 32% / 0.32); border-color: hsl(160 80% 55% / 0.85); box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.18), 0 0 0 1px hsl(160 80% 55% / 0.35), 0 2px 20px -5px hsl(160 80% 55% / 0.7); }
+  .dark .sidebar-item.active { color: hsl(0 0% 100%) !important; background: hsl(160 60% 32% / 0.32) !important; border-color: hsl(160 80% 55% / 0.85); box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.18), 0 0 0 1px hsl(160 80% 55% / 0.35), 0 2px 20px -5px hsl(160 80% 55% / 0.7); border-left: 4px solid #10b981 !important; }
   .dark .sidebar-item.active::before { background: hsl(160 80% 55%); box-shadow: 0 0 12px 2px hsl(160 80% 55% / 0.6); }
-  .dark .sidebar-item.active .sidebar-icon { color: hsl(160 70% 60%); }
+  .dark .sidebar-item.active .sidebar-icon { color: hsl(160 70% 60%) !important; }
 
   .dark .sidebar-item.has-active-child { color: hsl(160 60% 70%); background: hsl(160 40% 30% / 0.08); }
   .sidebar-item.has-active-child::before {
@@ -832,10 +834,10 @@
   /* Section labels */
   .sidebar-group-label {
     @apply font-bold uppercase tracking-wider px-3 py-1.5 mt-4 mb-1 first:mt-0;
-    font-size: 10px;
-    color: #34d399 !important;
+    font-size: 10.5px;
+    color: #64748b !important;
   }
-  .dark .sidebar-group-label { color: #34d399 !important; }
+  .dark .sidebar-group-label { color: #94a3b8 !important; }
 
   /* Mobile accordion submenu */
   .sidebar-submenu-slide {
@@ -852,13 +854,25 @@
     opacity: 1;
     pointer-events: auto;
   }
-  .sidebar-chevron { transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
-  .sidebar-chevron.open { transform: rotate(180deg); }
+  .sidebar-chevron {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #94a3b8;
+  }
+  .sidebar-item:hover .sidebar-chevron {
+    color: #64748b;
+  }
+  .sidebar-chevron.open {
+    transform: rotate(180deg);
+    color: #059669;
+  }
   .sidebar-submenu-container {
     @apply rounded-lg mt-1 ml-4 pl-3;
-    border-left: 1px solid hsl(160 40% 30% / 0.2);
+    border-left: 1px solid #e2e8f0;
     padding-top: 4px;
     padding-bottom: 4px;
+  }
+  .dark .sidebar-submenu-container {
+    border-left-color: rgba(255, 255, 255, 0.1);
   }
 
   /* ── Sub-menu items ── */
@@ -866,39 +880,39 @@
     @apply flex items-center gap-2 rounded-lg transition-all duration-150 font-normal relative cursor-pointer;
     padding: 6px 10px;
     font-size: 12px;
-    color: #94a3b8;
+    color: #64748b;
     line-height: 1.4;
     margin-bottom: 1px;
   }
   .sidebar-sub-item .sidebar-icon {
-    color: #10b981;
+    color: #059669;
   }
   .sidebar-sub-item:hover {
-    color: #ffffff;
-    background: rgba(6, 78, 59, 0.35);
+    color: #0f172a;
+    background: #f1f5f9;
   }
   .sidebar-sub-item:hover .sidebar-icon {
-    color: hsl(var(--foreground));
+    color: #047857;
   }
   .sidebar-sub-item.active {
-    @apply font-semibold text-white;
-    color: #ffffff !important;
-    background: rgba(6, 78, 59, 0.75) !important;
-    border-left: 3px solid #f59e0b !important;
+    @apply font-semibold;
+    color: #065f46 !important;
+    background: #ecfdf5 !important;
+    border-left: 3px solid #059669 !important;
   }
   .sidebar-sub-item.active .sidebar-icon {
-    color: #fde047 !important;
+    color: #059669 !important;
   }
   .sidebar-sub-item.active:hover {
-    background: hsl(var(--primary) / 0.12);
+    background: #d1fae5 !important;
   }
   /* Dark mode restores original sub-item colors */
   .dark .sidebar-sub-item { color: hsl(210 15% 58%); }
   .dark .sidebar-sub-item:hover { color: hsl(0 0% 92%); background: hsl(160 40% 30% / 0.1); }
   .dark .sidebar-sub-item:hover .sidebar-icon { color: hsl(160 65% 55%); }
-  .dark .sidebar-sub-item.active { color: hsl(160 70% 60%); background: hsl(160 50% 30% / 0.12); }
-  .dark .sidebar-sub-item.active .sidebar-icon { color: hsl(160 70% 55%); }
-  .dark .sidebar-sub-item.active:hover { background: hsl(160 50% 30% / 0.16); }
+  .dark .sidebar-sub-item.active { color: hsl(160 70% 60%) !important; background: hsl(160 50% 30% / 0.12) !important; border-left: 3px solid #10b981 !important; }
+  .dark .sidebar-sub-item.active .sidebar-icon { color: hsl(160 70% 55%) !important; }
+  .dark .sidebar-sub-item.active:hover { background: hsl(160 50% 30% / 0.16) !important; }
   .sidebar-avatar-glow {
     box-shadow: 0 0 0 2px hsl(160 50% 40% / 0.25);
   }
@@ -977,10 +991,10 @@
     background-color: hsl(var(--primary) / 0.4);
   }
 
-  /* ── Sidebar Glassmorphism Scrollbar ── */
+  /* ── Sidebar Scrollbar ── */
   .sidebar-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
   }
   .sidebar-scrollbar::-webkit-scrollbar {
     width: 4px;
@@ -990,13 +1004,13 @@
     margin: 8px 0;
   }
   .sidebar-scrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+    background: rgba(148, 163, 184, 0.35);
     border-radius: 9999px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: none;
     transition: background 0.3s ease;
   }
   .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+    background: rgba(100, 116, 139, 0.6);
   }
 }
 

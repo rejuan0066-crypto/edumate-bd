@@ -185,8 +185,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const headerTopPadding = headerTopPaddingMap[adminTheme.headerHeight] || '0.625rem';
 
   const sidebarStyle: React.CSSProperties = {
-    ...(adminTheme.sidebarBgColor ? { backgroundColor: adminTheme.sidebarBgColor } : {}),
-    ...(adminTheme.sidebarTextColor ? { color: adminTheme.sidebarTextColor } : {}),
+    ...(adminTheme.sidebarBgColor && !['#022c22', '#064e3b', '#065f46'].includes(adminTheme.sidebarBgColor.toLowerCase()) ? { backgroundColor: adminTheme.sidebarBgColor } : {}),
+    ...(adminTheme.sidebarTextColor && !['#e2e8f0', '#cbd5e1', '#ffffff'].includes(adminTheme.sidebarTextColor.toLowerCase()) ? { color: adminTheme.sidebarTextColor } : {}),
   };
   const headerStyle: React.CSSProperties = {
     boxShadow: 'var(--shadow-soft)',
@@ -436,9 +436,9 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         style={sidebarStyle}
       >
         {/* Logo */}
-        <div className="p-4 border-b border-emerald-800/40 bg-gradient-to-b from-emerald-950 to-[#022c22] shrink-0">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
           <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-xl bg-white p-0.5 flex items-center justify-center shrink-0 shadow-md ring-2 ring-amber-500/50 overflow-hidden">
+            <div className="w-10 h-10 rounded-xl bg-white p-0.5 flex items-center justify-center shrink-0 shadow-xs ring-1 ring-slate-200 dark:ring-slate-700 overflow-hidden">
               {(websiteSettings.favicon_url || websiteSettings.logo_url) ? (
                 <img
                   src={websiteSettings.favicon_url || websiteSettings.logo_url}
@@ -459,7 +459,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
               )}
             </div>
             {mobile && (
-              <button onClick={() => setMobileSidebarOpen(false)} className="p-1.5 rounded-md hover:bg-white/10 text-white shrink-0" aria-label="Close menu">
+              <button onClick={() => setMobileSidebarOpen(false)} className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 shrink-0" aria-label="Close menu">
                 <X className="w-5 h-5" />
               </button>
             )}
@@ -467,13 +467,13 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           {(sidebarOpen || mobile) && (
             <div className="overflow-hidden flex-1 min-w-0 mt-2.5">
               <h2
-                className="text-sm font-bold text-white truncate leading-relaxed block max-w-full"
+                className="text-sm font-bold text-slate-900 dark:text-white truncate leading-relaxed block max-w-full"
                 title={language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name)}
                 style={{ whiteSpace: 'nowrap', overflowWrap: 'anywhere' }}
               >
                 {language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name)}
               </h2>
-              <p className="text-[11px] text-white/90 font-medium leading-relaxed truncate">{language === 'bn' ? 'মাদ্রাসা ও এতিমখানা' : 'Madrasa & Orphanage'}</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed truncate">{language === 'bn' ? 'মাদ্রাসা ও এতিমখানা' : 'Madrasa & Orphanage'}</p>
             </div>
           )}
         </div>
@@ -628,22 +628,22 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
         {/* Bottom - user profile + logout */}
         {(sidebarOpen || mobile) && (
-          <div className="p-3 border-t border-emerald-900/50 bg-emerald-950/70 shrink-0">
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-xl bg-white/5 backdrop-blur-sm ring-1 ring-white/10">
-              <div className="w-6 h-6 rounded-full bg-sidebar-primary flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-white/10">
+          <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900 shrink-0">
+            <div className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-2xs">
+              <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-emerald-300 dark:ring-emerald-700">
                 {sidebarAvatar ? (
                   <img src={sidebarAvatar} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-[9px] font-bold text-sidebar-primary-foreground">
+                  <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-200">
                     {sidebarDisplayName.charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
               <div className="flex-1 min-w-0 leading-none">
-                <p className="text-[11px] font-semibold text-white truncate">
+                <p className="text-[11.5px] font-semibold text-slate-800 dark:text-slate-100 truncate">
                   {sidebarDisplayName}
                 </p>
-                <span className="text-[9px] text-emerald-400 truncate block mt-0.5">{(() => {
+                <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 font-medium truncate block mt-0.5">{(() => {
                   // Prefer the linked staff designation (actual job title) over generic role label
                   if (sidebarStaffPhoto?.designation) return sidebarStaffPhoto.designation;
                   const roleLabels: Record<string, { bn: string; en: string }> = {
@@ -659,10 +659,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
               </div>
               <button
                 onClick={async () => { await signOut(); navigate('/login'); }}
-                className="p-1 rounded-md hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive transition-all"
+                className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 dark:hover:bg-rose-950/30 transition-all shrink-0"
                 title={language === 'bn' ? 'লগআউট' : 'Logout'}
               >
-                <LogOut className="w-3 h-3" />
+                <LogOut className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
