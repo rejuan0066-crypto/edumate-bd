@@ -1,9 +1,11 @@
 import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
+import { Link } from 'react-router-dom';
 import {
   BookOpen, GraduationCap, FileText, DollarSign, Download, ExternalLink,
   Phone, Mail, CheckCircle2, FileCheck, FileCode, Paperclip,
-  Sparkles, ArrowRight, ShieldCheck, Printer, HelpCircle
+  Sparkles, ArrowRight, ShieldCheck, Printer, HelpCircle, Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +36,8 @@ export const AdmissionGuidelinesView: React.FC<AdmissionGuidelinesViewProps> = (
 }) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const { role } = useAuth();
+  const isAdmin = role === 'admin' || role === 'super_admin';
 
   const activeSections = (guidelines.sections || []).filter(s => s.is_active !== false);
   const attachments = guidelines.attachments || [];
@@ -87,6 +91,17 @@ export const AdmissionGuidelinesView: React.FC<AdmissionGuidelinesViewProps> = (
                 <Printer className="w-4 h-4" />
                 <span>{bn ? 'প্রিন্ট / সেভ করুন' : 'Print Guidelines'}</span>
               </Button>
+              {isAdmin && (
+                <Link to="/admin/website?tab=admission-guidelines">
+                  <Button
+                    type="button"
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2.5 rounded-xl shadow-md gap-1.5 text-xs sm:text-sm"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>{bn ? 'নির্দেশিকা এডিট করুন (এডমিন)' : 'Edit Guidelines'}</span>
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>

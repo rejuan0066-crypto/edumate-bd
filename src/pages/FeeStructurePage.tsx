@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PublicLayout from '@/components/PublicLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFeeStructure } from '@/hooks/useFeeStructure';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
@@ -9,7 +10,7 @@ import {
   DollarSign, GraduationCap, Printer, Download, BookOpen,
   HelpCircle, CreditCard, ChevronRight, Sparkles, CheckCircle2,
   FileText, ShieldCheck, AlertCircle, Phone, Mail, Building2,
-  Calendar, Layers, ArrowRight, ExternalLink
+  Calendar, Layers, ArrowRight, ExternalLink, Settings
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, any> = {
@@ -24,6 +25,8 @@ export const FeeStructurePage: React.FC = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { feeStructure, isLoading } = useFeeStructure();
+  const { role } = useAuth();
+  const isAdmin = role === 'admin' || role === 'super_admin';
 
   const [selectedDivisionFilter, setSelectedDivisionFilter] = useState<string>('all');
 
@@ -96,6 +99,17 @@ export const FeeStructurePage: React.FC = () => {
                   <Printer className="w-4 h-4" />
                   <span>{bn ? 'প্রিন্ট / সেভ করুন' : 'Print Fee Sheet'}</span>
                 </Button>
+                {isAdmin && (
+                  <Link to="/admin/website?tab=fee-structure">
+                    <Button
+                      type="button"
+                      className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2.5 rounded-xl shadow-md gap-1.5 text-xs sm:text-sm"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>{bn ? 'ফি চার্ট এডিট করুন (এডমিন)' : 'Edit Fee Chart'}</span>
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
