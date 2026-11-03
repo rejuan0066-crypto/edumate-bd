@@ -423,6 +423,17 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     return t('dashboard');
   })();
 
+  // Synchronise browser tab title with active page
+  useEffect(() => {
+    const instName =
+      (language === 'bn'
+        ? websiteSettings.institution_name
+        : websiteSettings.institution_name_en || websiteSettings.institution_name) ||
+      'আল আরাবিয়া ছোবহানিয়া মাদ্রাসা ও এতিমখানা';
+    const pageTitle = currentPageLabel || (language === 'bn' ? 'ড্যাশবোর্ড' : 'Dashboard');
+    document.title = `${pageTitle} | ${instName}`;
+  }, [currentPageLabel, language, websiteSettings.institution_name, websiteSettings.institution_name_en]);
+
   const renderSidebar = (mobile = false) => (
     <aside key={mobile ? 'mobile' : 'desktop'} className={`${mobile ? 'fixed inset-0 z-50' : 'hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex'} flex`}>
       {mobile && (

@@ -7,6 +7,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import AdminLayout from "@/components/AdminLayout";
 import RouteShimmer from "@/components/RouteShimmer";
 import { AdminUrlMask, UserPathRedirect } from "@/components/AdminUrlMask";
+import PageTitleManager from "@/components/PageTitleManager";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -369,6 +370,7 @@ const App = () => (
                 {/* Global so the "/user/..." address stays masked on every
                     route, including not-found pages. */}
                 <AdminUrlMask />
+                <PageTitleManager />
                 <HideOnRoutes paths={["/quran"]}>
                   <ScrollToTop />
                   <ScrollNavigation />
