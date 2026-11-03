@@ -92,7 +92,7 @@ export const DEFAULT_ADMISSION_GUIDELINES: AdmissionGuidelinesData = {
       title_bn: '৪. ভর্তি ফি ও পরিশোধ পদ্ধতি',
       title_en: '4. Fee Structure & Payment Methods',
       content_bn: `• ভর্তি ফরম ও সেশন ফি মাদ্রাসার অনলাইন পেমেন্ট গেটওয়ে (বিকাশ/নগদ/রকেট/কার্ড) অথবা মাদ্রাসার হিসাব শাখায় জমা দেওয়া যাবে।
-• এতিম, দরিদ্র ও অসচ্ছল পরিবারের মেধাবী শিক্ষার্থীদের জন্য লিল্লাহ বোর্ডিং ও বিশেষ আর্থিক ছাড়ের ব্যবস্থা রয়েছে।
+• এতিম, দরিদ্র ও অসচ্ছল পরিবারের মেধাবী শিক্ষার্থীদের জন্য বিশেষ আর্থিক ছাড়ের ব্যবস্থা রয়েছে।
 • প্রতি মাসের বেতন পরবর্তী মাসের ১০ তারিখের মধ্যে পরিশোধ করার অনুরোধ করা হচ্ছে।`,
       content_en: `• Fees can be paid via online gateway (bKash/Nagad/Rocket) or at the Madrasah accounts counter.
 • Financial assistance/free education available for orphans and insolvent meritorious students.`,
