@@ -56,6 +56,9 @@ const AdminClassRoutine = () => {
   const [form, setForm] = useState({ name: '', name_bn: '', class_id: '', academic_session_id: '', is_active: true });
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [filterClassId, setFilterClassId] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    return localStorage.getItem('class_routine_active_tab') || 'master';
+  });
 
   // Fetch institution
   const { data: institution } = useQuery({
@@ -305,13 +308,20 @@ const AdminClassRoutine = () => {
       <div className="space-y-4">
         <h1 className="text-xl font-bold">{bn ? 'ক্লাস রুটিন' : 'Class Routine'}</h1>
 
-        <Tabs defaultValue="individual" className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={v => {
+            setActiveTab(v);
+            localStorage.setItem('class_routine_active_tab', v);
+          }}
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-2 max-w-xs">
-            <TabsTrigger value="individual" className="gap-1.5 text-xs">
-              <List className="h-3.5 w-3.5" /> {bn ? 'ক্লাস রুটিন' : 'Class Routine'}
-            </TabsTrigger>
-            <TabsTrigger value="master" className="gap-1.5 text-xs">
+            <TabsTrigger value="master" className="gap-1.5 text-xs font-semibold">
               <LayoutGrid className="h-3.5 w-3.5" /> {bn ? 'দৈনিক ক্লাস রুটিন' : 'Daily Class Routine'}
+            </TabsTrigger>
+            <TabsTrigger value="individual" className="gap-1.5 text-xs">
+              <List className="h-3.5 w-3.5" /> {bn ? 'ক্লাস তালিকা' : 'Class List'}
             </TabsTrigger>
           </TabsList>
 
