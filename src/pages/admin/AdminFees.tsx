@@ -16,6 +16,7 @@ import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useAuth } from '@/hooks/useAuth';
 import FeeTypeManager from '@/components/admin/FeeTypeManager';
 import StudentCategoryManager from '@/components/admin/StudentCategoryManager';
+import { getNextFeeReceiptNumber } from '@/lib/paymentUtils';
 
 type MainTab = 'payment' | 'fee_types' | 'categories';
 type FeeTab = 'admission' | 'monthly' | 'exam';
@@ -192,8 +193,7 @@ const AdminFees = () => {
         throw new Error(msg);
       }
 
-      const { data: serialNumber, error: serialErr } = await supabase.rpc('get_next_receipt_serial');
-      if (serialErr) throw new Error('Serial number generation failed');
+      const serialNumber = await getNextFeeReceiptNumber();
       const payload = {
         student_id: selectedStudent,
         fee_type_id: selectedFeeType,

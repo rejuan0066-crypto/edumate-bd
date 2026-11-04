@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import ManualPaymentMethods from '@/components/ManualPaymentMethods';
-import { cleanRoleSuffix } from '@/lib/paymentUtils';
+import { cleanRoleSuffix, getNextFeeReceiptNumber } from '@/lib/paymentUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -433,13 +433,7 @@ const FeePaymentPage = () => {
       }
 
       const txnId = generateTransactionId();
-      let serialNumber: string | null = null;
-      try {
-        const { data: sn, error: serialErr } = await supabase.rpc('get_next_receipt_serial');
-        if (!serialErr && sn) serialNumber = sn;
-      } catch {
-        // DB trigger auto_assign_fee_payment_receipt_number will assign next serial on insert
-      }
+      const serialNumber = await getNextFeeReceiptNumber();
 
       const feeTypeName = selectedFeeTypeObj ? (bn ? selectedFeeTypeObj.name_bn : selectedFeeTypeObj.name) : 'Student Fee';
 

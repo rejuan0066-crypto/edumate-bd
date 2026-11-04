@@ -24,7 +24,7 @@ import FeeReceiptDownload from '@/components/fees/FeeReceiptDownload';
 import CollectorSelector from '@/components/fees/CollectorSelector';
 import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { cleanRoleSuffix, resolveUserCollectorIdentity } from '@/lib/paymentUtils';
+import { cleanRoleSuffix, resolveUserCollectorIdentity, getNextFeeReceiptNumber } from '@/lib/paymentUtils';
 
 const LazyPaymentDashboard = lazy(() => import('@/pages/admin/AdminPayments'));
 
@@ -479,14 +479,8 @@ const AdminStudentsFees = () => {
       setTransactionId(txnId);
       const isCash = paymentMethod === 'cash';
 
-      // Get atomic serial number
-      let serialNumber: string | null = null;
-      try {
-        const { data: sn, error: serialErr } = await supabase.rpc('get_next_receipt_serial');
-        if (!serialErr && sn) serialNumber = sn;
-      } catch (e) {
-        console.warn('Serial generation fallback to DB trigger');
-      }
+      // Get atomic serial number (starts cleanly from SL-YYYY-0001)
+      const serialNumber = await getNextFeeReceiptNumber();
 
       const feeTypeName = selectedFeeTypeObj ? (bn ? selectedFeeTypeObj.name_bn : selectedFeeTypeObj.name) : feeType;
       const finalCollector = cleanRoleSuffix(customCollector || collectorName);

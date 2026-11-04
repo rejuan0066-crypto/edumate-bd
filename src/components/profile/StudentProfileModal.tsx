@@ -24,7 +24,7 @@ import ProfileSectionCard from './ProfileSectionCard';
 import DocumentPreviewModal from '@/components/DocumentPreviewModal';
 import { toast } from 'sonner';
 import { cn, formatDigits } from '@/lib/utils';
-import { cleanRoleSuffix, resolveUserCollectorIdentity } from '@/lib/paymentUtils';
+import { cleanRoleSuffix, resolveUserCollectorIdentity, getNextFeeReceiptNumber } from '@/lib/paymentUtils';
 import CollectorSelector from '@/components/fees/CollectorSelector';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { printStudentProfile } from '@/lib/studentProfilePrint';
@@ -779,16 +779,7 @@ const StudentProfileModal = ({
 
     setIsPaying(true);
     try {
-      let serialNumber: string | null = null;
-      try {
-        const { data: sNum } = await supabase.rpc('get_next_receipt_serial');
-        if (sNum) serialNumber = sNum;
-      } catch (e) {
-        console.warn('Receipt serial generation fallback:', e);
-      }
-      if (!serialNumber) {
-        serialNumber = `REC-${Date.now().toString().slice(-6)}`;
-      }
+      const serialNumber = await getNextFeeReceiptNumber();
 
       const isoPaidAt = payDate ? new Date(payDate).toISOString() : new Date().toISOString();
       const finalCollector = cleanRoleSuffix(customCollector || collectorName);

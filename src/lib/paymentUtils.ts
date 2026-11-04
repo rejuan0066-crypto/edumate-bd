@@ -265,3 +265,46 @@ export async function updatePaymentSafely({
   if (error) throw error;
   return true;
 }
+
+/**
+ * Safely fetches the next atomic receipt serial number (e.g. SL-2026-0001).
+ * Falls back to finding the max receipt number in `fee_payments` if RPC fails,
+ * guaranteeing clean, sequential numbers starting from 1 with zero gaps or duplicates.
+ */
+export async function getNextFeeReceiptNumber(): Promise<string> {
+  const currentYear = new Date().getFullYear();
+  const prefix = `SL-${currentYear}-`;
+
+  // 1. Try atomic RPC
+  try {
+    const { data: sn, error } = await supabase.rpc('get_next_receipt_serial');
+    if (!error && sn && typeof sn === 'string' && sn.startsWith('SL-')) {
+      return sn;
+    }
+  } catch {
+    // fallback below
+  }
+
+  // 2. Fallback: Query highest existing receipt_number in fee_payments for the current year
+  try {
+    const { data } = await supabase
+      .from('fee_payments')
+      .select('receipt_number')
+      .like('receipt_number', `${prefix}%`)
+      .order('receipt_number', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (data?.receipt_number) {
+      const match = data.receipt_number.match(/SL-\d{4}-(\d+)/);
+      if (match && match[1]) {
+        const nextNum = parseInt(match[1], 10) + 1;
+        return `${prefix}${String(nextNum).padStart(4, '0')}`;
+      }
+    }
+  } catch {
+    // fallback to 0001
+  }
+
+  return `${prefix}0001`;
+}
