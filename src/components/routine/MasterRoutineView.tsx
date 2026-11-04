@@ -416,6 +416,18 @@ const MasterRoutineView = () => {
   const [selectedDay, setSelectedDay] = useState<number>(0);
   const [classSearchTerm, setClassSearchTerm] = useState('');
 
+  // Break Time & Label state
+  const [breakLabel, setBreakLabel] = useState<string>(() => {
+    return localStorage.getItem('routine_break_label') || 'বিরতি';
+  });
+  const [breakTime, setBreakTime] = useState<{ start: string; end: string }>(() => {
+    try {
+      const saved = localStorage.getItem('routine_break_time');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { start: '13:00', end: '13:45' };
+  });
+
   // Customizable Footer Note
   const [footerNote, setFooterNote] = useState<string>(() => {
     return localStorage.getItem('master_routine_footer_note') || 
@@ -712,6 +724,46 @@ const MasterRoutineView = () => {
       console.error(err);
       toast.error(bn ? 'সময় সংরক্ষণ ব্যর্থ হয়েছে' : 'Failed to save period time');
     }
+  };
+
+  // Save Break Time across all classes and local storage
+  const handleSaveBreakTime = async (label: string, start: string, end: string) => {
+    if (!start || !end) {
+      toast.error(bn ? 'শুরু এবং শেষ উভয় সময় নির্বাচন করুন' : 'Both start and end time required');
+      return;
+    }
+    const finalLabel = label.trim() || (bn ? 'বিরতি' : 'Break');
+    setBreakLabel(finalLabel);
+    setBreakTime({ start, end });
+    localStorage.setItem('routine_break_label', finalLabel);
+    localStorage.setItem('routine_break_time', JSON.stringify({ start, end }));
+
+    if (selectedSessionId && allRoutines && allRoutines.length > 0) {
+      try {
+        const routineIds = allRoutines.map(r => r.id);
+        await supabase
+          .from('routine_periods')
+          .update({
+            start_time: start,
+            end_time: end,
+            break_label: finalLabel,
+            break_label_bn: finalLabel,
+          })
+          .in('routine_id', routineIds)
+          .eq('is_break', true);
+
+        queryClient.invalidateQueries({ queryKey: ['all-classes-periods'] });
+        queryClient.invalidateQueries({ queryKey: ['weekly-routine-periods'] });
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    toast.success(
+      bn
+        ? `${finalLabel}র সময় সংরক্ষিত হয়েছে (${fmtTime(start, bn)} - ${fmtTime(end, bn)})`
+        : `Break time saved (${start} - ${end})`
+    );
   };
 
   // Save or delete a single period slot in Master Grid (All/Multi Classes mode)
@@ -1621,16 +1673,72 @@ const MasterRoutineView = () => {
                         return (
                           <th
                             key={`br-${idx}`}
-                            className={`${breakThStyle} break-col`}
-                            style={{
-                              writingMode: 'vertical-rl',
-                              textOrientation: 'mixed',
-                              padding: '8px 2px',
-                              minWidth: 32,
-                              maxWidth: 36,
-                            }}
+                            className={`${breakThStyle} break-col p-1`}
+                            style={{ minWidth: 70, maxWidth: 95 }}
                           >
-                            {bn ? 'বিরতি' : 'Break'}
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="w-full cursor-pointer hover:bg-emerald-300/60 dark:hover:bg-emerald-800/80 p-1 rounded transition-colors focus:outline-none"
+                                >
+                                  <div className="font-bold text-xs text-emerald-950 dark:text-emerald-100">{breakLabel}</div>
+                                  <div className="text-[9px] font-medium text-emerald-900 dark:text-emerald-200 mt-0.5 flex items-center justify-center gap-0.5">
+                                    <Clock className="w-2.5 h-2.5 opacity-70 print-hidden" />
+                                    <span>
+                                      {breakTime.start
+                                        ? `${fmtTime(breakTime.start, bn)} - ${fmtTime(breakTime.end, bn)}`
+                                        : (bn ? 'সময় দিন' : 'Set Time')}
+                                    </span>
+                                  </div>
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-64 p-3 space-y-2.5 z-[250] shadow-xl" align="center">
+                                <div className="flex items-center justify-between border-b pb-1.5">
+                                  <Label className="text-xs font-bold text-foreground">
+                                    {bn ? 'বিরতির সময় ও নাম' : 'Set Break Time'}
+                                  </Label>
+                                  <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                    {bn ? 'বিরতি' : 'Break'}
+                                  </Badge>
+                                </div>
+                                <div>
+                                  <Label className="text-[10px] text-muted-foreground">{bn ? 'বিরতির নাম' : 'Label'}</Label>
+                                  <Input
+                                    className="h-7 text-xs"
+                                    value={breakLabel}
+                                    onChange={e => setBreakLabel(e.target.value)}
+                                    placeholder={bn ? 'যেমন: বিরতি / মধ্যাহ্ন বিরতি' : 'e.g. Break'}
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground">{bn ? 'শুরু' : 'Start'}</Label>
+                                    <TimePicker
+                                      className="h-8 text-xs"
+                                      value={breakTime.start}
+                                      onChange={val => setBreakTime(prev => ({ ...prev, start: val }))}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground">{bn ? 'শেষ' : 'End'}</Label>
+                                    <TimePicker
+                                      className="h-8 text-xs"
+                                      value={breakTime.end}
+                                      onChange={val => setBreakTime(prev => ({ ...prev, end: val }))}
+                                    />
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  className="w-full h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1 mt-1 font-medium"
+                                  onClick={() => handleSaveBreakTime(breakLabel, breakTime.start, breakTime.end)}
+                                >
+                                  <Save className="h-3 w-3" />
+                                  <span>{bn ? 'বিরতির সময় সেভ করুন' : 'Save Break Time'}</span>
+                                </Button>
+                              </PopoverContent>
+                            </Popover>
                           </th>
                         );
                       }
@@ -2035,16 +2143,72 @@ const MasterRoutineView = () => {
                         return (
                           <th
                             key={`br-${idx}`}
-                            className={`${breakThStyle} break-col`}
-                            style={{
-                              writingMode: 'vertical-rl',
-                              textOrientation: 'mixed',
-                              padding: '8px 2px',
-                              minWidth: 28,
-                              maxWidth: 32,
-                            }}
+                            className={`${breakThStyle} break-col p-1`}
+                            style={{ minWidth: 70, maxWidth: 95 }}
                           >
-                            {bn ? 'বিরতি' : 'Break'}
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="w-full cursor-pointer hover:bg-emerald-300/60 dark:hover:bg-emerald-800/80 p-1 rounded transition-colors focus:outline-none"
+                                >
+                                  <div className="font-bold text-xs text-emerald-950 dark:text-emerald-100">{breakLabel}</div>
+                                  <div className="text-[9px] font-medium text-emerald-900 dark:text-emerald-200 mt-0.5 flex items-center justify-center gap-0.5">
+                                    <Clock className="w-2.5 h-2.5 opacity-70 print-hidden" />
+                                    <span>
+                                      {breakTime.start
+                                        ? `${fmtTime(breakTime.start, bn)} - ${fmtTime(breakTime.end, bn)}`
+                                        : (bn ? 'সময় দিন' : 'Set Time')}
+                                    </span>
+                                  </div>
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-64 p-3 space-y-2.5 z-[250] shadow-xl" align="center">
+                                <div className="flex items-center justify-between border-b pb-1.5">
+                                  <Label className="text-xs font-bold text-foreground">
+                                    {bn ? 'বিরতির সময় ও নাম' : 'Set Break Time'}
+                                  </Label>
+                                  <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                    {bn ? 'বিরতি' : 'Break'}
+                                  </Badge>
+                                </div>
+                                <div>
+                                  <Label className="text-[10px] text-muted-foreground">{bn ? 'বিরতির নাম' : 'Label'}</Label>
+                                  <Input
+                                    className="h-7 text-xs"
+                                    value={breakLabel}
+                                    onChange={e => setBreakLabel(e.target.value)}
+                                    placeholder={bn ? 'যেমন: বিরতি / মধ্যাহ্ন বিরতি' : 'e.g. Break'}
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground">{bn ? 'শুরু' : 'Start'}</Label>
+                                    <TimePicker
+                                      className="h-8 text-xs"
+                                      value={breakTime.start}
+                                      onChange={val => setBreakTime(prev => ({ ...prev, start: val }))}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground">{bn ? 'শেষ' : 'End'}</Label>
+                                    <TimePicker
+                                      className="h-8 text-xs"
+                                      value={breakTime.end}
+                                      onChange={val => setBreakTime(prev => ({ ...prev, end: val }))}
+                                    />
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  className="w-full h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1 mt-1 font-medium"
+                                  onClick={() => handleSaveBreakTime(breakLabel, breakTime.start, breakTime.end)}
+                                >
+                                  <Save className="h-3 w-3" />
+                                  <span>{bn ? 'বিরতির সময় সেভ করুন' : 'Save Break Time'}</span>
+                                </Button>
+                              </PopoverContent>
+                            </Popover>
                           </th>
                         );
                       }
