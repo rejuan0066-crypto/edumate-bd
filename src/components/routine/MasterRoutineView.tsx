@@ -1288,166 +1288,215 @@ const MasterRoutineView = () => {
     toast.success(bn ? 'স্বাক্ষরকারী তথ্য সংরক্ষিত হয়েছে' : 'Signatories saved');
   };
 
-  // High Fidelity Print Handler
+  // High Fidelity Print Handler (Single Page Landscape Fit)
   const handlePrint = () => {
     const el = document.getElementById('daily-routine-print');
     if (!el) return;
     const w = window.open('', '_blank');
     if (!w) return;
 
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-    <title>${bn ? 'দৈনিক ক্লাস রুটিন' : 'Daily Class Routine'} - ${instName}</title>
-    <style>
-      @font-face {
-        font-family: "Kalpurush";
-        src: url("https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf") format("truetype");
-        font-display: block;
-      }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body {
-        font-family: 'Kalpurush', 'Noto Sans Bengali', sans-serif;
-        padding: 12px;
-        background: #fff;
-        color: #111;
-      }
-      @page {
-        size: A4 landscape;
-        margin: 6mm;
-      }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-        margin-top: 8px;
-        font-size: 11px;
-      }
-      th, td {
-        border: 1.5px solid #222 !important;
-        text-align: center;
-        vertical-align: middle;
-      }
-      th {
-        background-color: #e8f5e9 !important;
-        color: #052e16 !important;
-        font-weight: 700;
-        padding: 5px 2px;
-      }
-      .break-col {
-        background-color: #c8e6c9 !important;
-        writing-mode: vertical-rl;
-        text-orientation: mixed;
-        font-weight: 700;
-        font-size: 10px;
-        min-width: 28px;
-        max-width: 32px;
-      }
-      .custom-cell {
-        background-color: #fef3c7 !important;
-        color: #78350f !important;
-        font-weight: 700;
-        padding: 4px;
-      }
-      .cell-subj {
-        font-weight: 700;
-        font-size: 10px;
-        padding: 3px 2px;
-        border-bottom: 1px solid #777;
-        min-height: 18px;
-        line-height: 1.2;
-      }
-      .cell-teacher {
-        font-size: 9px;
-        color: #333;
-        padding: 2px;
-        min-height: 16px;
-        line-height: 1.2;
-        background-color: #fcfcfc;
-      }
-      .header-wrap {
-        text-align: center;
-        margin-bottom: 6px;
-      }
-      .header-wrap h1 {
-        font-size: 20px;
-        font-weight: 800;
-        color: #064e3b;
-        margin-bottom: 2px;
-      }
-      .header-wrap .address {
-        font-size: 11px;
-        color: #444;
-      }
-      .header-wrap .contact {
-        font-size: 10px;
-        color: #555;
-        margin-top: 2px;
-      }
-      .header-wrap .badge-title {
-        display: inline-block;
-        margin-top: 5px;
-        padding: 3px 12px;
-        background: #e8f5e9;
-        border: 1px solid #1b5e20;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 700;
-        color: #1b5e20;
-      }
-      .print-hidden, .no-print, button, input {
-        display: none !important;
-      }
-      .footnote {
-        margin-top: 8px;
-        font-size: 10px;
-        color: #444;
-        border-top: 1px solid #999;
-        padding-top: 4px;
-        font-weight: 500;
-      }
-      .signatures {
-        margin-top: 45px;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        text-align: center;
-      }
-      .sig-block {
-        width: 220px;
-      }
-      .sig-line {
-        border-top: 1.5px solid #222;
-        margin-bottom: 4px;
-      }
-      .sig-title {
-        font-size: 11px;
-        font-weight: 700;
-      }
-      .sig-name {
-        font-size: 10.5px;
-        color: #222;
-      }
-      .sig-sub {
-        font-size: 9px;
-        color: #666;
-      }
-      @media print {
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .print-hidden { display: none !important; }
-      }
-    </style></head><body>`);
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${bn ? 'দৈনিক ক্লাস রুটিন' : 'Daily Class Routine'} - ${instName}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    @page {
+      size: A4 landscape;
+      margin: 4mm 6mm;
+    }
+    html, body {
+      font-family: 'Noto Sans Bengali', 'Kalpurush', system-ui, sans-serif;
+      background: #fff !important;
+      color: #000 !important;
+      width: 100%;
+      height: auto;
+    }
+    .print-hidden, .no-print, input, textarea, select {
+      display: none !important;
+    }
+    img {
+      max-width: 44px !important;
+      max-height: 44px !important;
+      width: 44px !important;
+      height: 44px !important;
+      object-fit: contain !important;
+      display: block !important;
+      margin: 0 auto 3px auto !important;
+    }
+    .header-wrap {
+      text-align: center;
+      margin-bottom: 4px;
+      padding: 2px 0;
+      background: transparent !important;
+    }
+    .header-wrap h1 {
+      font-size: 16px !important;
+      font-weight: 800 !important;
+      color: #064e3b !important;
+      line-height: 1.2 !important;
+      margin-bottom: 1px !important;
+    }
+    .header-wrap .address {
+      font-size: 9.5px !important;
+      color: #333 !important;
+      margin-top: 1px !important;
+    }
+    .header-wrap .contact {
+      font-size: 9px !important;
+      color: #444 !important;
+      margin-top: 1px !important;
+    }
+    .header-wrap .badge-title {
+      display: inline-block;
+      margin-top: 2px;
+      padding: 1.5px 10px;
+      background: #e8f5e9 !important;
+      border: 1px solid #1b5e20 !important;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #1b5e20 !important;
+    }
+    div {
+      overflow: visible !important;
+    }
+    table {
+      border-collapse: collapse !important;
+      width: 100% !important;
+      min-width: 100% !important;
+      max-width: 100% !important;
+      table-layout: fixed !important;
+      margin-top: 4px !important;
+      font-size: 9px !important;
+    }
+    th, td {
+      border: 1px solid #222 !important;
+      text-align: center !important;
+      vertical-align: middle !important;
+      padding: 2px 1px !important;
+      word-wrap: break-word !important;
+      overflow: hidden !important;
+    }
+    th {
+      background-color: #e8f5e9 !important;
+      color: #052e16 !important;
+      font-weight: 700 !important;
+      padding: 3px 1px !important;
+    }
+    .break-col {
+      background-color: #c8e6c9 !important;
+      font-weight: 700 !important;
+      font-size: 9px !important;
+      width: 48px !important;
+      min-width: 42px !important;
+      max-width: 52px !important;
+    }
+    .custom-cell {
+      background-color: #fef3c7 !important;
+      color: #78350f !important;
+      font-weight: 700 !important;
+    }
+    button {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100% !important;
+      display: block !important;
+      text-align: center !important;
+      color: inherit !important;
+      cursor: default !important;
+      font: inherit !important;
+    }
+    .cell-subj {
+      font-weight: 700 !important;
+      font-size: 9.5px !important;
+      padding: 2px 1px !important;
+      border-bottom: 0.5px solid #888 !important;
+      min-height: 14px !important;
+      line-height: 1.15 !important;
+      color: #000 !important;
+    }
+    .cell-teacher {
+      font-size: 8.5px !important;
+      color: #333 !important;
+      padding: 1px !important;
+      min-height: 12px !important;
+      line-height: 1.1 !important;
+      background-color: #fcfcfc !important;
+    }
+    .footnote {
+      margin-top: 5px;
+      font-size: 8.5px;
+      color: #444;
+      border-top: 1px solid #888;
+      padding-top: 2px;
+      font-weight: 500;
+    }
+    .signatures {
+      margin-top: 28px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      text-align: center;
+    }
+    .sig-block {
+      width: 170px;
+    }
+    .sig-line {
+      border-top: 1.5px solid #222;
+      margin-bottom: 3px;
+    }
+    .sig-title {
+      font-size: 9.5px;
+      font-weight: 700;
+    }
+    .sig-name {
+      font-size: 9px;
+      color: #222;
+    }
+    .sig-sub {
+      font-size: 8px;
+      color: #666;
+    }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .print-hidden { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  ${el.innerHTML}
+</body>
+</html>`;
 
-    w.document.write(el.innerHTML);
-    w.document.write('</body></html>');
+    w.document.open();
+    w.document.write(html);
     w.document.close();
 
-    const check = setInterval(() => {
-      if (w.document.readyState === 'complete') {
-        clearInterval(check);
-        setTimeout(() => { w.print(); w.close(); }, 350);
-      }
-    }, 100);
+    const triggerPrint = () => {
+      setTimeout(() => {
+        w.focus();
+        w.print();
+        w.close();
+      }, 400);
+    };
+
+    if (w.document.readyState === 'complete') {
+      triggerPrint();
+    } else {
+      w.onload = triggerPrint;
+    }
   };
 
   const thStyle = "border border-border bg-emerald-100/90 dark:bg-emerald-900/40 px-1 py-1.5 text-center font-bold text-[11px] text-emerald-950 dark:text-emerald-100";
@@ -1941,7 +1990,12 @@ const MasterRoutineView = () => {
             {/* Header with All Madrasa Information */}
             <div className="header-wrap text-center py-4 px-4 border-b-2 border-border relative bg-muted/20">
               {instLogo && (
-                <img src={instLogo} alt="" className="w-14 h-14 object-contain mx-auto mb-1.5" />
+                <img
+                  src={instLogo}
+                  alt=""
+                  className="w-11 h-11 object-contain mx-auto mb-1"
+                  style={{ width: 44, height: 44, objectFit: 'contain', margin: '0 auto 4px auto' }}
+                />
               )}
               <h1 className="text-xl font-extrabold text-foreground leading-tight tracking-wide">
                 {instName}
@@ -2409,7 +2463,12 @@ const MasterRoutineView = () => {
                 {bn ? 'তারিখ:' : 'Date:'} {new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB')}
               </div>
               {instLogo && (
-                <img src={instLogo} alt="" className="w-14 h-14 object-contain mx-auto mb-1.5" />
+                <img
+                  src={instLogo}
+                  alt=""
+                  className="w-11 h-11 object-contain mx-auto mb-1"
+                  style={{ width: 44, height: 44, objectFit: 'contain', margin: '0 auto 4px auto' }}
+                />
               )}
               <h1 className="text-xl font-extrabold text-foreground leading-tight tracking-wide">
                 {instName}
