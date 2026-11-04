@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import PublicLayout from '@/components/PublicLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -95,7 +95,67 @@ const FeePaymentPage = () => {
   const [manualMethod, setManualMethod] = useState('bkash');
   const [manualTrxId, setManualTrxId] = useState('');
   const [senderPhone, setSenderPhone] = useState('');
+  const [searchParams] = useSearchParams();
   const [paymentSuccess, setPaymentSuccess] = useState<any | null>(null);
+
+  // Auto-detect online payment callback (?status=success&...) and show receipt
+  useEffect(() => {
+    const status = searchParams.get('status')?.toLowerCase();
+    const txnId = searchParams.get('txn') || searchParams.get('transaction_id') || searchParams.get('tran_id');
+
+    if (status === 'success' || status === 'valid' || status === 'completed') {
+      const handleOnlineSuccess = async () => {
+        try {
+          let paymentData: any = null;
+          let stuData: any = null;
+
+          if (txnId) {
+            // Find in payments table
+            const { data: p } = await supabase
+              .from('payments')
+              .select('*, fee_payments(*), students(*)')
+              .eq('transaction_id', txnId)
+              .maybeSingle();
+
+            if (p) {
+              paymentData = p;
+              stuData = p.students;
+            }
+          }
+
+          if (paymentData) {
+            if (stuData) setFoundStudent(stuData);
+            setPaymentSuccess({
+              isCash: false,
+              isOnline: true,
+              serialNumber: paymentData.receipt_number || paymentData.transaction_id || txnId,
+              feeTypeName: paymentData.fee_type || (bn ? 'শিক্ষার্থীর ফি' : 'Student Fee'),
+              amount: paymentData.amount,
+              feePayment: paymentData.fee_payments?.[0] || paymentData,
+              txnId: paymentData.transaction_id || txnId,
+            });
+            toast.success(bn ? '🎉 অনলাইন পেমেন্ট সফল হয়েছে! নিচে রসিদ ডাউনলোড ও প্রিন্ট করুন।' : 'Online payment successful! Print or download your receipt.');
+          } else if (txnId) {
+            setPaymentSuccess({
+              isCash: false,
+              isOnline: true,
+              serialNumber: txnId,
+              feeTypeName: bn ? 'অনলাইন ফি পেমেন্ট' : 'Online Fee Payment',
+              amount: 0,
+              feePayment: null,
+              txnId: txnId,
+            });
+            toast.success(bn ? '🎉 পেমেন্ট সম্পন্ন হয়েছে! রসিদ দেখুন।' : 'Payment completed!');
+          }
+        } catch (e) {
+          console.error('Error loading online payment callback:', e);
+        }
+      };
+      handleOnlineSuccess();
+    } else if (status === 'failed' || status === 'fail' || status === 'cancel' || status === 'cancelled') {
+      toast.error(bn ? '❌ অনলাইন পেমেন্ট সম্পন্ন হয়নি বা বাতিল হয়েছে।' : 'Payment failed or was cancelled.');
+    }
+  }, [searchParams, bn]);
 
   // Active Payment Gateways
   const { data: gateways = [] } = useQuery({
@@ -390,6 +450,7 @@ const FeePaymentPage = () => {
         }
         const { data: gwData, error: gwErr } = await supabase.functions.invoke('process-payment', {
           body: {
+            action: 'initiate',
             amount: amtNum,
             fee_type: feeTypeName,
             payer_name: foundStudent.name_bn || foundStudent.name_en,
@@ -399,12 +460,13 @@ const FeePaymentPage = () => {
             month: selectedMonth,
             year: parseInt(selectedYear),
             transaction_id: txnId,
-            callback_url: window.location.origin + '/fees?status=success',
+            callback_url: window.location.origin + `/fees?status=success&txn=${encodeURIComponent(txnId)}`,
           },
         });
         if (gwErr) throw new Error(gwErr.message || (bn ? 'গেটওয়েতে সংযোগ করা যায়নি' : 'Gateway connection error'));
-        if (gwData?.redirect_url) {
-          window.location.href = gwData.redirect_url;
+        const redirectUrl = gwData?.payment_url || gwData?.redirect_url || gwData?.url || gwData?.bkashURL;
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
           return { isOnlineRedirect: true };
         }
         throw new Error(bn ? 'গেটওয়ে থেকে কোনো সাড়া পাওয়া যায়নি' : 'No gateway response');
@@ -1334,12 +1396,16 @@ const FeePaymentPage = () => {
                       </div>
                       <div className="space-y-1">
                         <h3 className="text-2xl font-bold text-foreground">
-                          {paymentSuccess.isCash
+                          {paymentSuccess.isOnline
+                            ? (bn ? '🎉 অনলাইন পেমেন্ট সফল হয়েছে!' : 'Online Payment Successful!')
+                            : paymentSuccess.isCash
                             ? (bn ? 'ফি আদায় সম্পন্ন হয়েছে!' : 'Payment Completed!')
                             : (bn ? 'পেমেন্ট তথ্য সংরক্ষিত হয়েছে!' : 'Payment Submitted!')}
                         </h3>
                         <p className="text-xs text-muted-foreground">
-                          {paymentSuccess.isCash
+                          {paymentSuccess.isOnline
+                            ? (bn ? 'আপনার পেমেন্ট সফলভাবে মাদ্রাসার ফান্ডে জমা হয়েছে। নিচে রসিদ ডাউনলোড ও প্রিন্ট করুন।' : 'Payment received. Download and print your receipt below.')
+                            : paymentSuccess.isCash
                             ? (bn ? 'রসিদ প্রিন্ট করুন এবং শিক্ষার্থীকে প্রদান করুন।' : 'Print receipt for the student.')
                             : (bn ? 'অফিস যাচাই শেষে পেমেন্ট চূড়ান্তভাবে অনুমোদন করা হবে।' : 'Office will verify and approve the payment.')}
                         </p>
@@ -1356,25 +1422,25 @@ const FeePaymentPage = () => {
                             const recData: ReceiptData = {
                               id: paymentSuccess.feePayment?.id || paymentSuccess.txnId,
                               receipt_number: paymentSuccess.serialNumber,
-                              student_name: foundStudent.name_bn || foundStudent.name_en || '',
-                              father_name: foundStudent.father_name || foundStudent.father_name_en || '',
-                              student_id: foundStudent.student_id || foundStudent.registration_no || '',
-                              class_name: foundStudent.divisions?.name_bn || foundStudent.classes?.name_bn || '',
-                              roll: foundStudent.roll_number || '',
+                              student_name: foundStudent?.name_bn || foundStudent?.name_en || (bn ? 'শিক্ষার্থী' : 'Student'),
+                              father_name: foundStudent?.father_name || foundStudent?.father_name_en || '',
+                              student_id: foundStudent?.student_id || foundStudent?.registration_no || '',
+                              class_name: foundStudent?.divisions?.name_bn || foundStudent?.classes?.name_bn || '',
+                              roll: foundStudent?.roll_number || '',
                               fee_type: paymentSuccess.feeTypeName,
                               amount: paymentSuccess.amount,
                               paid_amount: paymentSuccess.amount,
-                              status: paymentSuccess.isCash ? 'paid' : 'pending',
+                              status: paymentSuccess.isOnline || paymentSuccess.isCash ? 'paid' : 'pending',
                               paid_at: new Date().toISOString(),
                               month: selectedMonth,
                               year: parseInt(selectedYear),
                             };
                             handlePrint(recData);
                           }}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-1.5"
                         >
-                          <Printer className="w-4 h-4 mr-2" />
-                          {bn ? 'রসিদ প্রিন্ট করুন' : 'Print Receipt'}
+                          <Download className="w-4 h-4" />
+                          <span>{bn ? 'রসিদ ডাউনলোড / প্রিন্ট করুন' : 'Download / Print Receipt'}</span>
                         </Button>
                         <Button
                           variant="outline"
