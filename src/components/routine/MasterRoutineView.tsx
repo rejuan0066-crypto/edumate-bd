@@ -143,11 +143,17 @@ interface CellEditorProps {
     subjectId: string,
     teacherName: string,
     teacherNameBn: string,
-    classId?: string,
+    classIds?: string[] | string,
     customMeta?: CustomEventMeta | null
   ) => void;
   children: React.ReactNode;
   showClassSelect?: boolean;
+}
+
+interface SelectedTeacher {
+  id?: string;
+  name_bn: string;
+  name_en: string;
 }
 
 const CellEditor = ({
@@ -173,7 +179,8 @@ const CellEditor = ({
   const [localSubjectId, setLocalSubjectId] = useState(subjectId);
   const [localTeacher, setLocalTeacher] = useState(teacherName);
   const [localTeacherBn, setLocalTeacherBn] = useState(teacherNameBn);
-  const [localClassId, setLocalClassId] = useState(classId || '');
+  const [localClassIds, setLocalClassIds] = useState<string[]>(classId ? [classId] : []);
+  const [selectedStaffList, setSelectedStaffList] = useState<SelectedTeacher[]>([]);
 
   // Custom Event / Merge state
   const [customTitle, setCustomTitle] = useState('');
@@ -182,6 +189,31 @@ const CellEditor = ({
 
   const handleOpen = (isOpen: boolean) => {
     if (isOpen) {
+      setLocalClassIds(classId ? [classId] : []);
+
+      // Parse existing teachers from teacherNameBn or custom note
+      const initialTeacherSource = initialCustomMeta?.is_custom
+        ? (initialCustomMeta.note || '')
+        : (teacherNameBn || teacherName || '');
+      
+      const parsedTeachers: SelectedTeacher[] = [];
+      if (initialTeacherSource) {
+        const parts = initialTeacherSource.split(/[,،]+/).map(s => s.trim()).filter(Boolean);
+        parts.forEach(p => {
+          const matched = staff.find(st => st.name_bn === p || st.name_en === p);
+          if (matched) {
+            parsedTeachers.push({
+              id: matched.id,
+              name_bn: matched.name_bn || matched.name_en,
+              name_en: matched.name_en || matched.name_bn,
+            });
+          } else {
+            parsedTeachers.push({ name_bn: p, name_en: p });
+          }
+        });
+      }
+      setSelectedStaffList(parsedTeachers);
+
       if (initialCustomMeta?.is_custom) {
         setEditorMode('custom');
         setCustomTitle(initialCustomMeta.title || '');
@@ -199,12 +231,70 @@ const CellEditor = ({
         setCustomSpan(1);
         setCustomNote('');
       }
-      setLocalClassId(classId || '');
     }
     setOpen(isOpen);
   };
 
+  const handleAddStaff = (staffId: string) => {
+    if (!staffId) return;
+    const s = staff.find(st => st.id === staffId);
+    if (!s) return;
+    const already = selectedStaffList.some(item => (item.id && item.id === s.id) || item.name_bn === (s.name_bn || s.name_en));
+    const nextList = already
+      ? selectedStaffList
+      : [
+          ...selectedStaffList,
+          {
+            id: s.id,
+            name_bn: s.name_bn || s.name_en || '',
+            name_en: s.name_en || s.name_bn || '',
+          },
+        ];
+    setSelectedStaffList(nextList);
+
+    const joinedBn = nextList.map(t => t.name_bn).join(', ');
+    const joinedEn = nextList.map(t => t.name_en || t.name_bn).join(', ');
+    setLocalTeacherBn(joinedBn);
+    setLocalTeacher(joinedEn);
+    if (editorMode === 'custom') {
+      setCustomNote(joinedBn);
+    }
+  };
+
+  const handleRemoveStaff = (index: number) => {
+    const nextList = selectedStaffList.filter((_, i) => i !== index);
+    setSelectedStaffList(nextList);
+    const joinedBn = nextList.map(t => t.name_bn).join(', ');
+    const joinedEn = nextList.map(t => t.name_en || t.name_bn).join(', ');
+    setLocalTeacherBn(joinedBn);
+    setLocalTeacher(joinedEn);
+    if (editorMode === 'custom') {
+      setCustomNote(joinedBn);
+    }
+  };
+
+  const handleAddClass = (cId: string) => {
+    if (!cId) return;
+    if (!localClassIds.includes(cId)) {
+      setLocalClassIds([...localClassIds, cId]);
+    }
+  };
+
+  const handleRemoveClass = (cId: string) => {
+    if (localClassIds.length <= 1) return;
+    setLocalClassIds(localClassIds.filter(id => id !== cId));
+  };
+
+  const handleSelectAllClasses = () => {
+    setLocalClassIds(classes.map(c => c.id));
+  };
+
+  const handleResetClasses = () => {
+    setLocalClassIds(classId ? [classId] : (classes.length > 0 ? [classes[0].id] : []));
+  };
+
   const handleSave = () => {
+    const targetClasses = localClassIds.length > 0 ? localClassIds : (classId ? [classId] : []);
     if (editorMode === 'custom') {
       if (!customTitle.trim()) {
         toast.error(bn ? 'ইভেন্ট বা বিষয়ের নাম লিখুন (যেমন: সেমিনার)' : 'Event title required');
@@ -214,36 +304,26 @@ const CellEditor = ({
         is_custom: true,
         title: customTitle.trim(),
         span: Math.max(1, Math.min(maxSpan, customSpan)),
-        note: customNote.trim(),
+        note: customNote.trim() || localTeacherBn.trim(),
       };
-      onSave('none', '', '', localClassId || undefined, meta);
+      onSave('none', '', '', targetClasses, meta);
     } else {
-      onSave(localSubjectId, localTeacher, localTeacherBn, localClassId || undefined, null);
+      onSave(localSubjectId, localTeacher, localTeacherBn, targetClasses, null);
     }
     setOpen(false);
   };
 
   const handleClear = () => {
-    onSave('none', '', '', localClassId || undefined, null);
+    const targetClasses = localClassIds.length > 0 ? localClassIds : (classId ? [classId] : []);
+    onSave('none', '', '', targetClasses, null);
     setOpen(false);
-  };
-
-  const handleStaffSelect = (staffId: string) => {
-    const s = staff.find(st => st.id === staffId);
-    if (s) {
-      setLocalTeacher(s.name_en || s.name_bn || '');
-      setLocalTeacherBn(s.name_bn || s.name_en || '');
-      if (editorMode === 'custom') {
-        setCustomNote(s.name_bn || s.name_en || '');
-      }
-    }
   };
 
   return (
     <Popover open={open} onOpenChange={handleOpen} modal={false}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent
-        className="w-84 p-3.5 space-y-3 z-[250] shadow-xl border bg-card"
+        className="w-96 max-w-[95vw] p-3.5 space-y-3 z-[250] shadow-2xl border bg-card"
         align="center"
         onOpenAutoFocus={e => e.preventDefault()}
         side="top"
@@ -280,24 +360,87 @@ const CellEditor = ({
           </div>
         </div>
 
+        {/* Multiple Class Selection */}
         {showClassSelect && (
-          <div>
-            <Label className="text-xs font-medium">{bn ? 'শ্রেণী' : 'Class'}</Label>
-            <select
-              className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-              value={localClassId}
-              onChange={e => setLocalClassId(e.target.value)}
-            >
-              <option value="">{bn ? 'শ্রেণী নির্বাচন' : 'Select class'}</option>
-              {classes.map(c => {
-                const divName = bn ? c.divisions?.name_bn : c.divisions?.name;
+          <div className="space-y-1.5 p-2 bg-muted/40 rounded-lg border border-border/60">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Label className="text-xs font-semibold text-foreground">
+                  {bn ? 'শ্রেণী নির্বাচন' : 'Target Classes'}
+                </Label>
+                <span className="text-[10px] px-1.5 py-0.2 bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 rounded font-bold">
+                  {toBn(localClassIds.length)} {bn ? 'টি সিলেক্টেড' : 'selected'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {localClassIds.length < classes.length ? (
+                  <button
+                    type="button"
+                    onClick={handleSelectAllClasses}
+                    className="text-[10px] text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 font-semibold hover:underline"
+                  >
+                    {bn ? 'সকল শ্রেণী' : 'All Classes'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResetClasses}
+                    className="text-[10px] text-muted-foreground hover:text-destructive font-semibold hover:underline"
+                  >
+                    {bn ? 'রিসেট' : 'Reset'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Selected class badges */}
+            <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+              {localClassIds.map(cId => {
+                const clsObj = classes.find(c => c.id === cId);
+                const divName = bn ? clsObj?.divisions?.name_bn : clsObj?.divisions?.name;
+                const label = clsObj ? (bn ? clsObj.name_bn : clsObj.name) : cId;
                 return (
-                  <option key={c.id} value={c.id}>
-                    {bn ? c.name_bn : c.name} {divName ? `(${divName})` : ''}
-                  </option>
+                  <span
+                    key={cId}
+                    className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 text-[11px] px-1.5 py-0.5 rounded font-medium shadow-xs"
+                  >
+                    <span>{label}</span>
+                    {divName && <span className="text-[9px] opacity-75">({divName})</span>}
+                    {localClassIds.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveClass(cId)}
+                        className="text-emerald-700 hover:text-destructive dark:text-emerald-400 dark:hover:text-red-400"
+                        title={bn ? 'বাদ দিন' : 'Remove'}
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+                  </span>
                 );
               })}
-            </select>
+            </div>
+
+            {/* Dropdown to add class */}
+            {classes.filter(c => !localClassIds.includes(c.id)).length > 0 && (
+              <select
+                className="flex h-7 w-full rounded-md border border-input bg-background px-2 py-0.5 text-xs ring-offset-background focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                value=""
+                onChange={e => handleAddClass(e.target.value)}
+              >
+                <option value="">{bn ? '+ আরও শ্রেণী যুক্ত করুন...' : '+ Add class...'}</option>
+                {classes
+                  .filter(c => !localClassIds.includes(c.id))
+                  .map(c => {
+                    const divName = bn ? c.divisions?.name_bn : c.divisions?.name;
+                    return (
+                      <option key={c.id} value={c.id}>
+                        {bn ? c.name_bn : c.name} {divName ? `(${divName})` : ''}
+                      </option>
+                    );
+                  })}
+              </select>
+            )}
           </div>
         )}
 
@@ -313,9 +456,9 @@ const CellEditor = ({
                 <option value="none">{bn ? '-- কোনো বিষয় নেই (খালি) --' : '-- Empty --'}</option>
                 {subjects
                   .filter(s => {
-                    const cId = showClassSelect ? localClassId : filterClassId;
-                    if (!cId) return true;
-                    return !s.class_id || s.class_id === cId;
+                    if (!localClassIds || localClassIds.length === 0) return true;
+                    if (!s.class_id) return true;
+                    return localClassIds.includes(s.class_id);
                   })
                   .map(s => (
                     <option key={s.id} value={s.id}>
@@ -327,15 +470,50 @@ const CellEditor = ({
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <Label className="text-xs font-medium">{bn ? 'শিক্ষক নির্বাচন' : 'Select Teacher'}</Label>
-                <span className="text-[10px] text-muted-foreground">{bn ? 'শিক্ষা বিভাগসহ' : 'With Dept'}</span>
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-xs font-medium">{bn ? 'শিক্ষক নির্বাচন' : 'Select Teachers'}</Label>
+                  {selectedStaffList.length > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 rounded font-bold">
+                      {toBn(selectedStaffList.length)} {bn ? 'জন' : ''}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] text-muted-foreground">{bn ? 'শিক্ষা বিভাগ' : 'Education Dept'}</span>
               </div>
+
+              {/* Selected teachers badges */}
+              {selectedStaffList.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-1.5 p-1 bg-amber-50/60 dark:bg-amber-950/40 rounded border border-amber-200/60 max-h-20 overflow-y-auto">
+                  {selectedStaffList.map((t, idx) => (
+                    <span
+                      key={t.id || idx}
+                      className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 border border-amber-300 dark:border-amber-700 text-[11px] px-1.5 py-0.5 rounded font-medium shadow-xs"
+                    >
+                      <span>{bn ? t.name_bn : t.name_en || t.name_bn}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveStaff(idx)}
+                        className="text-amber-700 hover:text-destructive dark:text-amber-300 dark:hover:text-red-400"
+                        title={bn ? 'বাদ দিন' : 'Remove'}
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Add teacher select */}
               <select
                 className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                 value=""
-                onChange={e => handleStaffSelect(e.target.value)}
+                onChange={e => handleAddStaff(e.target.value)}
               >
-                <option value="">{bn ? '-- শিক্ষক বাছুন --' : '-- Pick teacher --'}</option>
+                <option value="">
+                  {selectedStaffList.length > 0
+                    ? (bn ? '+ আরও শিক্ষক যুক্ত করুন...' : '+ Add another teacher...')
+                    : (bn ? '-- শিক্ষক বাছুন (শিক্ষা বিভাগ) --' : '-- Pick teacher --')}
+                </option>
                 {staff.map(s => {
                   const deptOrDesig = s.department || s.designation || '';
                   const label = bn
@@ -422,9 +600,13 @@ const CellEditor = ({
                 <select
                   className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
                   value=""
-                  onChange={e => handleStaffSelect(e.target.value)}
+                  onChange={e => handleAddStaff(e.target.value)}
                 >
-                  <option value="">{bn ? '-- শিক্ষক বাছুন --' : '-- Pick --'}</option>
+                  <option value="">
+                    {selectedStaffList.length > 0
+                      ? (bn ? '+ আরও শিক্ষক...' : '+ Add...')
+                      : (bn ? '-- শিক্ষক বাছুন --' : '-- Pick --')}
+                  </option>
                   {staff.map(s => (
                     <option key={s.id} value={s.id}>
                       {bn ? s.name_bn || s.name_en : s.name_en || s.name_bn}
@@ -433,6 +615,27 @@ const CellEditor = ({
                 </select>
               </div>
             </div>
+
+            {/* Selected teachers in custom mode */}
+            {selectedStaffList.length > 0 && (
+              <div className="flex flex-wrap gap-1 p-1 bg-amber-50/70 dark:bg-amber-950/40 rounded border border-amber-200/60 max-h-20 overflow-y-auto">
+                {selectedStaffList.map((t, idx) => (
+                  <span
+                    key={t.id || idx}
+                    className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 border border-amber-300 dark:border-amber-700 text-[11px] px-1.5 py-0.5 rounded font-medium shadow-xs"
+                  >
+                    <span>{bn ? t.name_bn : t.name_en || t.name_bn}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveStaff(idx)}
+                      className="text-amber-700 hover:text-destructive dark:text-amber-300 dark:hover:text-red-400"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
 
             <div>
               <Label className="text-[11px] text-muted-foreground">{bn ? 'বিবরণ বা তত্ত্বাবধায়ক নোট' : 'Note / Remarks'}</Label>
@@ -848,7 +1051,7 @@ const MasterRoutineView = () => {
 
   // Save or delete a single period slot in Master Grid (All/Multi Classes mode)
   const handleSaveMasterCell = async (
-    targetClassId: string,
+    targetClassIds: string[] | string,
     periodNum: number,
     subjectId: string,
     teacherName: string,
@@ -856,75 +1059,96 @@ const MasterRoutineView = () => {
     customMeta?: CustomEventMeta | null
   ) => {
     try {
-      let routineId = allRoutines?.find(r => r.class_id === targetClassId)?.id;
-
-      // Auto-create class_routine if not exists
-      if (!routineId) {
-        const cls = allClasses?.find(c => c.id === targetClassId);
-        const { data: newR, error } = await supabase
-          .from('class_routines')
-          .insert({
-            class_id: targetClassId,
-            academic_session_id: selectedSessionId,
-            name: cls?.name || 'Routine',
-            name_bn: cls?.name_bn || 'রুটিন',
-            is_active: true,
-          })
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        routineId = newR.id;
-      }
-
-      const { data: existing } = await supabase
-        .from('routine_periods')
-        .select('id')
-        .eq('routine_id', routineId)
-        .eq('day_of_week', selectedDay)
-        .eq('period_number', periodNum)
-        .maybeSingle();
-
-      // Clear cell action
-      if (!customMeta?.is_custom && (subjectId === 'none' || (!subjectId && !teacherName && !teacherNameBn))) {
-        if (existing) {
-          const { error: delErr } = await supabase.from('routine_periods').delete().eq('id', existing.id);
-          if (delErr) throw delErr;
-        }
-        queryClient.invalidateQueries({ queryKey: ['all-classes-periods'] });
-        queryClient.invalidateQueries({ queryKey: ['all-class-routines'] });
-        toast.success(bn ? 'পিরিয়ড খালি করা হয়েছে' : 'Period cleared');
-        return;
-      }
+      const classList = (Array.isArray(targetClassIds) ? targetClassIds : [targetClassIds]).filter(Boolean);
+      if (classList.length === 0) return;
 
       const time = getPeriodTime(periodNum);
       const isCustom = !!customMeta?.is_custom;
+      const isClear = !isCustom && (subjectId === 'none' || (!subjectId && !teacherName && !teacherNameBn));
 
-      const periodData = {
-        routine_id: routineId,
-        day_of_week: selectedDay,
-        period_number: periodNum,
-        subject_id: isCustom ? null : (subjectId && subjectId !== 'none' ? subjectId : null),
-        teacher_name: isCustom ? (customMeta.note || null) : (teacherName || null),
-        teacher_name_bn: isCustom ? (customMeta.note || null) : (teacherNameBn || null),
-        is_break: false,
-        break_label_bn: isCustom ? customMeta.title : null,
-        room: isCustom ? JSON.stringify(customMeta) : null,
-        start_time: time.start || '08:00',
-        end_time: time.end || '08:45',
-      };
+      for (const targetClassId of classList) {
+        let routineId = allRoutines?.find(r => r.class_id === targetClassId)?.id;
 
-      if (existing) {
-        const { error: updErr } = await supabase.from('routine_periods').update(periodData).eq('id', existing.id);
-        if (updErr) throw updErr;
-      } else {
-        const { error: insErr } = await supabase.from('routine_periods').insert(periodData);
-        if (insErr) throw insErr;
+        // Auto-create class_routine if not exists
+        if (!routineId) {
+          const cls = allClasses?.find(c => c.id === targetClassId);
+          const { data: newR, error } = await supabase
+            .from('class_routines')
+            .insert({
+              class_id: targetClassId,
+              academic_session_id: selectedSessionId,
+              name: cls?.name || 'Routine',
+              name_bn: cls?.name_bn || 'রুটিন',
+              is_active: true,
+            })
+            .select('id')
+            .single();
+
+          if (error) throw error;
+          routineId = newR.id;
+        }
+
+        const { data: existing } = await supabase
+          .from('routine_periods')
+          .select('id')
+          .eq('routine_id', routineId)
+          .eq('day_of_week', selectedDay)
+          .eq('period_number', periodNum)
+          .maybeSingle();
+
+        // Clear cell action
+        if (isClear) {
+          if (existing) {
+            const { error: delErr } = await supabase.from('routine_periods').delete().eq('id', existing.id);
+            if (delErr) throw delErr;
+          }
+        } else {
+          const periodData = {
+            routine_id: routineId,
+            day_of_week: selectedDay,
+            period_number: periodNum,
+            subject_id: isCustom ? null : (subjectId && subjectId !== 'none' ? subjectId : null),
+            teacher_name: isCustom ? (customMeta.note || null) : (teacherName || null),
+            teacher_name_bn: isCustom ? (customMeta.note || null) : (teacherNameBn || null),
+            is_break: false,
+            break_label_bn: isCustom ? customMeta.title : null,
+            room: isCustom ? JSON.stringify(customMeta) : null,
+            start_time: time.start || '08:00',
+            end_time: time.end || '08:45',
+          };
+
+          if (existing) {
+            const { error: updErr } = await supabase.from('routine_periods').update(periodData).eq('id', existing.id);
+            if (updErr) throw updErr;
+          } else {
+            const { error: insErr } = await supabase.from('routine_periods').insert(periodData);
+            if (insErr) throw insErr;
+          }
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ['all-classes-periods'] });
       queryClient.invalidateQueries({ queryKey: ['all-class-routines'] });
-      toast.success(isCustom ? (bn ? 'কাস্টম ইভেন্ট / মার্জ সংরক্ষিত' : 'Event saved') : (bn ? 'সেভ হয়েছে' : 'Saved'));
+
+      if (isClear) {
+        toast.success(
+          classList.length > 1
+            ? (bn ? `${toBn(classList.length)}টি ক্লাসের পিরিয়ড খালি করা হয়েছে` : `${classList.length} classes period cleared`)
+            : (bn ? 'পিরিয়ড খালি করা হয়েছে' : 'Period cleared')
+        );
+      } else if (isCustom) {
+        toast.success(
+          classList.length > 1
+            ? (bn ? `${toBn(classList.length)}টি ক্লাসে কাস্টম ইভেন্ট সংরক্ষিত` : `${classList.length} classes event saved`)
+            : (bn ? 'কাস্টম ইভেন্ট / মার্জ সংরক্ষিত' : 'Event saved')
+        );
+      } else {
+        toast.success(
+          classList.length > 1
+            ? (bn ? `${toBn(classList.length)}টি ক্লাসের পিরিয়ড সংরক্ষিত` : `${classList.length} classes saved`)
+            : (bn ? 'সেভ হয়েছে' : 'Saved')
+        );
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || (bn ? 'সেভ ব্যর্থ হয়েছে' : 'Save failed'));
@@ -2000,16 +2224,16 @@ const MasterRoutineView = () => {
                                   teacherNameBn={customMeta.note || ''}
                                   subjects={subjects || []}
                                   filterClassId={cls.id}
-                                  classes={filteredClasses || []}
+                                  classes={allClasses && allClasses.length > 0 ? sortClasses(allClasses) : (filteredClasses || [])}
                                   staff={staff || []}
                                   bn={bn}
                                   showClassSelect
                                   classId={cls.id}
                                   initialCustomMeta={customMeta}
                                   maxSpan={consecutivePeriods}
-                                  onSave={(sId, tn, tnBn, cId, cMeta) => {
-                                    const targetClassId = cId || cls.id;
-                                    handleSaveMasterCell(targetClassId, col.num, sId, tn, tnBn, cMeta);
+                                  onSave={(sId, tn, tnBn, cIds, cMeta) => {
+                                    const targetClassIds = cIds || cls.id;
+                                    handleSaveMasterCell(targetClassIds, col.num, sId, tn, tnBn, cMeta);
                                   }}
                                 >
                                   <button className="w-full h-full min-h-[44px] cursor-pointer hover:bg-amber-100/70 dark:hover:bg-amber-900/40 p-1 flex flex-col items-center justify-center text-center transition-colors">
@@ -2047,16 +2271,16 @@ const MasterRoutineView = () => {
                                 teacherNameBn={period?.teacher_name_bn || ''}
                                 subjects={subjects || []}
                                 filterClassId={cls.id}
-                                classes={filteredClasses || []}
+                                classes={allClasses && allClasses.length > 0 ? sortClasses(allClasses) : (filteredClasses || [])}
                                 staff={staff || []}
                                 bn={bn}
                                 showClassSelect
                                 classId={cls.id}
                                 initialCustomMeta={null}
                                 maxSpan={consecutivePeriods}
-                                onSave={(sId, tn, tnBn, cId, cMeta) => {
-                                  const targetClassId = cId || cls.id;
-                                  handleSaveMasterCell(targetClassId, col.num, sId, tn, tnBn, cMeta);
+                                onSave={(sId, tn, tnBn, cIds, cMeta) => {
+                                  const targetClassIds = cIds || cls.id;
+                                  handleSaveMasterCell(targetClassIds, col.num, sId, tn, tnBn, cMeta);
                                 }}
                               >
                                 <button className="w-full cursor-pointer hover:bg-accent/15 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/40 rounded-none text-left">
