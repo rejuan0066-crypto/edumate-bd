@@ -17,6 +17,7 @@ import {
 import { toast } from 'sonner';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { to12HourFormat } from '@/hooks/useTimeFormat';
+import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
 
 const DAYS = [
   { value: 0, label_bn: 'শনিবার', label_en: 'Saturday', short_bn: 'শনি', short_en: 'Sat' },
@@ -51,6 +52,18 @@ const COMMON_EVENT_CHIPS = [
   'মুক্ত পাঠ',
   'ছুটি',
 ];
+
+export const formatDepartmentOrDesignation = (dept?: string, desig?: string, bn = true) => {
+  if (desig && desig !== dept) {
+    return desig;
+  }
+  if (!dept) return '';
+  const d = dept.toLowerCase();
+  if (d.includes('nurani') || d.includes('kitab')) return bn ? 'নূরানি ও কিতাব' : 'Nurani & Kitab';
+  if (d.includes('hifz')) return bn ? 'হিফজ বিভাগ' : 'Hifz Dept';
+  if (d === 'teacher' || d === 'teaching') return bn ? 'শিক্ষা বিভাগ' : 'Education Dept';
+  return dept;
+};
 
 /**
  * Filter to strictly include ONLY education / teaching department staff in routine
@@ -514,11 +527,13 @@ const CellEditor = ({
                     ? (bn ? '+ আরও শিক্ষক যুক্ত করুন...' : '+ Add another teacher...')
                     : (bn ? '-- শিক্ষক বাছুন (শিক্ষা বিভাগ) --' : '-- Pick teacher --')}
                 </option>
-                {staff.map(s => {
-                  const deptOrDesig = s.department || s.designation || '';
-                  const label = bn
-                    ? `${s.name_bn || s.name_en}${deptOrDesig ? ` (${deptOrDesig})` : ''}`
-                    : `${s.name_en || s.name_bn}${deptOrDesig ? ` (${deptOrDesig})` : ''}`;
+                {staff.map((s, idx) => {
+                  const serialNum = (typeof s.salary_order === 'number' && s.salary_order > 0)
+                    ? s.salary_order
+                    : (idx + 1);
+                  const prefix = bn ? `${toBn(serialNum)}. ` : `${serialNum}. `;
+                  const deptOrDesig = formatDepartmentOrDesignation(s.department, s.designation, bn);
+                  const label = `${prefix}${bn ? s.name_bn || s.name_en : s.name_en || s.name_bn}${deptOrDesig ? ` (${deptOrDesig})` : ''}`;
                   return (
                     <option key={s.id} value={s.id}>
                       {label}
@@ -607,11 +622,19 @@ const CellEditor = ({
                       ? (bn ? '+ আরও শিক্ষক...' : '+ Add...')
                       : (bn ? '-- শিক্ষক বাছুন --' : '-- Pick --')}
                   </option>
-                  {staff.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {bn ? s.name_bn || s.name_en : s.name_en || s.name_bn}
-                    </option>
-                  ))}
+                  {staff.map((s, idx) => {
+                    const serialNum = (typeof s.salary_order === 'number' && s.salary_order > 0)
+                      ? s.salary_order
+                      : (idx + 1);
+                    const prefix = bn ? `${toBn(serialNum)}. ` : `${serialNum}. `;
+                    const deptOrDesig = formatDepartmentOrDesignation(s.department, s.designation, bn);
+                    const label = `${prefix}${bn ? s.name_bn || s.name_en : s.name_en || s.name_bn}${deptOrDesig ? ` (${deptOrDesig})` : ''}`;
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {label}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
@@ -784,17 +807,17 @@ const MasterRoutineView = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('staff')
-        .select('id, name_bn, name_en, department, designation, staff_category')
-        .eq('status', 'active')
-        .order('name_bn');
+        .select('id, staff_id, name_bn, name_en, department, designation, staff_category, salary_order')
+        .eq('status', 'active');
       return data || [];
     },
   });
 
-  // Filter ONLY education / teaching department staff for routine assignment
+  // Filter ONLY education / teaching department staff for routine assignment AND sort strictly by institutional serial
   const staff = useMemo(() => {
     if (!rawStaff) return [];
-    return rawStaff.filter(isEducationStaff);
+    const eduOnly = rawStaff.filter(isEducationStaff);
+    return sortStaffByDepartment(eduOnly);
   }, [rawStaff]);
 
   // Auto-populate default principal from website settings or staff if empty
