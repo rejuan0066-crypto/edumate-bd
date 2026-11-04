@@ -706,13 +706,37 @@ const MasterRoutineView = () => {
   const bn = language === 'bn';
   const queryClient = useQueryClient();
 
-  const [selectedSessionId, setSelectedSessionId] = useState<string>('');
-  const [selectedDivisionId, setSelectedDivisionId] = useState<string>('all');
-  const [selectedClassId, setSelectedClassId] = useState<string>('all');
-  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
-  const [periodCount, setPeriodCount] = useState(8);
-  const [breakAfter, setBreakAfter] = useState(4);
-  const [periodTimes, setPeriodTimes] = useState<Record<number, { start: string; end: string }>>({});
+  const [selectedSessionId, setSelectedSessionId] = useState<string>(() => {
+    return localStorage.getItem('routine_selected_session_id') || '';
+  });
+  const [selectedDivisionId, setSelectedDivisionId] = useState<string>(() => {
+    return localStorage.getItem('routine_selected_division_id') || 'all';
+  });
+  const [selectedClassId, setSelectedClassId] = useState<string>(() => {
+    return localStorage.getItem('routine_selected_class_id') || 'all';
+  });
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('routine_selected_class_ids');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+  const [periodCount, setPeriodCount] = useState<number>(() => {
+    const saved = localStorage.getItem('routine_period_count');
+    return saved ? parseInt(saved, 10) || 8 : 8;
+  });
+  const [breakAfter, setBreakAfter] = useState<number>(() => {
+    const saved = localStorage.getItem('routine_break_after');
+    return saved ? parseInt(saved, 10) || 4 : 4;
+  });
+  const [periodTimes, setPeriodTimes] = useState<Record<number, { start: string; end: string }>>(() => {
+    try {
+      const saved = localStorage.getItem('routine_period_times');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
   const [selectedDay, setSelectedDay] = useState<number>(0);
   const [classSearchTerm, setClassSearchTerm] = useState('');
 
@@ -763,11 +787,16 @@ const MasterRoutineView = () => {
     },
   });
 
-  // Auto-select latest session
+  // Auto-select latest active session if none selected
   useEffect(() => {
-    if (sessions && sessions.length > 0 && !selectedSessionId) {
-      const current = sessions.find((s: any) => s.is_current) || sessions[0];
-      if (current) setSelectedSessionId(current.id);
+    if (sessions && sessions.length > 0) {
+      if (!selectedSessionId || !sessions.some(s => s.id === selectedSessionId)) {
+        const current = sessions.find((s: any) => s.is_active || s.is_current) || sessions[0];
+        if (current) {
+          setSelectedSessionId(current.id);
+          localStorage.setItem('routine_selected_session_id', current.id);
+        }
+      }
     }
   }, [sessions, selectedSessionId]);
 
@@ -976,7 +1005,13 @@ const MasterRoutineView = () => {
             changed = true;
           }
         });
-        return changed ? next : prev;
+        if (changed) {
+          try {
+            localStorage.setItem('routine_period_times', JSON.stringify(next));
+          } catch {}
+          return next;
+        }
+        return prev;
       });
     }
   }, [allClassesPeriods, allPeriods]);
@@ -1000,7 +1035,11 @@ const MasterRoutineView = () => {
       toast.error(bn ? 'শুরু এবং শেষ সময় উভয়ই নির্বাচন করুন' : 'Both start and end time required');
       return;
     }
-    setPeriodTimes(prev => ({ ...prev, [periodNum]: { start, end } }));
+    const nextTimes = { ...periodTimes, [periodNum]: { start, end } };
+    setPeriodTimes(nextTimes);
+    try {
+      localStorage.setItem('routine_period_times', JSON.stringify(nextTimes));
+    } catch {}
 
     if (!selectedSessionId) {
       toast.success(bn ? 'সময় আপডেট হয়েছে' : 'Time updated locally');
@@ -1183,6 +1222,7 @@ const MasterRoutineView = () => {
     const currentList = displayClasses.map(c => c.id);
     const nextList = currentList.filter(id => id !== classId);
     setSelectedClassIds(nextList);
+    localStorage.setItem('routine_selected_class_ids', JSON.stringify(nextList));
     toast.info(bn ? 'ক্লাসটি ভিউ থেকে সরানো হয়েছে' : 'Class removed from view');
   };
 
@@ -1533,7 +1573,13 @@ const MasterRoutineView = () => {
           {/* Academic Session */}
           <div className="min-w-[160px] flex-1 sm:flex-initial">
             <Label className="text-xs font-semibold">{bn ? 'একাডেমিক সেশন' : 'Session'}</Label>
-            <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+            <Select
+              value={selectedSessionId}
+              onValueChange={v => {
+                setSelectedSessionId(v);
+                localStorage.setItem('routine_selected_session_id', v);
+              }}
+            >
               <SelectTrigger className="h-9 text-xs">
                 <SelectValue placeholder={bn ? 'সেশন নির্বাচন' : 'Select session'} />
               </SelectTrigger>
@@ -1554,7 +1600,9 @@ const MasterRoutineView = () => {
               value={selectedDivisionId}
               onValueChange={v => {
                 setSelectedDivisionId(v);
+                localStorage.setItem('routine_selected_division_id', v);
                 setSelectedClassIds([]);
+                localStorage.removeItem('routine_selected_class_ids');
               }}
             >
               <SelectTrigger className="h-9 text-xs">
@@ -1580,7 +1628,11 @@ const MasterRoutineView = () => {
               value={selectedClassId}
               onValueChange={v => {
                 setSelectedClassId(v);
-                if (v !== 'all') setSelectedClassIds([]);
+                localStorage.setItem('routine_selected_class_id', v);
+                if (v !== 'all') {
+                  setSelectedClassIds([]);
+                  localStorage.removeItem('routine_selected_class_ids');
+                }
               }}
             >
               <SelectTrigger className="h-9 text-xs">
@@ -1637,7 +1689,11 @@ const MasterRoutineView = () => {
                   variant="outline"
                   size="sm"
                   className="text-[11px] h-6 px-2 flex-1"
-                  onClick={() => setSelectedClassIds(filteredClasses.map(c => c.id))}
+                  onClick={() => {
+                    const allIds = filteredClasses.map(c => c.id);
+                    setSelectedClassIds(allIds);
+                    localStorage.setItem('routine_selected_class_ids', JSON.stringify(allIds));
+                  }}
                 >
                   {bn ? 'সব নির্বাচন' : 'Select All'}
                 </Button>
@@ -1646,7 +1702,10 @@ const MasterRoutineView = () => {
                   variant="outline"
                   size="sm"
                   className="text-[11px] h-6 px-2 flex-1"
-                  onClick={() => setSelectedClassIds([])}
+                  onClick={() => {
+                    setSelectedClassIds([]);
+                    localStorage.removeItem('routine_selected_class_ids');
+                  }}
                 >
                   {bn ? 'রিসেট (সব দেখান)' : 'Reset'}
                 </Button>
@@ -1685,12 +1744,14 @@ const MasterRoutineView = () => {
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => {
+                              let next: string[];
                               if (isChecked) {
-                                const next = displayClasses.filter(c => c.id !== cls.id).map(c => c.id);
-                                setSelectedClassIds(next);
+                                next = displayClasses.filter(c => c.id !== cls.id).map(c => c.id);
                               } else {
-                                setSelectedClassIds([...displayClasses.map(c => c.id), cls.id]);
+                                next = [...displayClasses.map(c => c.id), cls.id];
                               }
+                              setSelectedClassIds(next);
+                              localStorage.setItem('routine_selected_class_ids', JSON.stringify(next));
                             }}
                             className="rounded border-input text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5"
                           />
@@ -1717,7 +1778,13 @@ const MasterRoutineView = () => {
                   size="icon"
                   variant="outline"
                   className="h-9 w-8"
-                  onClick={() => setPeriodCount(p => Math.max(1, p - 1))}
+                  onClick={() => {
+                    setPeriodCount(p => {
+                      const next = Math.max(1, p - 1);
+                      localStorage.setItem('routine_period_count', String(next));
+                      return next;
+                    });
+                  }}
                 >
                   <Minus className="h-3 w-3" />
                 </Button>
@@ -1726,7 +1793,13 @@ const MasterRoutineView = () => {
                   size="icon"
                   variant="outline"
                   className="h-9 w-8"
-                  onClick={() => setPeriodCount(p => Math.min(12, p + 1))}
+                  onClick={() => {
+                    setPeriodCount(p => {
+                      const next = Math.min(12, p + 1);
+                      localStorage.setItem('routine_period_count', String(next));
+                      return next;
+                    });
+                  }}
                 >
                   <Plus className="h-3 w-3" />
                 </Button>
@@ -1740,7 +1813,13 @@ const MasterRoutineView = () => {
                   size="icon"
                   variant="outline"
                   className="h-9 w-8"
-                  onClick={() => setBreakAfter(p => Math.max(1, p - 1))}
+                  onClick={() => {
+                    setBreakAfter(p => {
+                      const next = Math.max(1, p - 1);
+                      localStorage.setItem('routine_break_after', String(next));
+                      return next;
+                    });
+                  }}
                 >
                   <Minus className="h-3 w-3" />
                 </Button>
@@ -1749,7 +1828,13 @@ const MasterRoutineView = () => {
                   size="icon"
                   variant="outline"
                   className="h-9 w-8"
-                  onClick={() => setBreakAfter(p => Math.min(periodCount, p + 1))}
+                  onClick={() => {
+                    setBreakAfter(p => {
+                      const next = Math.min(periodCount, p + 1);
+                      localStorage.setItem('routine_break_after', String(next));
+                      return next;
+                    });
+                  }}
                 >
                   <Plus className="h-3 w-3" />
                 </Button>
@@ -1820,7 +1905,10 @@ const MasterRoutineView = () => {
             ))}
             <button
               type="button"
-              onClick={() => setSelectedClassIds([])}
+              onClick={() => {
+                setSelectedClassIds([]);
+                localStorage.removeItem('routine_selected_class_ids');
+              }}
               className="text-[11px] text-muted-foreground hover:text-foreground underline ml-1"
             >
               {bn ? 'সব ক্লাস দেখান' : 'Show All'}
@@ -2158,12 +2246,16 @@ const MasterRoutineView = () => {
                                   <TimePicker
                                     className="h-8 text-xs"
                                     value={time.start}
-                                    onChange={value =>
-                                      setPeriodTimes(prev => ({
-                                        ...prev,
-                                        [col.num]: { start: value, end: prev[col.num]?.end || time.end || '' },
-                                      }))
-                                    }
+                                    onChange={value => {
+                                      const nextTimes = {
+                                        ...periodTimes,
+                                        [col.num]: { start: value, end: periodTimes[col.num]?.end || time.end || '' },
+                                      };
+                                      setPeriodTimes(nextTimes);
+                                      try {
+                                        localStorage.setItem('routine_period_times', JSON.stringify(nextTimes));
+                                      } catch {}
+                                    }}
                                   />
                                 </div>
                                 <div>
@@ -2171,12 +2263,16 @@ const MasterRoutineView = () => {
                                   <TimePicker
                                     className="h-8 text-xs"
                                     value={time.end}
-                                    onChange={value =>
-                                      setPeriodTimes(prev => ({
-                                        ...prev,
-                                        [col.num]: { start: prev[col.num]?.start || time.start || '', end: value },
-                                      }))
-                                    }
+                                    onChange={value => {
+                                      const nextTimes = {
+                                        ...periodTimes,
+                                        [col.num]: { start: periodTimes[col.num]?.start || time.start || '', end: value },
+                                      };
+                                      setPeriodTimes(nextTimes);
+                                      try {
+                                        localStorage.setItem('routine_period_times', JSON.stringify(nextTimes));
+                                      } catch {}
+                                    }}
                                   />
                                 </div>
                               </div>
