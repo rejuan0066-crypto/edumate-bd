@@ -9,12 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { TimePicker } from '@/components/ui/time-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   Printer, Plus, Minus, Save, Trash2, Clock, CheckSquare,
-  X, Filter, Check, ChevronDown, RefreshCw
+  X, Filter, Check, ChevronDown, RefreshCw, PenTool, Edit, BookOpen, Layers
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { to12HourFormat } from '@/hooks/useTimeFormat';
 
 const DAYS = [
@@ -32,6 +33,25 @@ const toBn = (n: number | string) => String(n).replace(/\d/g, (d: string) => '�
 
 const fmtTime = (t: string, bn: boolean) => to12HourFormat(t, bn);
 
+export interface CustomEventMeta {
+  is_custom: boolean;
+  title: string;
+  span: number;
+  note?: string;
+  color?: string;
+}
+
+const COMMON_EVENT_CHIPS = [
+  'সেমিনার',
+  'বিশেষ ক্লাস',
+  'পরীক্ষা',
+  'মিলাদ ও দোয়া',
+  'কর্মশালা',
+  'আম বয়ান',
+  'মুক্ত পাঠ',
+  'ছুটি',
+];
+
 /* ─── Cell Editor Popover ─── */
 interface CellEditorProps {
   subjectId: string;
@@ -43,7 +63,15 @@ interface CellEditorProps {
   classes: any[];
   staff: any[];
   bn: boolean;
-  onSave: (subjectId: string, teacherName: string, teacherNameBn: string, classId?: string) => void;
+  initialCustomMeta?: CustomEventMeta | null;
+  maxSpan?: number;
+  onSave: (
+    subjectId: string,
+    teacherName: string,
+    teacherNameBn: string,
+    classId?: string,
+    customMeta?: CustomEventMeta | null
+  ) => void;
   children: React.ReactNode;
   showClassSelect?: boolean;
 }
@@ -58,33 +86,71 @@ const CellEditor = ({
   classes,
   staff,
   bn,
+  initialCustomMeta,
+  maxSpan = 4,
   onSave,
   children,
   showClassSelect,
 }: CellEditorProps) => {
   const [open, setOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<'regular' | 'custom'>('regular');
+  
+  // Regular class state
   const [localSubjectId, setLocalSubjectId] = useState(subjectId);
   const [localTeacher, setLocalTeacher] = useState(teacherName);
   const [localTeacherBn, setLocalTeacherBn] = useState(teacherNameBn);
   const [localClassId, setLocalClassId] = useState(classId || '');
 
+  // Custom Event / Merge state
+  const [customTitle, setCustomTitle] = useState('');
+  const [customSpan, setCustomSpan] = useState(1);
+  const [customNote, setCustomNote] = useState('');
+
   const handleOpen = (isOpen: boolean) => {
     if (isOpen) {
-      setLocalSubjectId(subjectId);
-      setLocalTeacher(teacherName);
-      setLocalTeacherBn(teacherNameBn);
+      if (initialCustomMeta?.is_custom) {
+        setEditorMode('custom');
+        setCustomTitle(initialCustomMeta.title || '');
+        setCustomSpan(initialCustomMeta.span || 1);
+        setCustomNote(initialCustomMeta.note || '');
+        setLocalSubjectId('none');
+        setLocalTeacher('');
+        setLocalTeacherBn('');
+      } else {
+        setEditorMode('regular');
+        setLocalSubjectId(subjectId);
+        setLocalTeacher(teacherName);
+        setLocalTeacherBn(teacherNameBn);
+        setCustomTitle('');
+        setCustomSpan(1);
+        setCustomNote('');
+      }
       setLocalClassId(classId || '');
     }
     setOpen(isOpen);
   };
 
   const handleSave = () => {
-    onSave(localSubjectId, localTeacher, localTeacherBn, localClassId || undefined);
+    if (editorMode === 'custom') {
+      if (!customTitle.trim()) {
+        toast.error(bn ? 'ইভেন্ট বা বিষয়ের নাম লিখুন (যেমন: সেমিনার)' : 'Event title required');
+        return;
+      }
+      const meta: CustomEventMeta = {
+        is_custom: true,
+        title: customTitle.trim(),
+        span: Math.max(1, Math.min(maxSpan, customSpan)),
+        note: customNote.trim(),
+      };
+      onSave('none', '', '', localClassId || undefined, meta);
+    } else {
+      onSave(localSubjectId, localTeacher, localTeacherBn, localClassId || undefined, null);
+    }
     setOpen(false);
   };
 
   const handleClear = () => {
-    onSave('none', '', '', localClassId || undefined);
+    onSave('none', '', '', localClassId || undefined, null);
     setOpen(false);
   };
 
@@ -93,6 +159,9 @@ const CellEditor = ({
     if (s) {
       setLocalTeacher(s.name_en || s.name_bn || '');
       setLocalTeacherBn(s.name_bn || s.name_en || '');
+      if (editorMode === 'custom') {
+        setCustomNote(s.name_bn || s.name_en || '');
+      }
     }
   };
 
@@ -100,7 +169,7 @@ const CellEditor = ({
     <Popover open={open} onOpenChange={handleOpen} modal={false}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent
-        className="w-80 p-3.5 space-y-2.5 z-[250] shadow-xl border bg-card"
+        className="w-84 p-3.5 space-y-3 z-[250] shadow-xl border bg-card"
         align="center"
         onOpenAutoFocus={e => e.preventDefault()}
         side="top"
@@ -108,13 +177,33 @@ const CellEditor = ({
       >
         <div className="flex items-center justify-between border-b pb-1.5">
           <Label className="text-xs font-bold text-foreground">
-            {bn ? 'পিরিয়ড তথ্য সম্পাদনা' : 'Edit Period Slot'}
+            {bn ? 'পিরিয়ড সম্পাদনা ও মার্জ' : 'Edit Period Slot'}
           </Label>
-          {(localTeacherBn || localTeacher || localSubjectId !== 'none') && (
-            <Badge variant="outline" className="text-[10px] text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40">
-              {bn ? 'নির্ধারিত' : 'Assigned'}
-            </Badge>
-          )}
+          <div className="flex bg-muted p-0.5 rounded-lg text-[11px]">
+            <button
+              type="button"
+              onClick={() => setEditorMode('regular')}
+              className={`px-2 py-0.5 rounded-md font-medium transition-all ${
+                editorMode === 'regular'
+                  ? 'bg-background text-foreground shadow-xs font-bold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {bn ? 'সাধারণ ক্লাস' : 'Regular'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditorMode('custom')}
+              className={`px-2 py-0.5 rounded-md font-medium transition-all flex items-center gap-1 ${
+                editorMode === 'custom'
+                  ? 'bg-amber-500 text-white shadow-xs font-bold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Layers className="w-3 h-3" />
+              {bn ? 'সেমিনার / মার্জ' : 'Event / Merge'}
+            </button>
+          </div>
         </div>
 
         {showClassSelect && (
@@ -138,73 +227,150 @@ const CellEditor = ({
           </div>
         )}
 
-        <div>
-          <Label className="text-xs font-medium">{bn ? 'বিষয় নির্বাচন' : 'Subject'}</Label>
-          <select
-            className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-            value={localSubjectId}
-            onChange={e => setLocalSubjectId(e.target.value)}
-          >
-            <option value="none">{bn ? '-- কোনো বিষয় নেই (খালি) --' : '-- Empty --'}</option>
-            {subjects
-              .filter(s => {
-                const cId = showClassSelect ? localClassId : filterClassId;
-                if (!cId) return true;
-                return !s.class_id || s.class_id === cId;
-              })
-              .map(s => (
-                <option key={s.id} value={s.id}>
-                  {bn ? s.name_bn : s.name}
-                </option>
-              ))}
-          </select>
-        </div>
+        {editorMode === 'regular' ? (
+          <div className="space-y-2.5">
+            <div>
+              <Label className="text-xs font-medium">{bn ? 'বিষয় নির্বাচন' : 'Subject'}</Label>
+              <select
+                className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                value={localSubjectId}
+                onChange={e => setLocalSubjectId(e.target.value)}
+              >
+                <option value="none">{bn ? '-- কোনো বিষয় নেই (খালি) --' : '-- Empty --'}</option>
+                {subjects
+                  .filter(s => {
+                    const cId = showClassSelect ? localClassId : filterClassId;
+                    if (!cId) return true;
+                    return !s.class_id || s.class_id === cId;
+                  })
+                  .map(s => (
+                    <option key={s.id} value={s.id}>
+                      {bn ? s.name_bn : s.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
 
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <Label className="text-xs font-medium">{bn ? 'শিক্ষক নির্বাচন' : 'Select Teacher'}</Label>
-            <span className="text-[10px] text-muted-foreground">{bn ? 'শিক্ষা বিভাগসহ' : 'With Dept'}</span>
-          </div>
-          <select
-            className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-            value=""
-            onChange={e => handleStaffSelect(e.target.value)}
-          >
-            <option value="">{bn ? '-- শিক্ষক বাছুন --' : '-- Pick teacher --'}</option>
-            {staff.map(s => {
-              const deptOrDesig = s.department || s.designation || '';
-              const label = bn
-                ? `${s.name_bn || s.name_en}${deptOrDesig ? ` (${deptOrDesig})` : ''}`
-                : `${s.name_en || s.name_bn}${deptOrDesig ? ` (${deptOrDesig})` : ''}`;
-              return (
-                <option key={s.id} value={s.id}>
-                  {label}
-                </option>
-              );
-            })}
-          </select>
-        </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs font-medium">{bn ? 'শিক্ষক নির্বাচন' : 'Select Teacher'}</Label>
+                <span className="text-[10px] text-muted-foreground">{bn ? 'শিক্ষা বিভাগসহ' : 'With Dept'}</span>
+              </div>
+              <select
+                className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                value=""
+                onChange={e => handleStaffSelect(e.target.value)}
+              >
+                <option value="">{bn ? '-- শিক্ষক বাছুন --' : '-- Pick teacher --'}</option>
+                {staff.map(s => {
+                  const deptOrDesig = s.department || s.designation || '';
+                  const label = bn
+                    ? `${s.name_bn || s.name_en}${deptOrDesig ? ` (${deptOrDesig})` : ''}`
+                    : `${s.name_en || s.name_bn}${deptOrDesig ? ` (${deptOrDesig})` : ''}`;
+                  return (
+                    <option key={s.id} value={s.id}>
+                      {label}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label className="text-[11px] text-muted-foreground">{bn ? 'শিক্ষক নাম (বাংলা)' : 'Name BN'}</Label>
-            <Input
-              className="h-7 text-xs"
-              value={localTeacherBn}
-              onChange={e => setLocalTeacherBn(e.target.value)}
-              placeholder={bn ? 'নাম লিখুন' : 'Teacher name'}
-            />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-[11px] text-muted-foreground">{bn ? 'শিক্ষক নাম (বাংলা)' : 'Name BN'}</Label>
+                <Input
+                  className="h-7 text-xs"
+                  value={localTeacherBn}
+                  onChange={e => setLocalTeacherBn(e.target.value)}
+                  placeholder={bn ? 'নাম লিখুন' : 'Teacher name'}
+                />
+              </div>
+              <div>
+                <Label className="text-[11px] text-muted-foreground">{bn ? 'শিক্ষক নাম (ইংরেজি)' : 'Name EN'}</Label>
+                <Input
+                  className="h-7 text-xs"
+                  value={localTeacher}
+                  onChange={e => setLocalTeacher(e.target.value)}
+                  placeholder="English name"
+                />
+              </div>
+            </div>
           </div>
-          <div>
-            <Label className="text-[11px] text-muted-foreground">{bn ? 'শিক্ষক নাম (ইংরেজি)' : 'Name EN'}</Label>
-            <Input
-              className="h-7 text-xs"
-              value={localTeacher}
-              onChange={e => setLocalTeacher(e.target.value)}
-              placeholder="English name"
-            />
+        ) : (
+          <div className="space-y-2.5">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs font-semibold text-foreground">
+                  {bn ? 'ইভেন্ট বা বিষয়ের নাম' : 'Event / Title'}
+                </Label>
+                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
+                  {bn ? 'কাস্টম টেক্সট' : 'Custom'}
+                </span>
+              </div>
+              <Input
+                className="h-8 text-xs font-medium"
+                value={customTitle}
+                onChange={e => setCustomTitle(e.target.value)}
+                placeholder={bn ? 'যেমন: সেমিনার / বিশেষ ক্লাস / পরীক্ষা' : 'e.g. Seminar'}
+              />
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {COMMON_EVENT_CHIPS.map(chip => (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => setCustomTitle(chip)}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 transition-colors"
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs font-medium">{bn ? 'পিরিয়ড মার্জ' : 'Merge Span'}</Label>
+                <select
+                  className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs focus:ring-2 focus:ring-amber-500 font-medium"
+                  value={customSpan}
+                  onChange={e => setCustomSpan(Number(e.target.value))}
+                >
+                  <option value={1}>{bn ? '১টি পিরিয়ড (মার্জ ছাড়া)' : '1 Period'}</option>
+                  {maxSpan >= 2 && <option value={2}>{bn ? '২টি পিরিয়ড মার্জ' : '2 Periods'}</option>}
+                  {maxSpan >= 3 && <option value={3}>{bn ? '৩টি পিরিয়ড মার্জ' : '3 Periods'}</option>}
+                  {maxSpan >= 4 && <option value={4}>{bn ? '৪টি পিরিয়ড মার্জ' : '4 Periods'}</option>}
+                </select>
+              </div>
+
+              <div>
+                <Label className="text-xs font-medium">{bn ? 'দায়িত্বপ্রাপ্ত / শিক্ষক' : 'In-charge'}</Label>
+                <select
+                  className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
+                  value=""
+                  onChange={e => handleStaffSelect(e.target.value)}
+                >
+                  <option value="">{bn ? '-- শিক্ষক বাছুন --' : '-- Pick --'}</option>
+                  {staff.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {bn ? s.name_bn || s.name_en : s.name_en || s.name_bn}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground">{bn ? 'বিবরণ বা তত্ত্বাবধায়ক নোট' : 'Note / Remarks'}</Label>
+              <Input
+                className="h-7 text-xs"
+                value={customNote}
+                onChange={e => setCustomNote(e.target.value)}
+                placeholder={bn ? 'তত্ত্বাবধায়ক / বিষয়বস্তু' : 'In-charge or topic details'}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex items-center gap-1.5 pt-1.5 border-t">
           <Button
@@ -215,12 +381,14 @@ const CellEditor = ({
             onClick={handleClear}
           >
             <Trash2 className="h-3 w-3" />
-            <span>{bn ? 'খালি করুন' : 'Clear'}</span>
+            <span>{bn ? 'খালি / আনমার্জ' : 'Clear / Unmerge'}</span>
           </Button>
           <Button
             type="button"
             size="sm"
-            className="h-7 text-xs flex-1 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+            className={`h-7 text-xs flex-1 gap-1 text-white font-medium ${
+              editorMode === 'custom' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'
+            }`}
             onClick={handleSave}
           >
             <Save className="h-3 w-3" />
@@ -248,15 +416,31 @@ const MasterRoutineView = () => {
   const [selectedDay, setSelectedDay] = useState<number>(0);
   const [classSearchTerm, setClassSearchTerm] = useState('');
 
-  // Institution info
-  const { data: institution } = useQuery({
-    queryKey: ['institution-default'],
-    queryFn: async () => {
-      const data = await fetchInstitutionInfo();
-      return data;
-    },
-    staleTime: 10 * 60 * 1000,
+  // Customizable Footer Note
+  const [footerNote, setFooterNote] = useState<string>(() => {
+    return localStorage.getItem('master_routine_footer_note') || 
+      'বি.দ্র. কর্তৃপক্ষ কর্তৃক পরিবর্তন করার ক্ষমতা এবং বিশেষ প্রয়োজনে অতিরিক্ত ক্লাস নিতে পারবেন।';
   });
+  const [isEditingFooterNote, setIsEditingFooterNote] = useState(false);
+
+  // Signatories Config (Nazim & Principal)
+  const [signatories, setSignatories] = useState<{
+    nazim: { name_bn: string; title_bn: string; show: boolean };
+    principal: { name_bn: string; title_bn: string; show: boolean };
+  }>(() => {
+    try {
+      const saved = localStorage.getItem('master_routine_signatories');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      nazim: { name_bn: '', title_bn: 'নাজিম / শিক্ষা সচিব', show: true },
+      principal: { name_bn: '', title_bn: 'প্রতিষ্ঠাতা ও প্রিন্সিপাল', show: true },
+    };
+  });
+  const [showSignatoryDialog, setShowSignatoryDialog] = useState(false);
+
+  // Fetch website settings for institution info
+  const { settings: websiteSettings } = useWebsiteSettings();
 
   // Academic sessions
   const { data: sessions } = useQuery({
@@ -275,7 +459,7 @@ const MasterRoutineView = () => {
     }
   }, [sessions, selectedSessionId]);
 
-  // Divisions (শিক্ষা বিভাগসমূহ)
+  // Divisions (শিক্ষা বিভাগসমূহ) with sort_order
   const { data: divisions } = useQuery({
     queryKey: ['divisions-for-master-routine'],
     queryFn: async () => {
@@ -284,15 +468,14 @@ const MasterRoutineView = () => {
     },
   });
 
-  // Classes with their divisions
+  // Classes with their divisions and sort_order
   const { data: allClasses } = useQuery({
     queryKey: ['all-classes-for-routine'],
     queryFn: async () => {
       const { data } = await supabase
         .from('classes')
-        .select('*, divisions(id, name, name_bn)')
-        .eq('is_active', true)
-        .order('sort_order');
+        .select('*, divisions(id, name, name_bn, sort_order)')
+        .eq('is_active', true);
       return data || [];
     },
   });
@@ -319,24 +502,53 @@ const MasterRoutineView = () => {
     },
   });
 
+  // Auto-populate default principal from website settings or staff if empty
+  useEffect(() => {
+    if (!signatories.principal.name_bn) {
+      const pName = websiteSettings?.principal_name || 'আলহাজ্ব আব্দুছ ছোবহান';
+      const pTitle = websiteSettings?.principal_title_bn || 'প্রতিষ্ঠাতা ও প্রিন্সিপাল';
+      setSignatories(prev => ({
+        ...prev,
+        principal: { ...prev.principal, name_bn: pName, title_bn: pTitle },
+      }));
+    }
+  }, [websiteSettings]);
+
+  // Sequential Sorting of classes:
+  // Division sort_order first -> Class sort_order second -> Name
+  const sortClasses = useCallback((list: any[]) => {
+    return [...list].sort((a, b) => {
+      const divA = a.divisions?.sort_order ?? 999;
+      const divB = b.divisions?.sort_order ?? 999;
+      if (divA !== divB) return divA - divB;
+      const orderA = a.sort_order ?? 999;
+      const orderB = b.sort_order ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.name_bn || a.name || '').localeCompare(b.name_bn || b.name || '', 'bn');
+    });
+  }, []);
+
   // Filtered classes according to selected education department (division)
   const filteredClasses = useMemo(() => {
     if (!allClasses) return [];
-    if (selectedDivisionId === 'all') return allClasses;
-    return allClasses.filter(c => c.division_id === selectedDivisionId);
-  }, [allClasses, selectedDivisionId]);
+    let list = allClasses;
+    if (selectedDivisionId !== 'all') {
+      list = list.filter(c => c.division_id === selectedDivisionId);
+    }
+    return sortClasses(list);
+  }, [allClasses, selectedDivisionId, sortClasses]);
 
-  // Classes currently shown in the Master Routine table
+  // Classes currently shown in the Daily Routine table
   const displayClasses = useMemo(() => {
     if (!filteredClasses) return [];
+    let list = filteredClasses;
     if (selectedClassIds.length > 0) {
-      return filteredClasses.filter(c => selectedClassIds.includes(c.id));
+      list = filteredClasses.filter(c => selectedClassIds.includes(c.id));
+    } else if (selectedClassId && selectedClassId !== 'all') {
+      list = filteredClasses.filter(c => c.id === selectedClassId);
     }
-    if (selectedClassId && selectedClassId !== 'all') {
-      return filteredClasses.filter(c => c.id === selectedClassId);
-    }
-    return filteredClasses;
-  }, [filteredClasses, selectedClassIds, selectedClassId]);
+    return sortClasses(list);
+  }, [filteredClasses, selectedClassIds, selectedClassId, sortClasses]);
 
   const isAllClasses = selectedClassId === 'all' || selectedClassIds.length > 0;
 
@@ -508,7 +720,8 @@ const MasterRoutineView = () => {
     periodNum: number,
     subjectId: string,
     teacherName: string,
-    teacherNameBn: string
+    teacherNameBn: string,
+    customMeta?: CustomEventMeta | null
   ) => {
     try {
       let routineId = allRoutines?.find(r => r.class_id === targetClassId)?.id;
@@ -541,7 +754,7 @@ const MasterRoutineView = () => {
         .maybeSingle();
 
       // Clear cell action
-      if (subjectId === 'none' || (!subjectId && !teacherName && !teacherNameBn)) {
+      if (!customMeta?.is_custom && (subjectId === 'none' || (!subjectId && !teacherName && !teacherNameBn))) {
         if (existing) {
           const { error: delErr } = await supabase.from('routine_periods').delete().eq('id', existing.id);
           if (delErr) throw delErr;
@@ -553,14 +766,18 @@ const MasterRoutineView = () => {
       }
 
       const time = getPeriodTime(periodNum);
+      const isCustom = !!customMeta?.is_custom;
+
       const periodData = {
         routine_id: routineId,
         day_of_week: selectedDay,
         period_number: periodNum,
-        subject_id: subjectId || null,
-        teacher_name: teacherName || null,
-        teacher_name_bn: teacherNameBn || null,
+        subject_id: isCustom ? null : (subjectId && subjectId !== 'none' ? subjectId : null),
+        teacher_name: isCustom ? (customMeta.note || null) : (teacherName || null),
+        teacher_name_bn: isCustom ? (customMeta.note || null) : (teacherNameBn || null),
         is_break: false,
+        break_label_bn: isCustom ? customMeta.title : null,
+        room: isCustom ? JSON.stringify(customMeta) : null,
         start_time: time.start || '08:00',
         end_time: time.end || '08:45',
       };
@@ -575,7 +792,7 @@ const MasterRoutineView = () => {
 
       queryClient.invalidateQueries({ queryKey: ['all-classes-periods'] });
       queryClient.invalidateQueries({ queryKey: ['all-class-routines'] });
-      toast.success(bn ? 'সেভ হয়েছে' : 'Saved');
+      toast.success(isCustom ? (bn ? 'কাস্টম ইভেন্ট / মার্জ সংরক্ষিত' : 'Event saved') : (bn ? 'সেভ হয়েছে' : 'Saved'));
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || (bn ? 'সেভ ব্যর্থ হয়েছে' : 'Save failed'));
@@ -619,12 +836,14 @@ const MasterRoutineView = () => {
       subjectId,
       teacherName,
       teacherNameBn,
+      customMeta,
     }: {
       dayOfWeek: number;
       periodNum: number;
       subjectId: string;
       teacherName: string;
       teacherNameBn: string;
+      customMeta?: CustomEventMeta | null;
     }) => {
       let routineId = routine?.id;
 
@@ -653,7 +872,7 @@ const MasterRoutineView = () => {
         .eq('period_number', periodNum)
         .maybeSingle();
 
-      if (subjectId === 'none' || (!subjectId && !teacherName && !teacherNameBn)) {
+      if (!customMeta?.is_custom && (subjectId === 'none' || (!subjectId && !teacherName && !teacherNameBn))) {
         if (existing) {
           await supabase.from('routine_periods').delete().eq('id', existing.id);
         }
@@ -661,14 +880,18 @@ const MasterRoutineView = () => {
       }
 
       const time = getPeriodTime(periodNum);
+      const isCustom = !!customMeta?.is_custom;
+
       const periodData = {
         routine_id: routineId,
         day_of_week: dayOfWeek,
         period_number: periodNum,
-        subject_id: subjectId || null,
-        teacher_name: teacherName || null,
-        teacher_name_bn: teacherNameBn || null,
+        subject_id: isCustom ? null : (subjectId && subjectId !== 'none' ? subjectId : null),
+        teacher_name: isCustom ? (customMeta.note || null) : (teacherName || null),
+        teacher_name_bn: isCustom ? (customMeta.note || null) : (teacherNameBn || null),
         is_break: false,
+        break_label_bn: isCustom ? customMeta.title : null,
+        room: isCustom ? JSON.stringify(customMeta) : null,
         start_time: time.start || '08:00',
         end_time: time.end || '08:45',
       };
@@ -691,47 +914,188 @@ const MasterRoutineView = () => {
 
   const selectedSession = sessions?.find(s => s.id === selectedSessionId);
   const selectedCls = allClasses?.find(c => c.id === selectedClassId);
-  const instName = bn ? institution?.name : (institution?.name_en || institution?.name);
 
-  // Print handler
+  // Institution details for header & print
+  const instName = websiteSettings?.institution_name || 'আল আরাবিয়া ছোবহানিয়া মাদ্রাসা ও এতিমখানা';
+  const instAddress = websiteSettings?.address || 'খাজাঞ্চি রোড, এমএইচ সেন্টার, বিশ্বনাথ, সিলেট';
+  const instPhone = websiteSettings?.phone || '01749842401';
+  const instEmail = websiteSettings?.email || 'info@subhania.edu.bd';
+  const instLogo = websiteSettings?.logo_url || '';
+  const sessionLabel = selectedSession ? (bn ? selectedSession.name_bn || selectedSession.name : selectedSession.name) : '';
+  const dayLabel = DAYS[selectedDay]?.label_bn || 'শনিবার';
+
+  // Save Signatories Settings
+  const handleSaveSignatories = (newSig: typeof signatories) => {
+    setSignatories(newSig);
+    localStorage.setItem('master_routine_signatories', JSON.stringify(newSig));
+    setShowSignatoryDialog(false);
+    toast.success(bn ? 'স্বাক্ষরকারী তথ্য সংরক্ষিত হয়েছে' : 'Signatories saved');
+  };
+
+  // High Fidelity Print Handler
   const handlePrint = () => {
-    const el = document.getElementById('master-routine-print');
+    const el = document.getElementById('daily-routine-print');
     if (!el) return;
     const w = window.open('', '_blank');
     if (!w) return;
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${bn ? 'ক্লাস রুটিন' : 'Class Routine'}</title>
-    <style>@font-face{font-family:"Kalpurush";src:url("https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf") format("truetype");font-display:block;}</style>
+
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>${bn ? 'দৈনিক ক্লাস রুটিন' : 'Daily Class Routine'} - ${instName}</title>
+    <style>
+      @font-face {
+        font-family: "Kalpurush";
+        src: url("https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf") format("truetype");
+        font-display: block;
+      }
+    </style>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      * { margin:0; padding:0; box-sizing:border-box; }
-      body { font-family: 'Kalpurush', 'Noto Sans Bengali', sans-serif; padding: 10px; }
-      @page { size: A4 landscape; margin: 8mm; }
-      table { border-collapse: collapse; width: 100%; }
-      th, td { border: 1.5px solid #333; text-align: center; vertical-align: middle; }
-      th { background: #d4edda; font-weight: 700; }
-      .header { text-align: center; margin-bottom: 8px; }
-      .header h1 { font-size: 18px; font-weight: 700; }
-      .header p { font-size: 11px; margin: 2px 0; }
-      .break-col { background: #c8e6c9 !important; writing-mode: vertical-rl; text-orientation: mixed; font-weight: 700; font-size: 10px; min-width: 26px; max-width: 30px; }
-      .cell-top { font-weight: 600; font-size: 9.5px; padding: 2px 3px; border-bottom: 1px solid #999; min-height: 18px; }
-      .cell-bottom { font-size: 8px; color: #555; padding: 2px 3px; min-height: 18px; }
-      .day-cell { background: #f5f5f5; font-weight: 700; font-size: 11px; white-space: nowrap; padding: 6px 8px; }
-      .print-hidden, .no-print { display: none !important; }
-      @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .print-hidden { display: none !important; } }
-    </style></head><body><div>`);
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: 'Kalpurush', 'Noto Sans Bengali', sans-serif;
+        padding: 12px;
+        background: #fff;
+        color: #111;
+      }
+      @page {
+        size: A4 landscape;
+        margin: 6mm;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 8px;
+        font-size: 11px;
+      }
+      th, td {
+        border: 1.5px solid #222 !important;
+        text-align: center;
+        vertical-align: middle;
+      }
+      th {
+        background-color: #e8f5e9 !important;
+        color: #052e16 !important;
+        font-weight: 700;
+        padding: 5px 2px;
+      }
+      .break-col {
+        background-color: #c8e6c9 !important;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        font-weight: 700;
+        font-size: 10px;
+        min-width: 28px;
+        max-width: 32px;
+      }
+      .custom-cell {
+        background-color: #fef3c7 !important;
+        color: #78350f !important;
+        font-weight: 700;
+        padding: 4px;
+      }
+      .cell-subj {
+        font-weight: 700;
+        font-size: 10px;
+        padding: 3px 2px;
+        border-bottom: 1px solid #777;
+        min-height: 18px;
+        line-height: 1.2;
+      }
+      .cell-teacher {
+        font-size: 9px;
+        color: #333;
+        padding: 2px;
+        min-height: 16px;
+        line-height: 1.2;
+        background-color: #fcfcfc;
+      }
+      .header-wrap {
+        text-align: center;
+        margin-bottom: 6px;
+      }
+      .header-wrap h1 {
+        font-size: 20px;
+        font-weight: 800;
+        color: #064e3b;
+        margin-bottom: 2px;
+      }
+      .header-wrap .address {
+        font-size: 11px;
+        color: #444;
+      }
+      .header-wrap .contact {
+        font-size: 10px;
+        color: #555;
+        margin-top: 2px;
+      }
+      .header-wrap .badge-title {
+        display: inline-block;
+        margin-top: 5px;
+        padding: 3px 12px;
+        background: #e8f5e9;
+        border: 1px solid #1b5e20;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #1b5e20;
+      }
+      .print-hidden, .no-print, button, input {
+        display: none !important;
+      }
+      .footnote {
+        margin-top: 8px;
+        font-size: 10px;
+        color: #444;
+        border-top: 1px solid #999;
+        padding-top: 4px;
+        font-weight: 500;
+      }
+      .signatures {
+        margin-top: 45px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        text-align: center;
+      }
+      .sig-block {
+        width: 220px;
+      }
+      .sig-line {
+        border-top: 1.5px solid #222;
+        margin-bottom: 4px;
+      }
+      .sig-title {
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .sig-name {
+        font-size: 10.5px;
+        color: #222;
+      }
+      .sig-sub {
+        font-size: 9px;
+        color: #666;
+      }
+      @media print {
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .print-hidden { display: none !important; }
+      }
+    </style></head><body>`);
+
     w.document.write(el.innerHTML);
-    w.document.write('</div></body></html>');
+    w.document.write('</body></html>');
     w.document.close();
+
     const check = setInterval(() => {
       if (w.document.readyState === 'complete') {
         clearInterval(check);
-        setTimeout(() => { w.print(); w.close(); }, 300);
+        setTimeout(() => { w.print(); w.close(); }, 350);
       }
     }, 100);
   };
 
-  const thStyle = "border border-border bg-emerald-100/80 dark:bg-emerald-900/30 px-1 py-1.5 text-center font-bold text-[11px]";
-  const breakThStyle = "border border-border bg-emerald-200 dark:bg-emerald-800/40 font-bold text-[10px]";
+  const thStyle = "border border-border bg-emerald-100/90 dark:bg-emerald-900/40 px-1 py-1.5 text-center font-bold text-[11px] text-emerald-950 dark:text-emerald-100";
+  const breakThStyle = "border border-border bg-emerald-200 dark:bg-emerald-800/60 font-bold text-[10px] text-emerald-950 dark:text-emerald-100";
 
   return (
     <div className="space-y-4">
@@ -770,7 +1134,7 @@ const MasterRoutineView = () => {
               </SelectTrigger>
               <SelectContent className="z-[300]">
                 <SelectItem value="all" className="text-xs font-medium">
-                  {bn ? 'সকল শিক্ষা বিভাগ' : 'All Divisions'}
+                  {bn ? 'সকল শিক্ষা বিভাগ (সিরিয়াল অনুযায়ী)' : 'All Divisions (In Order)'}
                 </SelectItem>
                 {divisions?.map(d => (
                   <SelectItem key={d.id} value={d.id} className="text-xs">
@@ -796,7 +1160,7 @@ const MasterRoutineView = () => {
               </SelectTrigger>
               <SelectContent className="z-[300]">
                 <SelectItem value="all" className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                  {bn ? 'প্রতিদিনের মাস্টার রুটিন (সব/মাল্টিপল)' : 'Daily Master Routine (All/Multi)'}
+                  {bn ? 'দৈনিক ক্লাস রুটিন (সকল/নির্বাচিত)' : 'Daily Class Routine (All/Multi)'}
                 </SelectItem>
                 {filteredClasses.map(c => {
                   const divName = bn ? c.divisions?.name_bn : c.divisions?.name;
@@ -967,6 +1331,17 @@ const MasterRoutineView = () => {
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 ml-auto">
+            {/* Signatories Selector Button */}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 gap-1.5 text-xs text-foreground bg-card"
+              onClick={() => setShowSignatoryDialog(true)}
+            >
+              <PenTool className="h-3.5 w-3.5 text-emerald-600" />
+              <span>{bn ? 'স্বাক্ষরকারী' : 'Signatures'}</span>
+            </Button>
+
             <Button
               size="sm"
               variant="outline"
@@ -981,9 +1356,14 @@ const MasterRoutineView = () => {
               <RefreshCw className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{bn ? 'রিফ্রেশ' : 'Refresh'}</span>
             </Button>
-            <Button size="sm" variant="outline" className="h-9 gap-1.5 bg-background" onClick={handlePrint}>
-              <Printer className="h-3.5 w-3.5 text-foreground" />
-              <span>{bn ? 'প্রিন্ট রুটিন' : 'Print'}</span>
+
+            <Button
+              size="sm"
+              className="h-9 gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-medium shadow-xs"
+              onClick={handlePrint}
+            >
+              <Printer className="h-3.5 w-3.5" />
+              <span>{bn ? 'প্রিন্ট / ডাউনলোড' : 'Print / Download'}</span>
             </Button>
           </div>
         </div>
@@ -1021,31 +1401,215 @@ const MasterRoutineView = () => {
         )}
       </div>
 
+      {/* Signatories Configuration Modal */}
+      <Dialog open={showSignatoryDialog} onOpenChange={setShowSignatoryDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <PenTool className="w-4 h-4 text-emerald-600" />
+              {bn ? 'রুটিনের স্বাক্ষরকারী নির্বাচন' : 'Configure Routine Signatories'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2 text-xs">
+            {/* Nazim */}
+            <div className="p-3 border rounded-lg space-y-2 bg-muted/20">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-foreground">{bn ? '১. নাজিম / শিক্ষা সচিব' : '1. Nazim / Education Sec'}</span>
+                <label className="flex items-center gap-1.5 text-[11px] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={signatories.nazim.show}
+                    onChange={e => setSignatories(prev => ({
+                      ...prev,
+                      nazim: { ...prev.nazim, show: e.target.checked }
+                    }))}
+                    className="rounded text-emerald-600"
+                  />
+                  <span>{bn ? 'প্রদর্শন করুন' : 'Show'}</span>
+                </label>
+              </div>
+
+              {staff && staff.length > 0 && (
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">{bn ? 'শিক্ষক তালিকা থেকে নির্বাচন' : 'Pick from staff'}</Label>
+                  <select
+                    className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                    value=""
+                    onChange={e => {
+                      const s = staff.find(st => st.id === e.target.value);
+                      if (s) {
+                        setSignatories(prev => ({
+                          ...prev,
+                          nazim: {
+                            ...prev.nazim,
+                            name_bn: s.name_bn || s.name_en || '',
+                            title_bn: s.designation || 'নাজিম / শিক্ষা সচিব',
+                          }
+                        }));
+                      }
+                    }}
+                  >
+                    <option value="">{bn ? '-- বাছুন --' : '-- Pick --'}</option>
+                    {staff.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {bn ? s.name_bn || s.name_en : s.name_en || s.name_bn} {s.designation ? `(${s.designation})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[11px]">{bn ? 'নাম (বাংলা)' : 'Name'}</Label>
+                  <Input
+                    className="h-7 text-xs"
+                    value={signatories.nazim.name_bn}
+                    onChange={e => setSignatories(prev => ({
+                      ...prev,
+                      nazim: { ...prev.nazim, name_bn: e.target.value }
+                    }))}
+                    placeholder={bn ? 'নাজিমের নাম' : 'Name'}
+                  />
+                </div>
+                <div>
+                  <Label className="text-[11px]">{bn ? 'পদবি' : 'Title'}</Label>
+                  <Input
+                    className="h-7 text-xs"
+                    value={signatories.nazim.title_bn}
+                    onChange={e => setSignatories(prev => ({
+                      ...prev,
+                      nazim: { ...prev.nazim, title_bn: e.target.value }
+                    }))}
+                    placeholder="পদবি"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Principal */}
+            <div className="p-3 border rounded-lg space-y-2 bg-muted/20">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-foreground">{bn ? '২. মুহতামিম / প্রিন্সিপাল' : '2. Principal / Muhtamim'}</span>
+                <label className="flex items-center gap-1.5 text-[11px] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={signatories.principal.show}
+                    onChange={e => setSignatories(prev => ({
+                      ...prev,
+                      principal: { ...prev.principal, show: e.target.checked }
+                    }))}
+                    className="rounded text-emerald-600"
+                  />
+                  <span>{bn ? 'প্রদর্শন করুন' : 'Show'}</span>
+                </label>
+              </div>
+
+              {staff && staff.length > 0 && (
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">{bn ? 'শিক্ষক তালিকা থেকে নির্বাচন' : 'Pick from staff'}</Label>
+                  <select
+                    className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                    value=""
+                    onChange={e => {
+                      const s = staff.find(st => st.id === e.target.value);
+                      if (s) {
+                        setSignatories(prev => ({
+                          ...prev,
+                          principal: {
+                            ...prev.principal,
+                            name_bn: s.name_bn || s.name_en || '',
+                            title_bn: s.designation || 'প্রতিষ্ঠাতা ও প্রিন্সিপাল',
+                          }
+                        }));
+                      }
+                    }}
+                  >
+                    <option value="">{bn ? '-- বাছুন --' : '-- Pick --'}</option>
+                    {staff.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {bn ? s.name_bn || s.name_en : s.name_en || s.name_bn} {s.designation ? `(${s.designation})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[11px]">{bn ? 'নাম (বাংলা)' : 'Name'}</Label>
+                  <Input
+                    className="h-7 text-xs"
+                    value={signatories.principal.name_bn}
+                    onChange={e => setSignatories(prev => ({
+                      ...prev,
+                      principal: { ...prev.principal, name_bn: e.target.value }
+                    }))}
+                    placeholder={bn ? 'প্রিন্সিপালের নাম' : 'Name'}
+                  />
+                </div>
+                <div>
+                  <Label className="text-[11px]">{bn ? 'পদবি' : 'Title'}</Label>
+                  <Input
+                    className="h-7 text-xs"
+                    value={signatories.principal.title_bn}
+                    onChange={e => setSignatories(prev => ({
+                      ...prev,
+                      principal: { ...prev.principal, title_bn: e.target.value }
+                    }))}
+                    placeholder="পদবি"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Button
+              className="w-full h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+              onClick={() => handleSaveSignatories(signatories)}
+            >
+              <Save className="w-3.5 h-3.5 mr-1" />
+              {bn ? 'সংরক্ষণ করুন' : 'Save'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {!selectedSessionId ? (
         <div className="py-12 text-center text-muted-foreground">
           {bn ? 'অনুগ্রহ করে একটি একাডেমিক সেশন নির্বাচন করুন' : 'Select an academic session'}
         </div>
       ) : isAllClasses ? (
-        /* ─── All Classes Daily Master Grid (Rows = Classes, Columns = Periods) ─── */
-        <div id="master-routine-print">
+        /* ─── All Classes Daily Grid (Rows = Classes sorted sequentially, Columns = Periods) ─── */
+        <div id="daily-routine-print">
           <div className="border-2 border-border rounded-xl overflow-hidden bg-background shadow-sm">
-            {/* Header */}
-            <div className="text-center py-3 px-4 border-b-2 border-border relative bg-muted/20">
-              {institution?.logo_url && (
-                <img src={institution.logo_url} alt="" className="w-12 h-12 object-contain mx-auto mb-1" />
+            {/* Header with All Madrasa Information */}
+            <div className="header-wrap text-center py-4 px-4 border-b-2 border-border relative bg-muted/20">
+              {instLogo && (
+                <img src={instLogo} alt="" className="w-14 h-14 object-contain mx-auto mb-1.5" />
               )}
-              <h1 className="text-lg font-bold text-foreground leading-tight">
-                {instName || (bn ? 'আল আরাবিয়া ছোবহানিয়া মাদ্রাসা ও এতিমখানা' : 'Madrasah Name')}
+              <h1 className="text-xl font-extrabold text-foreground leading-tight tracking-wide">
+                {instName}
               </h1>
-              {institution?.address && <p className="text-[10px] text-muted-foreground">{institution.address}</p>}
-              <p className="text-xs font-semibold text-foreground mt-0.5">
-                {bn ? 'মাস্টার রুটিন' : 'Master Routine'} —{' '}
-                {selectedSession ? (bn ? selectedSession.name_bn || selectedSession.name : selectedSession.name) : ''}
-              </p>
+              {instAddress && <p className="address text-xs text-muted-foreground mt-0.5">{instAddress}</p>}
+              {(instPhone || instEmail) && (
+                <p className="contact text-[11px] text-muted-foreground font-sans mt-0.5">
+                  {instPhone && <span>মোবাইল: {toBn(instPhone)}</span>}
+                  {instPhone && instEmail && <span className="mx-2">|</span>}
+                  {instEmail && <span>ইমেইল: {instEmail}</span>}
+                </p>
+              )}
+              <div className="badge-title mt-2 inline-flex items-center gap-2 px-4 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-100 dark:border-emerald-800">
+                <span className="text-xs font-bold">
+                  {bn ? 'দৈনিক ক্লাস রুটিন' : 'Daily Class Routine'} — {sessionLabel}
+                </span>
+                <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                  (বার: {dayLabel})
+                </span>
+              </div>
             </div>
 
             {/* Day Selector Tabs (শনি, রবি, সোম, মঙ্গল, বুধ, বৃহ) */}
-            <div className="flex items-center justify-between gap-1 p-2 border-b border-border flex-wrap bg-muted/10">
+            <div className="flex items-center justify-between gap-1 p-2 border-b border-border flex-wrap bg-muted/10 print-hidden">
               <div className="flex gap-1 flex-wrap">
                 {DAYS.map(day => (
                   <Button
@@ -1064,13 +1628,13 @@ const MasterRoutineView = () => {
                 ))}
               </div>
 
-              <div className="text-xs text-muted-foreground px-2 py-0.5 rounded bg-muted/60 print-hidden">
+              <div className="text-xs text-muted-foreground px-2 py-0.5 rounded bg-muted/60">
                 <span>{bn ? 'দিনের রুটিন:' : 'Day:'} </span>
                 <span className="font-bold text-foreground">{bn ? DAYS[selectedDay]?.label_bn : DAYS[selectedDay]?.label_en}</span>
               </div>
             </div>
 
-            {/* Master Grid Table */}
+            {/* Daily Grid Table */}
             <div className="overflow-x-auto p-2">
               <table className="w-full border-collapse" style={{ minWidth: periodColumns.length * 90 + 160 }}>
                 <thead>
@@ -1078,7 +1642,7 @@ const MasterRoutineView = () => {
                     <th className={thStyle} style={{ minWidth: 150 }}>
                       <div className="font-bold text-xs">{bn ? 'শ্রেণী / পিরিয়ড' : 'Class / Period'}</div>
                       <div className="text-[9px] font-normal text-muted-foreground">
-                        {bn ? `(${displayClasses.length} টি ক্লাস)` : `(${displayClasses.length} Classes)`}
+                        {bn ? `(${displayClasses.length} টি ক্লাস সিরিয়াল অনুযায়ী)` : `(${displayClasses.length} Classes In Order)`}
                       </div>
                     </th>
                     {periodColumns.map((col, idx) => {
@@ -1086,7 +1650,7 @@ const MasterRoutineView = () => {
                         return (
                           <th
                             key={`br-${idx}`}
-                            className={breakThStyle}
+                            className={`${breakThStyle} break-col`}
                             style={{
                               writingMode: 'vertical-rl',
                               textOrientation: 'mixed',
@@ -1189,6 +1753,8 @@ const MasterRoutineView = () => {
 
                     const divName = bn ? cls.divisions?.name_bn : cls.divisions?.name;
 
+                    let skipCount = 0;
+
                     return (
                       <tr key={cls.id} className="hover:bg-accent/5 transition-colors group">
                         <td className="border border-border bg-accent/5 px-2.5 py-1.5 text-center">
@@ -1225,9 +1791,87 @@ const MasterRoutineView = () => {
                         </td>
                         {periodColumns.map((col, idx) => {
                           if (col.isBreak) {
-                            return <td key={`br-${idx}`} className="border border-border bg-accent/5" />;
+                            return <td key={`br-${idx}`} className={`${breakThStyle} break-col`} />;
                           }
+
+                          if (skipCount > 0) {
+                            skipCount--;
+                            return null;
+                          }
+
                           const period = getClassPeriodData(col.num);
+
+                          // Parse custom event & span metadata
+                          let customMeta: CustomEventMeta | null = null;
+                          if (period?.room && period.room.startsWith('{')) {
+                            try {
+                              const parsed = JSON.parse(period.room);
+                              if (parsed.is_custom) {
+                                customMeta = parsed;
+                              }
+                            } catch {}
+                          }
+
+                          // Calculate remaining non-break columns before break or end
+                          let consecutivePeriods = 1;
+                          for (let c = idx + 1; c < periodColumns.length; c++) {
+                            if (periodColumns[c].isBreak) break;
+                            consecutivePeriods++;
+                          }
+
+                          let span = 1;
+                          if (customMeta && customMeta.span > 1) {
+                            span = Math.min(customMeta.span, consecutivePeriods);
+                            skipCount = span - 1;
+                          }
+
+                          // Custom Event / Merged Cell Rendering
+                          if (customMeta) {
+                            return (
+                              <td
+                                key={col.num}
+                                colSpan={span}
+                                className="border border-border p-0 custom-cell bg-amber-50/90 dark:bg-amber-950/40 text-center"
+                              >
+                                <CellEditor
+                                  subjectId="none"
+                                  teacherName=""
+                                  teacherNameBn={customMeta.note || ''}
+                                  subjects={subjects || []}
+                                  filterClassId={cls.id}
+                                  classes={filteredClasses || []}
+                                  staff={staff || []}
+                                  bn={bn}
+                                  showClassSelect
+                                  classId={cls.id}
+                                  initialCustomMeta={customMeta}
+                                  maxSpan={consecutivePeriods}
+                                  onSave={(sId, tn, tnBn, cId, cMeta) => {
+                                    const targetClassId = cId || cls.id;
+                                    handleSaveMasterCell(targetClassId, col.num, sId, tn, tnBn, cMeta);
+                                  }}
+                                >
+                                  <button className="w-full h-full min-h-[44px] cursor-pointer hover:bg-amber-100/70 dark:hover:bg-amber-900/40 p-1 flex flex-col items-center justify-center text-center transition-colors">
+                                    <span className="font-bold text-xs text-amber-950 dark:text-amber-200">
+                                      {customMeta.title || (bn ? 'সেমিনার' : 'Seminar')}
+                                    </span>
+                                    {customMeta.note && (
+                                      <span className="text-[9px] text-amber-800 dark:text-amber-300 mt-0.5 truncate max-w-[130px]">
+                                        {customMeta.note}
+                                      </span>
+                                    )}
+                                    {span > 1 && (
+                                      <span className="text-[8px] text-amber-700/80 dark:text-amber-400 font-mono mt-0.5 print-hidden">
+                                        ({toBn(span)}টি পিরিয়ড মার্জ)
+                                      </span>
+                                    )}
+                                  </button>
+                                </CellEditor>
+                              </td>
+                            );
+                          }
+
+                          // Regular Subject / Teacher Cell Rendering
                           const subj = period?.subjects as any;
                           const subjName = subj ? (bn ? subj.name_bn : subj.name) : '';
                           const teacherDisplay = bn
@@ -1247,20 +1891,22 @@ const MasterRoutineView = () => {
                                 bn={bn}
                                 showClassSelect
                                 classId={cls.id}
-                                onSave={(sId, tn, tnBn, cId) => {
+                                initialCustomMeta={null}
+                                maxSpan={consecutivePeriods}
+                                onSave={(sId, tn, tnBn, cId, cMeta) => {
                                   const targetClassId = cId || cls.id;
-                                  handleSaveMasterCell(targetClassId, col.num, sId, tn, tnBn);
+                                  handleSaveMasterCell(targetClassId, col.num, sId, tn, tnBn, cMeta);
                                 }}
                               >
                                 <button className="w-full cursor-pointer hover:bg-accent/15 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/40 rounded-none text-left">
                                   <div className="flex flex-col min-h-[44px]">
-                                    <div className="flex-1 flex items-center justify-center px-1 py-0.5">
+                                    <div className="flex-1 flex items-center justify-center px-1 py-0.5 cell-subj">
                                       <span className="text-[10px] font-semibold text-foreground leading-tight text-center">
                                         {subjName || <span className="text-muted-foreground/30 font-bold">+</span>}
                                       </span>
                                     </div>
                                     <div className="border-t border-border/70" />
-                                    <div className="flex-1 flex items-center justify-center px-1 py-0.5 bg-muted/10">
+                                    <div className="flex-1 flex items-center justify-center px-1 py-0.5 bg-muted/10 cell-teacher">
                                       <span className="text-[8.5px] text-muted-foreground leading-tight text-center truncate max-w-[85px]">
                                         {teacherDisplay || <span className="opacity-30">—</span>}
                                       </span>
@@ -1285,43 +1931,122 @@ const MasterRoutineView = () => {
               </table>
             </div>
 
-            <div className="px-3 py-2 border-t border-border text-[9px] text-muted-foreground flex items-center justify-between">
-              <span>
-                {bn
-                  ? 'বি.দ্র. কর্তৃপক্ষ কর্তৃক পরিবর্তন করার ক্ষমতা এবং বিশেষ প্রয়োজনে অতিরিক্ত ক্লাশ নিতে পারবেন।'
-                  : 'Note: Schedule subject to change by administration.'}
-              </span>
+            {/* Footnote / বি.দ্র. Section */}
+            <div className="px-4 py-2.5 border-t border-border footnote flex items-center justify-between gap-3 flex-wrap bg-muted/10">
+              <div className="flex items-center gap-2 flex-1 min-w-[280px]">
+                <span className="text-xs font-bold text-foreground whitespace-nowrap">
+                  {bn ? 'বি.দ্র.' : 'Note:'}
+                </span>
+                {isEditingFooterNote ? (
+                  <div className="flex items-center gap-1.5 flex-1">
+                    <Input
+                      value={footerNote}
+                      onChange={e => setFooterNote(e.target.value)}
+                      className="h-7 text-xs flex-1"
+                      placeholder={bn ? 'বি.দ্র. নোট লিখুন...' : 'Write note...'}
+                    />
+                    <Button
+                      size="sm"
+                      className="h-7 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                      onClick={() => {
+                        setIsEditingFooterNote(false);
+                        localStorage.setItem('master_routine_footer_note', footerNote);
+                        toast.success(bn ? 'বি.দ্র. নোট সংরক্ষিত হয়েছে' : 'Note saved');
+                      }}
+                    >
+                      <Save className="h-3 w-3 mr-1" />
+                      {bn ? 'সেভ' : 'Save'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 flex-1">
+                    <span className="text-xs text-foreground/80 font-medium">
+                      {footerNote}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingFooterNote(true)}
+                      className="print-hidden p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground"
+                      title={bn ? 'বি.দ্র. সম্পাদনা করুন' : 'Edit note'}
+                    >
+                      <Edit className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <span className="print-hidden text-[10px] text-emerald-700 dark:text-emerald-300 font-medium">
-                {bn ? '💡 প্রতি সেলে ক্লিক করে বিষয় ও শিক্ষক নির্ধারণ বা পরিবর্তন করুন' : 'Click any slot to edit'}
+                {bn ? '💡 প্রতি সেলে ক্লিক করে বিষয়, শিক্ষক বা সেমিনার (পিরিয়ড মার্জ) নির্ধারণ করুন' : 'Click any slot to edit or merge'}
               </span>
+            </div>
+
+            {/* Signatures Section (নাজিম ও প্রিন্সিপাল স্বাক্ষর) */}
+            <div className="signatures pt-10 pb-5 px-10 grid grid-cols-2 gap-8 text-center border-t border-border/40">
+              {signatories.nazim.show && (
+                <div className="sig-block flex flex-col items-center">
+                  <div className="sig-line w-48 border-t-2 border-foreground/70 mb-1.5" />
+                  <span className="sig-name font-bold text-xs text-foreground">
+                    {signatories.nazim.name_bn || (bn ? 'নাজিম / শিক্ষা সচিব' : 'Education Secretary')}
+                  </span>
+                  <span className="sig-title text-[10px] text-muted-foreground">
+                    {signatories.nazim.title_bn || (bn ? 'নাজিম / শিক্ষা সচিব' : 'Nazim')}
+                  </span>
+                  <span className="sig-sub text-[9px] text-muted-foreground/80 mt-0.5">
+                    {instName}
+                  </span>
+                </div>
+              )}
+
+              {signatories.principal.show && (
+                <div className="sig-block flex flex-col items-center">
+                  <div className="sig-line w-48 border-t-2 border-foreground/70 mb-1.5" />
+                  <span className="sig-name font-bold text-xs text-foreground">
+                    {signatories.principal.name_bn || (bn ? 'আলহাজ্ব আব্দুছ ছোবহান' : 'Principal')}
+                  </span>
+                  <span className="sig-title text-[10px] text-muted-foreground">
+                    {signatories.principal.title_bn || (bn ? 'প্রতিষ্ঠাতা ও প্রিন্সিপাল' : 'Founder & Principal')}
+                  </span>
+                  <span className="sig-sub text-[9px] text-muted-foreground/80 mt-0.5">
+                    {instName}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
       ) : (
         /* ─── Single Class Weekly Grid (Rows = Days, Columns = Periods) ─── */
-        <div id="master-routine-print">
+        <div id="daily-routine-print">
           <div className="border-2 border-border rounded-xl overflow-hidden bg-background shadow-sm">
             {/* Header */}
-            <div className="text-center py-3 px-4 border-b-2 border-border relative bg-muted/20">
-              <div className="absolute top-2 right-3 text-[10px] text-muted-foreground border border-border rounded px-2 py-0.5">
+            <div className="header-wrap text-center py-4 px-4 border-b-2 border-border relative bg-muted/20">
+              <div className="absolute top-2 right-3 text-[10px] text-muted-foreground border border-border rounded px-2 py-0.5 print-hidden">
                 {bn ? 'তারিখ:' : 'Date:'} {new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB')}
               </div>
-              {institution?.logo_url && (
-                <img src={institution.logo_url} alt="" className="w-12 h-12 object-contain mx-auto mb-1" />
+              {instLogo && (
+                <img src={instLogo} alt="" className="w-14 h-14 object-contain mx-auto mb-1.5" />
               )}
-              <h1 className="text-lg font-bold text-foreground leading-tight">
-                {instName || (bn ? 'প্রতিষ্ঠানের নাম' : 'Institution Name')}
+              <h1 className="text-xl font-extrabold text-foreground leading-tight tracking-wide">
+                {instName}
               </h1>
-              {institution?.address && <p className="text-[10px] text-muted-foreground">{institution.address}</p>}
-              <p className="text-xs font-semibold text-foreground mt-0.5">
-                {bn ? 'সাপ্তাহিক ক্লাস রুটিন' : 'Weekly Class Routine'} —{' '}
-                {selectedSession ? (bn ? selectedSession.name_bn || selectedSession.name : selectedSession.name) : ''}
-              </p>
-              {selectedCls && (
-                <p className="text-sm font-bold text-foreground mt-0.5 bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-100 inline-block px-4 py-0.5 rounded-full">
-                  {bn ? selectedCls.name_bn : selectedCls.name}
+              {instAddress && <p className="address text-xs text-muted-foreground mt-0.5">{instAddress}</p>}
+              {(instPhone || instEmail) && (
+                <p className="contact text-[11px] text-muted-foreground font-sans mt-0.5">
+                  {instPhone && <span>মোবাইল: {toBn(instPhone)}</span>}
+                  {instPhone && instEmail && <span className="mx-2">|</span>}
+                  {instEmail && <span>ইমেইল: {instEmail}</span>}
                 </p>
               )}
+              <div className="badge-title mt-2 inline-flex items-center gap-2 px-4 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-100 dark:border-emerald-800">
+                <span className="text-xs font-bold">
+                  {bn ? 'সাপ্তাহিক ক্লাস রুটিন' : 'Weekly Class Routine'} — {sessionLabel}
+                </span>
+                {selectedCls && (
+                  <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                    ({bn ? selectedCls.name_bn : selectedCls.name})
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Weekly Table */}
@@ -1337,7 +2062,7 @@ const MasterRoutineView = () => {
                         return (
                           <th
                             key={`br-${idx}`}
-                            className={breakThStyle}
+                            className={`${breakThStyle} break-col`}
                             style={{
                               writingMode: 'vertical-rl',
                               textOrientation: 'mixed',
@@ -1418,74 +2143,190 @@ const MasterRoutineView = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {DAYS.map(day => (
-                    <tr key={day.value} className="hover:bg-accent/5 transition-colors">
-                      <td className="border border-border bg-accent/5 px-3 py-2 font-bold text-[11px] whitespace-nowrap text-center">
-                        {bn ? day.label_bn : day.label_en}
-                      </td>
-                      {periodColumns.map((col, idx) => {
-                        if (col.isBreak) {
-                          return <td key={`br-${idx}`} className="border border-border bg-accent/5" />;
-                        }
-                        const period = allPeriods?.find(
-                          (p: any) => p.day_of_week === day.value && p.period_number === col.num
-                        );
-                        const subj = period?.subjects as any;
-                        const subjName = subj ? (bn ? subj.name_bn : subj.name) : '';
-                        const teacherDisplay = bn
-                          ? period?.teacher_name_bn || period?.teacher_name || ''
-                          : period?.teacher_name || period?.teacher_name_bn || '';
+                  {DAYS.map(day => {
+                    let skipCount = 0;
+                    return (
+                      <tr key={day.value} className="hover:bg-accent/5 transition-colors">
+                        <td className="border border-border bg-accent/5 px-3 py-2 font-bold text-[11px] whitespace-nowrap text-center">
+                          {bn ? day.label_bn : day.label_en}
+                        </td>
+                        {periodColumns.map((col, idx) => {
+                          if (col.isBreak) {
+                            return <td key={`br-${idx}`} className={`${breakThStyle} break-col`} />;
+                          }
 
-                        return (
-                          <td key={col.num} className="border border-border p-0">
-                            <CellEditor
-                              subjectId={period?.subject_id || 'none'}
-                              teacherName={period?.teacher_name || ''}
-                              teacherNameBn={period?.teacher_name_bn || ''}
-                              subjects={subjects || []}
-                              filterClassId={selectedClassId}
-                              classes={filteredClasses || []}
-                              staff={staff || []}
-                              bn={bn}
-                              onSave={(sId, tn, tnBn) =>
-                                saveSingleCellMutation.mutate({
-                                  dayOfWeek: day.value,
-                                  periodNum: col.num,
-                                  subjectId: sId,
-                                  teacherName: tn,
-                                  teacherNameBn: tnBn,
-                                })
+                          if (skipCount > 0) {
+                            skipCount--;
+                            return null;
+                          }
+
+                          const period = allPeriods?.find(
+                            (p: any) => p.day_of_week === day.value && p.period_number === col.num
+                          );
+
+                          let customMeta: CustomEventMeta | null = null;
+                          if (period?.room && period.room.startsWith('{')) {
+                            try {
+                              const parsed = JSON.parse(period.room);
+                              if (parsed.is_custom) {
+                                customMeta = parsed;
                               }
-                            >
-                              <button className="w-full cursor-pointer hover:bg-accent/15 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/40 rounded-none text-left">
-                                <div className="flex flex-col min-h-[44px]">
-                                  <div className="flex-1 flex items-center justify-center px-1 py-0.5">
-                                    <span className="text-[10px] font-semibold text-foreground leading-tight text-center">
-                                      {subjName || <span className="text-muted-foreground/30 font-bold">+</span>}
+                            } catch {}
+                          }
+
+                          let consecutivePeriods = 1;
+                          for (let c = idx + 1; c < periodColumns.length; c++) {
+                            if (periodColumns[c].isBreak) break;
+                            consecutivePeriods++;
+                          }
+
+                          let span = 1;
+                          if (customMeta && customMeta.span > 1) {
+                            span = Math.min(customMeta.span, consecutivePeriods);
+                            skipCount = span - 1;
+                          }
+
+                          if (customMeta) {
+                            return (
+                              <td
+                                key={col.num}
+                                colSpan={span}
+                                className="border border-border p-0 custom-cell bg-amber-50/90 dark:bg-amber-950/40 text-center"
+                              >
+                                <CellEditor
+                                  subjectId="none"
+                                  teacherName=""
+                                  teacherNameBn={customMeta.note || ''}
+                                  subjects={subjects || []}
+                                  filterClassId={selectedClassId}
+                                  classes={filteredClasses || []}
+                                  staff={staff || []}
+                                  bn={bn}
+                                  initialCustomMeta={customMeta}
+                                  maxSpan={consecutivePeriods}
+                                  onSave={(sId, tn, tnBn, _cId, cMeta) =>
+                                    saveSingleCellMutation.mutate({
+                                      dayOfWeek: day.value,
+                                      periodNum: col.num,
+                                      subjectId: sId,
+                                      teacherName: tn,
+                                      teacherNameBn: tnBn,
+                                      customMeta: cMeta,
+                                    })
+                                  }
+                                >
+                                  <button className="w-full h-full min-h-[44px] cursor-pointer hover:bg-amber-100/70 p-1 flex flex-col items-center justify-center text-center">
+                                    <span className="font-bold text-xs text-amber-950 dark:text-amber-200">
+                                      {customMeta.title || (bn ? 'সেমিনার' : 'Seminar')}
                                     </span>
+                                    {customMeta.note && (
+                                      <span className="text-[9px] text-amber-800 dark:text-amber-300 mt-0.5 truncate max-w-[120px]">
+                                        {customMeta.note}
+                                      </span>
+                                    )}
+                                  </button>
+                                </CellEditor>
+                              </td>
+                            );
+                          }
+
+                          const subj = period?.subjects as any;
+                          const subjName = subj ? (bn ? subj.name_bn : subj.name) : '';
+                          const teacherDisplay = bn
+                            ? period?.teacher_name_bn || period?.teacher_name || ''
+                            : period?.teacher_name || period?.teacher_name_bn || '';
+
+                          return (
+                            <td key={col.num} className="border border-border p-0">
+                              <CellEditor
+                                subjectId={period?.subject_id || 'none'}
+                                teacherName={period?.teacher_name || ''}
+                                teacherNameBn={period?.teacher_name_bn || ''}
+                                subjects={subjects || []}
+                                filterClassId={selectedClassId}
+                                classes={filteredClasses || []}
+                                staff={staff || []}
+                                bn={bn}
+                                initialCustomMeta={null}
+                                maxSpan={consecutivePeriods}
+                                onSave={(sId, tn, tnBn, _cId, cMeta) =>
+                                  saveSingleCellMutation.mutate({
+                                    dayOfWeek: day.value,
+                                    periodNum: col.num,
+                                    subjectId: sId,
+                                    teacherName: tn,
+                                    teacherNameBn: tnBn,
+                                    customMeta: cMeta,
+                                  })
+                                }
+                              >
+                                <button className="w-full cursor-pointer hover:bg-accent/15 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/40 rounded-none text-left">
+                                  <div className="flex flex-col min-h-[44px]">
+                                    <div className="flex-1 flex items-center justify-center px-1 py-0.5 cell-subj">
+                                      <span className="text-[10px] font-semibold text-foreground leading-tight text-center">
+                                        {subjName || <span className="text-muted-foreground/30 font-bold">+</span>}
+                                      </span>
+                                    </div>
+                                    <div className="border-t border-border/70" />
+                                    <div className="flex-1 flex items-center justify-center px-1 py-0.5 bg-muted/10 cell-teacher">
+                                      <span className="text-[8.5px] text-muted-foreground leading-tight text-center truncate max-w-[85px]">
+                                        {teacherDisplay || <span className="opacity-30">—</span>}
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className="border-t border-border/70" />
-                                  <div className="flex-1 flex items-center justify-center px-1 py-0.5 bg-muted/10">
-                                    <span className="text-[8.5px] text-muted-foreground leading-tight text-center truncate max-w-[85px]">
-                                      {teacherDisplay || <span className="opacity-30">—</span>}
-                                    </span>
-                                  </div>
-                                </div>
-                              </button>
-                            </CellEditor>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
+                                </button>
+                              </CellEditor>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
-            <div className="px-3 py-2 border-t border-border text-[9px] text-muted-foreground">
-              {bn
-                ? 'বি.দ্র. কর্তৃপক্ষ কর্তৃক পরিবর্তন করার ক্ষমতা এবং বিশেষ প্রয়োজনে অতিরিক্ত ক্লাশ নিতে পারবেন।'
-                : 'Note: Schedule subject to change by administration.'}
+            {/* Footnote */}
+            <div className="px-4 py-2.5 border-t border-border footnote flex items-center justify-between gap-3 flex-wrap bg-muted/10">
+              <div className="flex items-center gap-2 flex-1 min-w-[280px]">
+                <span className="text-xs font-bold text-foreground whitespace-nowrap">
+                  {bn ? 'বি.দ্র.' : 'Note:'}
+                </span>
+                <span className="text-xs text-foreground/80 font-medium">{footerNote}</span>
+              </div>
+            </div>
+
+            {/* Signatures */}
+            <div className="signatures pt-10 pb-5 px-10 grid grid-cols-2 gap-8 text-center border-t border-border/40">
+              {signatories.nazim.show && (
+                <div className="sig-block flex flex-col items-center">
+                  <div className="sig-line w-48 border-t-2 border-foreground/70 mb-1.5" />
+                  <span className="sig-name font-bold text-xs text-foreground">
+                    {signatories.nazim.name_bn || (bn ? 'নাজিম / শিক্ষা সচিব' : 'Education Secretary')}
+                  </span>
+                  <span className="sig-title text-[10px] text-muted-foreground">
+                    {signatories.nazim.title_bn || (bn ? 'নাজিম / শিক্ষা সচিব' : 'Nazim')}
+                  </span>
+                  <span className="sig-sub text-[9px] text-muted-foreground/80 mt-0.5">
+                    {instName}
+                  </span>
+                </div>
+              )}
+
+              {signatories.principal.show && (
+                <div className="sig-block flex flex-col items-center">
+                  <div className="sig-line w-48 border-t-2 border-foreground/70 mb-1.5" />
+                  <span className="sig-name font-bold text-xs text-foreground">
+                    {signatories.principal.name_bn || (bn ? 'আলহাজ্ব আব্দুছ ছোবহান' : 'Principal')}
+                  </span>
+                  <span className="sig-title text-[10px] text-muted-foreground">
+                    {signatories.principal.title_bn || (bn ? 'প্রতিষ্ঠাতা ও প্রিন্সিপাল' : 'Founder & Principal')}
+                  </span>
+                  <span className="sig-sub text-[9px] text-muted-foreground/80 mt-0.5">
+                    {instName}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

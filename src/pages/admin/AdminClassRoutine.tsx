@@ -311,7 +311,7 @@ const AdminClassRoutine = () => {
               <List className="h-3.5 w-3.5" /> {bn ? 'ক্লাস রুটিন' : 'Class Routine'}
             </TabsTrigger>
             <TabsTrigger value="master" className="gap-1.5 text-xs">
-              <LayoutGrid className="h-3.5 w-3.5" /> {bn ? 'মাস্টার রুটিন' : 'Master Routine'}
+              <LayoutGrid className="h-3.5 w-3.5" /> {bn ? 'দৈনিক ক্লাস রুটিন' : 'Daily Class Routine'}
             </TabsTrigger>
           </TabsList>
 
