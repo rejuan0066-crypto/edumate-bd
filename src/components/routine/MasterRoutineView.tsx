@@ -52,6 +52,80 @@ const COMMON_EVENT_CHIPS = [
   'ছুটি',
 ];
 
+/**
+ * Filter to strictly include ONLY education / teaching department staff in routine
+ * Excludes support, maintenance, security, kitchen, and purely administrative roles
+ */
+export const isEducationStaff = (s: any): boolean => {
+  if (!s) return false;
+  const cat = (s.staff_category || '').toLowerCase();
+  const dept = (s.department || '').toLowerCase();
+  const desig = (s.designation || '').toLowerCase();
+
+  // 1. Explicitly exclude non-academic positions
+  const nonAcademicKeywords = [
+    'বাবুর্চি', 'cook', 'chef', 'রান্না', 'পিয়ন', 'peon', 'মালি', 'দারোয়ান',
+    'guard', 'নিরাপত্তা', 'security', 'পরিচ্ছন্ন', 'cleaner', 'ঝাড়ুদার',
+    'ড্রাইভার', 'driver', 'আয়া', 'হিসাবরক্ষক', 'accountant', 'অফিস সহকারী',
+    'office assistant', 'কম্পিউটার অপারেটর', 'operator', 'কেরানি', 'clerk'
+  ];
+  if (nonAcademicKeywords.some(k => desig.includes(k) || dept.includes(k) || cat.includes(k))) {
+    return false;
+  }
+
+  // 2. Explicitly include teaching / education categories
+  if (
+    cat === 'teacher' ||
+    cat === 'teaching' ||
+    cat === 'academic' ||
+    cat === 'education' ||
+    cat.startsWith('teacher_') ||
+    cat.includes('hifz') ||
+    cat.includes('nurani') ||
+    cat.includes('kitab')
+  ) {
+    return true;
+  }
+
+  // 3. Department matching education/teaching
+  if (
+    dept.includes('শিক্ষা') ||
+    dept.includes('শিক্ষক') ||
+    dept.includes('একাডেমিক') ||
+    dept.includes('academic') ||
+    dept.includes('teacher') ||
+    dept.includes('teaching') ||
+    dept.includes('নূরানী') ||
+    dept.includes('নুরানি') ||
+    dept.includes('হিফজ') ||
+    dept.includes('হিফয') ||
+    dept.includes('কিতাব') ||
+    dept.includes('ইবতেদায়ী') ||
+    dept.includes('ইবতেদায়ি') ||
+    dept.includes('মুতাওয়াসসিতাহ') ||
+    dept.includes('মুতাওয়াসসিতাহ')
+  ) {
+    return true;
+  }
+
+  // 4. Designation matching teaching
+  const teacherKeywords = [
+    'শিক্ষক', 'teacher', 'উস্তাদ', 'মুহাদ্দিস', 'মুফাসসির', 'মুফতি', 'মাওলানা',
+    'ক্বারী', 'কারি', 'কারী', 'হাফেজ', 'হাফিজ', 'নাজেরা', 'হেফজ', 'হিফজ',
+    'নূরানী', 'নুরানি', 'কিতাব', 'প্রভাষক', 'সহকারী শিক্ষক', 'প্রধান শিক্ষক'
+  ];
+  if (teacherKeywords.some(k => desig.includes(k))) {
+    return true;
+  }
+
+  // Fallback: If no category or department specified, include as potential teacher
+  if (!cat && !dept && !desig) {
+    return true;
+  }
+
+  return false;
+};
+
 /* ─── Cell Editor Popover ─── */
 interface CellEditorProps {
   subjectId: string;
@@ -501,18 +575,24 @@ const MasterRoutineView = () => {
     },
   });
 
-  // Staff / Teachers with department and designation
-  const { data: staff } = useQuery({
+  // Staff / Teachers with department, designation, and category
+  const { data: rawStaff } = useQuery({
     queryKey: ['staff-for-routine'],
     queryFn: async () => {
       const { data } = await supabase
         .from('staff')
-        .select('id, name_bn, name_en, department, designation')
+        .select('id, name_bn, name_en, department, designation, staff_category')
         .eq('status', 'active')
         .order('name_bn');
       return data || [];
     },
   });
+
+  // Filter ONLY education / teaching department staff for routine assignment
+  const staff = useMemo(() => {
+    if (!rawStaff) return [];
+    return rawStaff.filter(isEducationStaff);
+  }, [rawStaff]);
 
   // Auto-populate default principal from website settings or staff if empty
   useEffect(() => {
