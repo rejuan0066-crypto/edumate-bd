@@ -135,18 +135,25 @@ const WhatsAppSettings = () => {
       const headers: Record<string, string> = {};
       if (apiKeyRaw) headers['apikey'] = apiKeyRaw;
 
-      const resp = await fetch(`${sUrl}/instance/connectionState/${encodeURIComponent(inst)}`, { headers });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const resp = await fetch(`${sUrl}/instance/connectionState/${encodeURIComponent(inst)}`, {
+        headers,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
       const data = await resp.json().catch(() => ({}));
       const state = (data?.instance?.state || data?.state || '').toLowerCase();
       const owner = data?.instance?.owner || data?.owner;
-      if (owner) setConnectedPhone(String(owner).replace(/@.*$/, ''));
 
       if (state === 'open' || state === 'connected') {
+        if (owner) setConnectedPhone(String(owner).replace(/@.*$/, ''));
         setConnectionStatus('connected');
         setStatusMessage(bn ? '✅ সংযুক্ত (Connected)! নম্বরটি সক্রিয় আছে।' : 'Connected! Number is active.');
       } else {
+        setConnectedPhone(null);
         setConnectionStatus('disconnected');
-        setStatusMessage(bn ? '⚠️ সংযোগ বিচ্ছিন্ন (Disconnected) অথবা QR কোড স্ক্যান প্রয়োজন।' : 'Disconnected. QR scan needed.');
+        setStatusMessage(bn ? '🔴 সংযোগ বিচ্ছিন্ন (লগআউট অবস্থা)। কোনো WhatsApp যুক্ত নেই।' : 'Disconnected (Logged out). No WhatsApp connected.');
       }
     } catch {
       // ignore background error
@@ -331,51 +338,51 @@ const WhatsAppSettings = () => {
       return;
     }
     const confirmMsg = bn
-      ? 'আপনি কি নিশ্চিত যে বর্তমান WhatsApp সেশনটি লগআউট / সংযোগ বিচ্ছিন্ন করতে চান?'
+      ? 'আপনি কি নিশ্চিত যে বর্তমান WhatsApp সেশনটি লগআউট / সংযোগ বিচ্ছিন্ন করতে চান? এতে সেশন ও কিউআর রিসেট হবে।'
       : 'Are you sure you want to log out / disconnect the current WhatsApp session?';
     if (!window.confirm(confirmMsg)) return;
 
     setLoggingOut(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
     try {
       const sUrl = freeGateway.server_url.replace(/\/+$/, '');
       const instance = freeGateway.instance_name.trim() || 'madrasa_main';
       const headers: Record<string, string> = {};
       if (freeGateway.api_key) headers['apikey'] = freeGateway.api_key;
 
-      let loggedOut = false;
-      // 1. DELETE /instance/logout/:instance
+      // 1. Try standard instance logout
       try {
-        const resp = await fetch(`${sUrl}/instance/logout/${encodeURIComponent(instance)}`, {
+        await fetch(`${sUrl}/instance/logout/${encodeURIComponent(instance)}`, {
           method: 'DELETE',
           headers,
+          signal: controller.signal,
         });
-        if (resp.ok) loggedOut = true;
       } catch { /* ignore */ }
 
-      // 2. POST fallback
-      if (!loggedOut) {
-        try {
-          const resp = await fetch(`${sUrl}/instance/logout/${encodeURIComponent(instance)}`, {
-            method: 'POST',
-            headers,
-          });
-          if (resp.ok) loggedOut = true;
-        } catch { /* ignore */ }
-      }
+      // 2. Always delete instance on server to completely wipe Baileys auth tokens & memory
+      try {
+        await fetch(`${sUrl}/instance/delete/${encodeURIComponent(instance)}`, {
+          method: 'DELETE',
+          headers,
+          signal: controller.signal,
+        });
+      } catch { /* ignore */ }
 
       // 3. WPPConnect fallback
-      if (!loggedOut && freeGateway.provider === 'wppconnect') {
+      if (freeGateway.provider === 'wppconnect') {
         try {
-          const resp = await fetch(`${sUrl}/api/${encodeURIComponent(instance)}/logout-session`, {
+          await fetch(`${sUrl}/api/${encodeURIComponent(instance)}/logout-session`, {
             method: 'POST',
             headers,
+            signal: controller.signal,
           });
-          if (resp.ok) loggedOut = true;
         } catch { /* ignore */ }
       }
 
       setConnectionStatus('disconnected');
-      setStatusMessage(bn ? '⚠️ WhatsApp সফলভাবে লগআউট / সংযোগ বিচ্ছিন্ন করা হয়েছে।' : 'WhatsApp logged out successfully.');
+      setStatusMessage(bn ? '🔴 সংযোগ বিচ্ছিন্ন (লগআউট অবস্থা)। নতুন করে QR কোড স্ক্যান করুন।' : 'Disconnected (Logged out). Scan QR code to connect.');
       setConnectedPhone(null);
       setQrCodeData(null);
       setScanStatus('idle');
@@ -383,15 +390,22 @@ const WhatsAppSettings = () => {
 
       toast({
         title: bn ? 'লগআউট সম্পন্ন' : 'Logged out',
-        description: bn ? 'WhatsApp সেশনটি ডিসকানেক্ট করা হয়েছে।' : 'WhatsApp session has been disconnected.',
+        description: bn ? 'WhatsApp সেশনটি সফলভাবে ডিসকানেক্ট ও রিসেট করা হয়েছে।' : 'WhatsApp session has been disconnected and reset.',
       });
-    } catch (e: any) {
+    } catch {
+      // Local reset even on timeout or network error
+      setConnectionStatus('disconnected');
+      setStatusMessage(bn ? '🔴 সংযোগ বিচ্ছিন্ন (লগআউট অবস্থা)। নতুন করে QR কোড স্ক্যান করুন।' : 'Disconnected (Logged out).');
+      setConnectedPhone(null);
+      setQrCodeData(null);
+      setScanStatus('idle');
+      setQrModalOpen(false);
       toast({
-        title: bn ? 'লগআউট ব্যর্থ' : 'Logout failed',
-        description: e.message,
-        variant: 'destructive',
+        title: bn ? 'লগআউট সম্পন্ন (লোকাল রিসেট)' : 'Logged out (Local Reset)',
+        description: bn ? 'সেশন রিসেট করা হয়েছে।' : 'Session reset.',
       });
     } finally {
+      clearTimeout(timeoutId);
       setLoggingOut(false);
     }
   };
@@ -404,29 +418,43 @@ const WhatsAppSettings = () => {
     }
     setCheckingStatus(true);
     setStatusMessage('');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
     try {
       const sUrl = freeGateway.server_url.replace(/\/+$/, '');
       const instance = freeGateway.instance_name.trim() || 'madrasa_main';
       const headers: Record<string, string> = {};
       if (freeGateway.api_key) headers['apikey'] = freeGateway.api_key;
 
-      const resp = await fetch(`${sUrl}/instance/connectionState/${encodeURIComponent(instance)}`, { headers });
+      const resp = await fetch(`${sUrl}/instance/connectionState/${encodeURIComponent(instance)}`, {
+        headers,
+        signal: controller.signal,
+      });
       const data = await resp.json().catch(() => ({}));
       
-      const state = data?.instance?.state || data?.state;
+      const state = (data?.instance?.state || data?.state || '').toLowerCase();
       const owner = data?.instance?.owner || data?.owner;
-      if (owner) setConnectedPhone(String(owner).replace(/@.*$/, ''));
+      
       if (state === 'open' || state === 'connected') {
+        if (owner) setConnectedPhone(String(owner).replace(/@.*$/, ''));
         setConnectionStatus('connected');
         setStatusMessage(bn ? '✅ সংযুক্ত (Connected)! নম্বরটি সক্রিয় আছে।' : 'Connected! Number is active.');
       } else {
+        setConnectedPhone(null);
         setConnectionStatus('disconnected');
-        setStatusMessage(bn ? '⚠️ সংযোগ বিচ্ছিন্ন (Disconnected) অথবা QR কোড স্ক্যান প্রয়োজন।' : 'Disconnected. QR scan needed.');
+        if (state === 'connecting') {
+          setStatusMessage(bn ? '🟡 সংযোগ প্রক্রিয়াধীন (Connecting)... কিউআর কোড স্ক্যান বা সেশন রিসেট করুন।' : 'Connecting... Scan QR or reset session.');
+        } else {
+          setStatusMessage(bn ? '🔴 সংযোগ বিচ্ছিন্ন (লগআউট অবস্থা)। কোনো WhatsApp যুক্ত নেই।' : 'Disconnected (Logged out). No WhatsApp connected.');
+        }
       }
     } catch (e: any) {
       setConnectionStatus('error');
-      setStatusMessage(bn ? `সার্ভারে সংযোগ ব্যর্থ: ${e.message}` : `Connection failed: ${e.message}`);
+      setConnectedPhone(null);
+      setStatusMessage(bn ? `সার্ভারে সংযোগ ব্যর্থ: ${e.name === 'AbortError' ? 'সময় শেষ (Timeout)' : (e.message || 'Error')}` : `Connection failed: ${e.message}`);
     } finally {
+      clearTimeout(timeoutId);
       setCheckingStatus(false);
     }
   };
@@ -443,60 +471,91 @@ const WhatsAppSettings = () => {
 
     setLoadingQr(true);
     setQrCodeData(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
     try {
       const sUrl = freeGateway.server_url.replace(/\/+$/, '');
       const instance = freeGateway.instance_name.trim() || 'madrasa_main';
       const headers: Record<string, string> = {};
       if (freeGateway.api_key) headers['apikey'] = freeGateway.api_key;
 
-      const resp = await fetch(`${sUrl}/instance/connect/${encodeURIComponent(instance)}`, { headers });
-      const data = await resp.json().catch(() => ({}));
-      
-      let b64 = data?.base64 || data?.qrcode?.base64;
-      let code = data?.code || data?.qrcode?.code;
-
-      // If instance doesn't exist yet, auto-create it
-      if (!b64 && !code) {
-        const createResp = await fetch(`${sUrl}/instance/create`, {
-          method: 'POST',
-          headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            instanceName: instance,
-            qrcode: true,
-            integration: 'WHATSAPP-BAILEYS',
-          }),
+      // 1. Check current connection state first
+      try {
+        const stResp = await fetch(`${sUrl}/instance/connectionState/${encodeURIComponent(instance)}`, {
+          headers,
+          signal: controller.signal,
         });
-        const createData = await createResp.json().catch(() => ({}));
-        b64 = createData?.qrcode?.base64 || createData?.base64;
-        code = createData?.qrcode?.code || createData?.code;
+        const st = await stResp.json().catch(() => ({}));
+        const state = (st?.instance?.state || st?.state || '').toLowerCase();
+        if (state === 'open' || state === 'connected') {
+          const owner = st?.instance?.owner || st?.owner;
+          if (owner) setConnectedPhone(String(owner).replace(/@.*$/, ''));
+          setScanStatus('success');
+          setConnectionStatus('connected');
+          setStatusMessage(bn ? '✅ সংযুক্ত (Connected)! নম্বরটি সক্রিয় আছে।' : 'Connected! Number is active.');
+          setLoadingQr(false);
+          clearTimeout(timeoutId);
+          return;
+        }
+      } catch { /* proceed */ }
 
-      }
+      // 2. Try fetching existing QR from /instance/connect
+      let b64: string | null = null;
+      let code: string | null = null;
+      let data: any = {};
 
-      // QR may take a few seconds to generate — retry
-      for (let i = 0; i < 4 && !b64 && !code; i++) {
-        await new Promise((r) => setTimeout(r, 2000));
-        const retryResp = await fetch(`${sUrl}/instance/connect/${encodeURIComponent(instance)}`, { headers });
-        const retryData = await retryResp.json().catch(() => ({}));
-        b64 = retryData?.base64 || retryData?.qrcode?.base64;
-        code = retryData?.code || retryData?.qrcode?.code;
-      }
+      try {
+        const resp = await fetch(`${sUrl}/instance/connect/${encodeURIComponent(instance)}`, {
+          headers,
+          signal: controller.signal,
+        });
+        data = await resp.json().catch(() => ({}));
+        b64 = data?.base64 || data?.qrcode?.base64;
+        code = data?.code || data?.qrcode?.code;
+      } catch { /* proceed */ }
 
-      // Already connected?
+      // 3. If no QR returned (stale instance in close/connecting state or not found),
+      // delete the stale instance and create a fresh one to guarantee an immediate fresh QR code!
       if (!b64 && !code) {
         try {
-          const stResp = await fetch(`${sUrl}/instance/connectionState/${encodeURIComponent(instance)}`, { headers });
-          const st = await stResp.json().catch(() => ({}));
-          const state = st?.instance?.state || st?.state;
-          if (state === 'open' || state === 'connected') {
-            const owner = st?.instance?.owner || st?.owner;
-            if (owner) setConnectedPhone(String(owner).replace(/@.*$/, ''));
-            setScanStatus('success');
-            setConnectionStatus('connected');
-            setStatusMessage(bn ? '✅ সংযুক্ত (Connected)! নম্বরটি সক্রিয় আছে।' : 'Connected! Number is active.');
-            setLoadingQr(false);
-            return;
-          }
-        } catch { /* ignore */ }
+          await fetch(`${sUrl}/instance/delete/${encodeURIComponent(instance)}`, {
+            method: 'DELETE',
+            headers,
+            signal: controller.signal,
+          });
+        } catch { /* ignore if already gone */ }
+
+        try {
+          const createResp = await fetch(`${sUrl}/instance/create`, {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              instanceName: instance,
+              qrcode: true,
+              integration: 'WHATSAPP-BAILEYS',
+            }),
+            signal: controller.signal,
+          });
+          const createData = await createResp.json().catch(() => ({}));
+          b64 = createData?.qrcode?.base64 || createData?.base64;
+          code = createData?.qrcode?.code || createData?.code;
+          if (createData?.pairingCode) data.pairingCode = createData.pairingCode;
+        } catch { /* proceed */ }
+      }
+
+      // 4. Retry polling /instance/connect if still processing
+      for (let i = 0; i < 3 && !b64 && !code; i++) {
+        await new Promise((r) => setTimeout(r, 1500));
+        try {
+          const retryResp = await fetch(`${sUrl}/instance/connect/${encodeURIComponent(instance)}`, {
+            headers,
+            signal: controller.signal,
+          });
+          const retryData = await retryResp.json().catch(() => ({}));
+          b64 = retryData?.base64 || retryData?.qrcode?.base64;
+          code = retryData?.code || retryData?.qrcode?.code;
+        } catch { /* continue */ }
       }
 
       if (b64) {
@@ -510,12 +569,17 @@ const WhatsAppSettings = () => {
         setQrCodeData(data.pairingCode);
       } else {
         const errMsg = data?.response?.message?.[0] || data?.message || data?.error || (data?.status ? `HTTP ${data.status}` : null);
-        setQrErrorMessage(errMsg || (bn ? 'সার্ভার থেকে কোনো QR ডেটা আসেনি।' : 'No QR data returned from server.'));
+        setQrErrorMessage(errMsg || (bn ? 'সার্ভার থেকে কোনো QR ডেটা আসেনি। অনুগ্রহ করে "নতুন QR কোড আনুন" চাপুন।' : 'No QR data returned from server. Please refresh.'));
       }
     } catch (err: any) {
       console.error('Error fetching QR:', err);
-      setQrErrorMessage(err.message || (bn ? 'সার্ভারে সংযোগ ব্যর্থ হয়েছে।' : 'Failed to connect to server.'));
+      setQrErrorMessage(
+        err.name === 'AbortError'
+          ? (bn ? 'সার্ভার সাড়া দিতে অতিরিক্ত সময় নিচ্ছে (Timeout)। অনুগ্রহ করে আবার চেষ্টা করুন।' : 'Server timed out. Please try again.')
+          : (err.message || (bn ? 'সার্ভারে সংযোগ ব্যর্থ হয়েছে।' : 'Failed to connect to server.'))
+      );
     } finally {
+      clearTimeout(timeoutId);
       setLoadingQr(false);
     }
   };
@@ -722,25 +786,34 @@ const WhatsAppSettings = () => {
             </div>
           </div>
 
-          {statusMessage && (
-            <div className={`p-3 rounded-xl text-xs font-medium flex flex-wrap items-center justify-between gap-2 border ${
-              connectionStatus === 'connected' ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/30' :
-              connectionStatus === 'disconnected' ? 'bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30' :
-              'bg-destructive/15 text-destructive border-destructive/30'
-            }`}>
-              <div className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${
-                  connectionStatus === 'connected' ? 'bg-emerald-500 animate-pulse' :
-                  connectionStatus === 'disconnected' ? 'bg-amber-500' : 'bg-destructive'
-                }`} />
-                <span>{statusMessage}</span>
-                {connectedPhone && (
-                  <span className="font-mono text-[11px] bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 px-2 py-0.5 rounded-full font-bold">
-                    📱 {connectedPhone}
-                  </span>
+          {/* Live Connection Status Banner */}
+          <div className={`p-3 rounded-xl text-xs font-medium flex flex-wrap items-center justify-between gap-2 border ${
+            connectionStatus === 'connected' ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/30' :
+            connectionStatus === 'disconnected' ? 'bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30' :
+            connectionStatus === 'error' ? 'bg-destructive/15 text-destructive border-destructive/30' :
+            'bg-muted text-muted-foreground border-border'
+          }`}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`w-2.5 h-2.5 rounded-full ${
+                connectionStatus === 'connected' ? 'bg-emerald-500 animate-pulse' :
+                connectionStatus === 'disconnected' ? 'bg-amber-500' :
+                connectionStatus === 'error' ? 'bg-destructive' : 'bg-muted-foreground'
+              }`} />
+              <span>
+                {statusMessage || (
+                  connectionStatus === 'connected'
+                    ? (bn ? '✅ সংযুক্ত (Connected)! নম্বরটি সক্রিয় আছে।' : 'Connected! Number is active.')
+                    : (bn ? '🔴 সংযোগ বিচ্ছিন্ন (লগআউট অবস্থা)। কোনো WhatsApp যুক্ত নেই।' : 'Disconnected (Logged out).')
                 )}
-              </div>
-              {connectionStatus === 'connected' && (
+              </span>
+              {connectionStatus === 'connected' && connectedPhone && (
+                <span className="font-mono text-[11px] bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 px-2 py-0.5 rounded-full font-bold">
+                  📱 {connectedPhone}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              {connectionStatus === 'connected' ? (
                 <Button
                   type="button"
                   variant="ghost"
@@ -749,12 +822,23 @@ const WhatsAppSettings = () => {
                   disabled={loggingOut}
                   className="h-7 px-2.5 text-xs text-destructive hover:bg-destructive/15 gap-1.5 rounded-lg"
                 >
-                  <LogOut className="w-3 h-3" />
+                  {loggingOut ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
                   <span>{bn ? 'লগআউট করুন' : 'Log Out'}</span>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleOpenQrModal}
+                  className="h-7 px-2.5 text-xs text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 gap-1.5 rounded-lg font-semibold"
+                >
+                  <QrCode className="w-3 h-3" />
+                  <span>{bn ? 'QR স্ক্যান করে সংযোগ করুন' : 'Scan QR to Connect'}</span>
                 </Button>
               )}
             </div>
-          )}
+          </div>
 
           <div className="p-3 rounded-lg bg-background/80 border text-xs text-muted-foreground space-y-1">
             <p className="font-semibold text-foreground flex items-center gap-1.5">
@@ -1086,19 +1170,30 @@ const WhatsAppSettings = () => {
                   <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-center space-y-2">
                     <p className="font-semibold">{bn ? '⚠️ সংযোগ সমস্যা' : 'Connection Problem'}</p>
                     <p className="font-mono text-[11px]">{qrErrorMessage}</p>
-                    {qrErrorMessage.includes('ইতিমধ্যে সংযুক্ত') && (
+                    <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
                       <Button
                         type="button"
                         size="sm"
                         variant="destructive"
                         onClick={handleLogout}
                         disabled={loggingOut}
-                        className="rounded-full text-xs gap-1.5 mt-2"
+                        className="rounded-full text-xs gap-1.5"
                       >
-                        <LogOut className="w-3.5 h-3.5" />
-                        {bn ? 'বর্তমান সেশন লগআউট করুন' : 'Log Out Current Session'}
+                        {loggingOut ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                        {bn ? 'সেশন রিসেট করুন' : 'Reset Session'}
                       </Button>
-                    )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleOpenQrModal}
+                        disabled={loadingQr}
+                        className="rounded-full text-xs gap-1.5"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        {bn ? 'আবার চেষ্টা করুন' : 'Try Again'}
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="text-muted-foreground space-y-1">
