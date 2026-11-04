@@ -1602,35 +1602,6 @@ const MasterRoutineView = () => {
                 <span className="text-xs font-bold">
                   {bn ? 'দৈনিক ক্লাস রুটিন' : 'Daily Class Routine'} — {sessionLabel}
                 </span>
-                <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
-                  (বার: {dayLabel})
-                </span>
-              </div>
-            </div>
-
-            {/* Day Selector Tabs (শনি, রবি, সোম, মঙ্গল, বুধ, বৃহ) */}
-            <div className="flex items-center justify-between gap-1 p-2 border-b border-border flex-wrap bg-muted/10 print-hidden">
-              <div className="flex gap-1 flex-wrap">
-                {DAYS.map(day => (
-                  <Button
-                    key={day.value}
-                    size="sm"
-                    variant={selectedDay === day.value ? 'default' : 'outline'}
-                    className={`text-xs h-7 px-3.5 font-bold transition-all ${
-                      selectedDay === day.value
-                        ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm'
-                        : 'hover:bg-accent'
-                    }`}
-                    onClick={() => setSelectedDay(day.value)}
-                  >
-                    {bn ? day.short_bn : day.short_en}
-                  </Button>
-                ))}
-              </div>
-
-              <div className="text-xs text-muted-foreground px-2 py-0.5 rounded bg-muted/60">
-                <span>{bn ? 'দিনের রুটিন:' : 'Day:'} </span>
-                <span className="font-bold text-foreground">{bn ? DAYS[selectedDay]?.label_bn : DAYS[selectedDay]?.label_en}</span>
               </div>
             </div>
 
@@ -1747,7 +1718,9 @@ const MasterRoutineView = () => {
 
                     const getClassPeriodData = (periodNum: number) => {
                       return (
-                        classPeriods?.find(p => p.day_of_week === selectedDay && p.period_number === periodNum) || null
+                        classPeriods?.find(p => p.day_of_week === selectedDay && p.period_number === periodNum) ||
+                        classPeriods?.find(p => p.period_number === periodNum) ||
+                        null
                       );
                     };
 
