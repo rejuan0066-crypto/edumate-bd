@@ -503,12 +503,12 @@ const Login = () => {
 
           {/* Back to Home Link */}
           <div className="text-center mt-3.5 relative z-10">
-            <Link
-              to="/"
-              className="text-xs text-slate-500 hover:text-[#0d7a55] font-semibold transition inline-flex items-center gap-1"
+            <a
+              href="https://subhaniabd.vercel.app"
+              className="text-xs text-slate-500 hover:text-[#0d7a55] font-semibold transition inline-flex items-center gap-1 cursor-pointer"
             >
               <span>← {language === 'bn' ? 'মূল ওয়েবসাইটে ফিরুন' : 'Back to website'}</span>
-            </Link>
+            </a>
           </div>
 
           {/* Bottom-Left Accent Curve (matching mockup) */}
