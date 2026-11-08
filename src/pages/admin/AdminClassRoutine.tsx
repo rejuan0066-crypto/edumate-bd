@@ -56,7 +56,6 @@ const AdminClassRoutine = () => {
   const [form, setForm] = useState({ name: '', name_bn: '', class_id: '', academic_session_id: '', is_active: true });
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [filterClassId, setFilterClassId] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<string>('individual');
 
   // Fetch institution
   const { data: institution } = useQuery({
@@ -361,143 +360,140 @@ const AdminClassRoutine = () => {
     </div>
   );
 
-  // ---- LIST VIEW ----
+  // ---- LIST VIEW: When no routine is clicked, show Routine Names List ----
   if (!selectedRoutineId) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-bold">{bn ? 'ক্লাস রুটিন' : 'Class Routine'}</h1>
+        {/* Top Header */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-xl font-bold">{bn ? 'ক্লাস রুটিন' : 'Class Routine'}</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {bn ? 'তালিকার যেকোনো রুটিনে ক্লিক করে পূর্ণাঙ্গ ক্লাস রুটিন টেবিল দেখুন ও পরিচালনা করুন' : 'Click on any routine in the list to view and manage its timetable'}
+            </p>
+          </div>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={v => {
-            setActiveTab(v);
-            localStorage.setItem('class_routine_active_tab', v);
-          }}
-          className="w-full"
-        >
-          <TabsList className="grid w-full grid-cols-2 max-w-sm">
-            <TabsTrigger value="individual" className="gap-1.5 text-xs font-semibold">
-              <List className="h-3.5 w-3.5" /> {bn ? 'ক্লাস রুটিন তালিকা' : 'Class Routine List'}
-            </TabsTrigger>
-            <TabsTrigger value="master" className="gap-1.5 text-xs font-semibold">
-              <LayoutGrid className="h-3.5 w-3.5" /> {bn ? 'দৈনিক মাস্টার রুটিন' : 'Daily Master Routine'}
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 border-emerald-600/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold"
+              onClick={() => setSelectedRoutineId('all')}
+            >
+              <LayoutGrid className="h-4 w-4 text-emerald-600" />
+              {bn ? 'সকল ক্লাসের দৈনিক মাস্টার রুটিন' : 'All Classes Master Routine'}
+            </Button>
 
-          <TabsContent value="individual" className="space-y-4 mt-4">
-            <div className="flex items-end justify-between gap-3 flex-wrap">
-              <div className="min-w-[180px]">
-                <Label className="text-xs">{bn ? 'শ্রেণী অনুযায়ী ফিল্টার' : 'Filter by Class'}</Label>
-                <Select value={filterClassId} onValueChange={setFilterClassId}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{bn ? 'সকল শ্রেণী' : 'All Classes'}</SelectItem>
-                    {classes?.map(c => {
-                      const div = (c as any).divisions;
-                      return <SelectItem key={c.id} value={c.id}>{bn ? `${div?.name_bn || ''} - ${c.name_bn}` : `${div?.name || ''} - ${c.name}`}</SelectItem>;
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Dialog open={showCreate} onOpenChange={setShowCreate}>
-                <DialogTrigger asChild>
-                  <Button size="sm"><Plus className="h-4 w-4 mr-1" />{bn ? 'নতুন রুটিন' : 'New Routine'}</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>{bn ? 'নতুন রুটিন তৈরি' : 'Create Routine'}</DialogTitle></DialogHeader>
-                  <RoutineFormFields />
-                  <Button onClick={() => createRoutine.mutate()} disabled={!form.name || !form.name_bn || !form.class_id}>
-                    {bn ? 'তৈরি করুন' : 'Create'}
-                  </Button>
-                </DialogContent>
-              </Dialog>
-            </div>
+            <Dialog open={showCreate} onOpenChange={setShowCreate}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-emerald-700 hover:bg-emerald-800 text-white gap-1.5 font-semibold">
+                  <Plus className="h-4 w-4" />{bn ? 'নতুন রুটিন' : 'New Routine'}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{bn ? 'নতুন রুটিন তৈরি' : 'Create Routine'}</DialogTitle></DialogHeader>
+                <RoutineFormFields />
+                <Button onClick={() => createRoutine.mutate()} disabled={!form.name || !form.name_bn || !form.class_id}>
+                  {bn ? 'তৈরি করুন' : 'Create'}
+                </Button>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
 
-            {isLoading ? <p className="text-muted-foreground">{bn ? 'লোড হচ্ছে...' : 'Loading...'}</p> : (() => {
-              const filtered = filterClassId === 'all' ? routines : routines?.filter(r => r.class_id === filterClassId);
-              return (
-              <Card>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="min-w-[40px]">#</TableHead>
-                          <TableHead className="min-w-[150px]">{bn ? 'রুটিন নাম' : 'Routine Name'}</TableHead>
-                          <TableHead className="min-w-[120px]">{bn ? 'শ্রেণী' : 'Class'}</TableHead>
-                          <TableHead className="min-w-[120px]">{bn ? 'সেশন' : 'Session'}</TableHead>
-                          <TableHead className="min-w-[80px]">{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
-                          <TableHead className="w-28 text-right">{bn ? 'অ্যাকশন' : 'Action'}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filtered?.map((r, idx) => {
-                          const cls = r.classes as any;
-                          const div = cls?.divisions as any;
-                          const sess = r.academic_sessions as any;
-                          return (
-                            <TableRow key={r.id} className="cursor-pointer hover:bg-accent/50" onClick={() => setSelectedRoutineId(r.id)}>
-                              <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
-                              <TableCell className="font-medium">{bn ? r.name_bn : r.name}</TableCell>
-                              <TableCell className="text-sm">{bn ? `${div?.name_bn || ''} - ${cls?.name_bn || ''}` : `${div?.name || ''} - ${cls?.name || ''}`}</TableCell>
-                              <TableCell className="text-sm">{sess ? (bn ? sess.name_bn || sess.name : sess.name) : '-'}</TableCell>
-                              <TableCell>
-                                <Badge variant={r.is_active ? 'default' : 'secondary'}>
-                                  {r.is_active ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right" onClick={e => e.stopPropagation()}>
-                                <div className="flex gap-1 justify-end">
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40" title={bn ? 'ফুল রুটিন দেখুন' : 'View Full Routine'} onClick={() => setSelectedRoutineId(r.id)}><Eye className="h-3.5 w-3.5" /></Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40" title={bn ? 'রুটিন তথ্য সম্পাদনা' : 'Edit Routine'} onClick={() => {
-                                    setForm({ name: r.name, name_bn: r.name_bn, class_id: r.class_id, academic_session_id: r.academic_session_id || '', is_active: r.is_active ?? true });
-                                    setEditingRoutineId(r.id);
-                                    setShowEdit(true);
-                                  }}><Edit className="h-3.5 w-3.5" /></Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40" title={bn ? 'রুটিন রিসেট (সকল পিরিয়ড মুছুন)' : 'Reset Routine'} onClick={async () => {
-                                    if ((await confirm({
-                                      title: bn ? 'রুটিন রিসেট নিশ্চিতকরণ' : 'Confirm Reset',
-                                      description: bn ? `আপনি কি নিশ্চিত যে "${bn ? r.name_bn : r.name}" রুটিনের সকল পিরিয়ড রিসেট করতে চান? সব পিরিয়ড খালি হয়ে যাবে।` : `Reset all periods for "${r.name}"?`,
-                                      variant: 'destructive',
-                                    }))) {
-                                      resetRoutine.mutate(r.id);
-                                    }
-                                  }}><RotateCcw className="h-3.5 w-3.5" /></Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" title={bn ? 'রুটিন কপি' : 'Copy Routine'} onClick={() => copyRoutine.mutate(r.id)}><Copy className="h-3.5 w-3.5" /></Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" title={bn ? 'রুটিন ডিলিট' : 'Delete Routine'} onClick={async () => {
-                                    if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) deleteRoutine.mutate(r.id);
-                                  }}><Trash2 className="h-3.5 w-3.5" /></Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                        {(!filtered || filtered.length === 0) && (
-                          <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{bn ? 'কোনো রুটিন নেই' : 'No routines'}</TableCell></TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-              );
-            })()}
-          </TabsContent>
+        {/* Filter bar */}
+        <div className="flex items-end justify-between gap-3 flex-wrap bg-card p-3 rounded-xl border border-border">
+          <div className="min-w-[200px]">
+            <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
+              {bn ? 'শ্রেণী অনুযায়ী ফিল্টার' : 'Filter by Class'}
+            </Label>
+            <Select value={filterClassId} onValueChange={setFilterClassId}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{bn ? 'সকল শ্রেণী' : 'All Classes'}</SelectItem>
+                {classes?.map(c => {
+                  const div = (c as any).divisions;
+                  return <SelectItem key={c.id} value={c.id}>{bn ? `${div?.name_bn || ''} - ${c.name_bn}` : `${div?.name || ''} - ${c.name}`}</SelectItem>;
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-          <TabsContent value="master" className="mt-4">
-            <div className="mb-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveTab('individual')}
-                className="h-8 gap-1.5 text-xs font-semibold hover:bg-muted"
-              >
-                <span>←</span> {bn ? 'রুটিন তালিকায় ফিরুন' : 'Back to Routine List'}
-              </Button>
-            </div>
-            <MasterRoutineView onBack={() => setActiveTab('individual')} showBackToList={true} />
-          </TabsContent>
-        </Tabs>
+        {/* Routine Names List Table */}
+        {isLoading ? (
+          <p className="text-muted-foreground">{bn ? 'লোড হচ্ছে...' : 'Loading...'}</p>
+        ) : (() => {
+          const filtered = filterClassId === 'all' ? routines : routines?.filter(r => r.class_id === filterClassId);
+          return (
+            <Card>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[40px]">#</TableHead>
+                        <TableHead className="min-w-[150px]">{bn ? 'রুটিন নাম' : 'Routine Name'}</TableHead>
+                        <TableHead className="min-w-[120px]">{bn ? 'শ্রেণী' : 'Class'}</TableHead>
+                        <TableHead className="min-w-[120px]">{bn ? 'সেশন' : 'Session'}</TableHead>
+                        <TableHead className="min-w-[80px]">{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
+                        <TableHead className="w-28 text-right">{bn ? 'অ্যাকশন' : 'Action'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered?.map((r, idx) => {
+                        const cls = r.classes as any;
+                        const div = cls?.divisions as any;
+                        const sess = r.academic_sessions as any;
+                        return (
+                          <TableRow key={r.id} className="cursor-pointer hover:bg-accent/50 group" onClick={() => setSelectedRoutineId(r.id)}>
+                            <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
+                            <TableCell className="font-semibold text-emerald-800 dark:text-emerald-300 group-hover:underline">
+                              {bn ? r.name_bn : r.name}
+                            </TableCell>
+                            <TableCell className="text-sm">{bn ? `${div?.name_bn || ''} - ${cls?.name_bn || ''}` : `${div?.name || ''} - ${cls?.name || ''}`}</TableCell>
+                            <TableCell className="text-sm">{sess ? (bn ? sess.name_bn || sess.name : sess.name) : '-'}</TableCell>
+                            <TableCell>
+                              <Badge variant={r.is_active ? 'default' : 'secondary'}>
+                                {r.is_active ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right" onClick={e => e.stopPropagation()}>
+                              <div className="flex gap-1 justify-end">
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40" title={bn ? 'ফুল রুটিন দেখুন' : 'View Full Routine'} onClick={() => setSelectedRoutineId(r.id)}><Eye className="h-3.5 w-3.5" /></Button>
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40" title={bn ? 'রুটিন তথ্য সম্পাদনা' : 'Edit Routine'} onClick={() => {
+                                  setForm({ name: r.name, name_bn: r.name_bn, class_id: r.class_id, academic_session_id: r.academic_session_id || '', is_active: r.is_active ?? true });
+                                  setEditingRoutineId(r.id);
+                                  setShowEdit(true);
+                                }}><Edit className="h-3.5 w-3.5" /></Button>
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40" title={bn ? 'রুটিন রিসেট (সকল পিরিয়ড মুছুন)' : 'Reset Routine'} onClick={async () => {
+                                  if ((await confirm({
+                                    title: bn ? 'রুটিন রিসেট নিশ্চিতকরণ' : 'Confirm Reset',
+                                    description: bn ? `আপনি কি নিশ্চিত যে "${bn ? r.name_bn : r.name}" রুটিনের সকল পিরিয়ড রিসেট করতে চান? সব পিরিয়ড খালি হয়ে যাবে।` : `Reset all periods for "${r.name}"?`,
+                                    variant: 'destructive',
+                                  }))) {
+                                    resetRoutine.mutate(r.id);
+                                  }
+                                }}><RotateCcw className="h-3.5 w-3.5" /></Button>
+                                <Button size="icon" variant="ghost" className="h-7 w-7" title={bn ? 'রুটিন কপি' : 'Copy Routine'} onClick={() => copyRoutine.mutate(r.id)}><Copy className="h-3.5 w-3.5" /></Button>
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" title={bn ? 'রুটিন ডিলিট' : 'Delete Routine'} onClick={async () => {
+                                  if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) deleteRoutine.mutate(r.id);
+                                }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {(!filtered || filtered.length === 0) && (
+                        <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{bn ? 'কোনো রুটিন নেই' : 'No routines'}</TableCell></TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Edit dialog */}
         <Dialog open={showEdit} onOpenChange={v => { setShowEdit(v); if (!v) setEditingRoutineId(null); }}>
@@ -513,377 +509,31 @@ const AdminClassRoutine = () => {
     );
   }
 
-  // Helper: format time to bn
-  const fmtTime = (t: string) => to12HourFormat(t, bn);
-  
-  const toBnNum = (n: number) => bn ? String(n).replace(/\d/g, (d: string) => '০১২৩৪৫৬৭৮৯'[Number(d)]) : String(n);
-
-  const PERIOD_LABELS_BN = ['১ম', '২য়', '৩য়', '৪র্থ', '৫ম', '৬ষ্ঠ', '৭ম', '৮ম', '৯ম', '১০ম'];
-  const PERIOD_LABELS_EN = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
-
-  const cls = selectedRoutine?.classes as any;
-  const div = cls?.divisions as any;
-  const sess = selectedRoutine?.academic_sessions as any;
-  const instName = bn ? institution?.name : (institution?.name_en || institution?.name);
-
-  // Collect unique period numbers across all days
-  const allPeriodNums = [...new Set((periods || []).map(p => p.period_number))].sort((a, b) => a - b);
-
-  // Find break periods
-  const breakNums = new Set((periods || []).filter(p => p.is_break).map(p => p.period_number));
-
-  // Split periods: before break, break, after break
-  const beforeBreak = allPeriodNums.filter(n => !breakNums.has(n) && (breakNums.size === 0 || n < Math.min(...breakNums)));
-  const breakPeriods = allPeriodNums.filter(n => breakNums.has(n));
-  const afterBreak = allPeriodNums.filter(n => !breakNums.has(n) && breakNums.size > 0 && n > Math.max(...breakNums));
-  const orderedNums = breakNums.size > 0 ? [...beforeBreak, ...breakPeriods, ...afterBreak] : allPeriodNums;
-
-  // Print handler
-  const handlePrint = () => {
-    const el = document.getElementById('routine-print-area');
-    if (!el) return;
-    const w = window.open('', '_blank');
-    if (!w) return;
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${bn ? 'ক্লাস রুটিন' : 'Class Routine'}</title>
-    <style>@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-      * { margin:0; padding:0; box-sizing:border-box; }
-      body { font-family: 'SutonnyOMJ', 'Noto Sans Bengali', sans-serif; padding: 15px; }
-      @page { size: A4 landscape; margin: 10mm; }
-      table { border-collapse: collapse; width: 100%; }
-      th, td { border: 1.5px solid #333; padding: 4px 6px; text-align: center; font-size: 11px; vertical-align: middle; }
-      th { background: #f0f0f0; font-weight: 600; }
-      .header { text-align: center; margin-bottom: 10px; }
-      .header h1 { font-size: 18px; font-weight: 700; }
-      .header p { font-size: 12px; margin: 2px 0; }
-      .date-box { position: absolute; top: 15px; right: 20px; font-size: 11px; }
-      .break-col { background: #e8f5e9 !important; writing-mode: vertical-rl; text-orientation: mixed; font-weight: 600; font-size: 10px; min-width: 28px; max-width: 32px; }
-      .after-break { background: #f0faf0; }
-      .after-break-head { background: #d4edda !important; }
-      .day-cell { background: #f5f5f5; font-weight: 600; text-align: left; padding-left: 8px; white-space: nowrap; }
-      .subject { font-weight: 600; font-size: 11px; }
-      .teacher { font-size: 9px; color: #555; }
-      .footer { margin-top: 8px; font-size: 10px; text-align: left; }
-      @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-    </style></head><body><div style="position:relative;">`);
-    w.document.write(el.innerHTML);
-    w.document.write('</div></body></html>');
-    w.document.close();
-    const check = setInterval(() => {
-      if (w.document.readyState === 'complete') {
-        clearInterval(check);
-        setTimeout(() => { w.print(); w.close(); }, 300);
-      }
-    }, 100);
-  };
-
-  // ---- DETAIL VIEW (Formal Weekly Timetable for Selected Routine) ----
+  // ---- DETAIL VIEW: When routine is clicked -> Show Full Master Routine Table ----
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 flex-wrap mb-2">
-        <Button variant="outline" size="sm" onClick={() => setSelectedRoutineId(null)} className="gap-1.5 text-xs font-semibold hover:bg-muted">
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setSelectedRoutineId(null)}
+          className="h-9 px-3 rounded-xl gap-2 font-bold text-xs hover:bg-muted border-emerald-600/40 text-emerald-800 dark:text-emerald-300"
+        >
           <span>←</span> {bn ? 'রুটিন তালিকায় ফিরুন' : 'Back to Routine List'}
         </Button>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-sm sm:text-base font-bold truncate text-foreground flex items-center gap-2">
-            <span>{bn ? selectedRoutine?.name_bn : selectedRoutine?.name}</span>
-            {cls && (
-              <Badge variant="outline" className="text-xs font-normal">
-                {bn ? `${div?.name_bn || ''} - ${cls?.name_bn || ''}` : `${div?.name || ''} - ${cls?.name || ''}`}
-              </Badge>
-            )}
-            {sess && (
-              <Badge variant="secondary" className="text-xs font-normal">
-                {bn ? sess.name_bn || sess.name : sess.name}
-              </Badge>
-            )}
-          </h2>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" className="gap-1.5" onClick={() => openNewPeriod(0)}>
-            <Plus className="h-3.5 w-3.5" /> {bn ? 'পিরিয়ড যোগ' : 'Add Period'}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5 text-blue-700 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40"
-            onClick={() => {
-              if (selectedRoutine) {
-                setForm({
-                  name: selectedRoutine.name,
-                  name_bn: selectedRoutine.name_bn,
-                  class_id: selectedRoutine.class_id,
-                  academic_session_id: selectedRoutine.academic_session_id || '',
-                  is_active: selectedRoutine.is_active ?? true,
-                });
-                setEditingRoutineId(selectedRoutine.id);
-                setShowEdit(true);
-              }
-            }}
-          >
-            <Edit className="h-3.5 w-3.5" /> {bn ? 'সম্পাদনা' : 'Edit'}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/40 border-amber-300"
-            onClick={async () => {
-              if (selectedRoutineId && (await confirm({
-                title: bn ? 'রুটিন রিসেট নিশ্চিতকরণ' : 'Confirm Routine Reset',
-                description: bn
-                  ? `আপনি কি নিশ্চিত যে "${bn ? selectedRoutine?.name_bn : selectedRoutine?.name}" রুটিনের সকল পিরিয়ড রিসেট করতে চান? সব পিরিয়ড খালি হয়ে যাবে।`
-                  : `Are you sure you want to reset and clear all periods for "${selectedRoutine?.name}"?`,
-                variant: 'destructive',
-              }))) {
-                resetRoutine.mutate(selectedRoutineId);
-              }
-            }}
-          >
-            <RotateCcw className="h-3.5 w-3.5" /> {bn ? 'রুটিন রিসেট' : 'Reset Routine'}
-          </Button>
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={handlePrint}>
-            <Printer className="h-3.5 w-3.5" /> {bn ? 'প্রিন্ট' : 'Print'}
-          </Button>
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-base text-foreground">
+            {selectedRoutine ? (bn ? selectedRoutine.name_bn || selectedRoutine.name : selectedRoutine.name) : (bn ? 'সকল ক্লাসের দৈনিক মাস্টার রুটিন' : 'All Classes Routine')}
+          </span>
         </div>
       </div>
 
-      {/* Period add/edit dialog */}
-      <Dialog open={showPeriodDialog} onOpenChange={setShowPeriodDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{periodForm.id ? (bn ? 'পিরিয়ড সম্পাদনা' : 'Edit Period') : (bn ? 'নতুন পিরিয়ড' : 'New Period')}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>{bn ? 'বার' : 'Day'}</Label>
-                <Select value={String(periodForm.day_of_week)} onValueChange={v => setPeriodForm(f => ({ ...f, day_of_week: Number(v) }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{DAYS.map(d => <SelectItem key={d.value} value={String(d.value)}>{bn ? d.label_bn : d.label_en}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div><Label>{bn ? 'পিরিয়ড নম্বর' : 'Period #'}</Label>
-                <Input type="number" min={1} value={periodForm.period_number || ''} onChange={e => setPeriodForm(f => ({ ...f, period_number: Number(e.target.value) }))} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>{bn ? 'শুরু' : 'Start'}</Label>
-                <TimePicker value={periodForm.start_time} onChange={v => setPeriodForm(f => ({ ...f, start_time: v }))} />
-              </div>
-              <div><Label>{bn ? 'শেষ' : 'End'}</Label>
-                <TimePicker value={periodForm.end_time} onChange={v => setPeriodForm(f => ({ ...f, end_time: v }))} />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={periodForm.is_break} onCheckedChange={v => setPeriodForm(f => ({ ...f, is_break: v }))} />
-              <Label>{bn ? 'বিরতি/টিফিন' : 'Break/Tiffin'}</Label>
-            </div>
-            {periodForm.is_break ? (
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>{bn ? 'বিরতি লেবেল (বাংলা)' : 'Break Label (BN)'}</Label>
-                  <Input value={periodForm.break_label_bn} onChange={e => setPeriodForm(f => ({ ...f, break_label_bn: e.target.value }))} placeholder="টিফিন" />
-                </div>
-                <div><Label>{bn ? 'বিরতি লেবেল (ইংরেজি)' : 'Break Label (EN)'}</Label>
-                  <Input value={periodForm.break_label} onChange={e => setPeriodForm(f => ({ ...f, break_label: e.target.value }))} placeholder="Tiffin" />
-                </div>
-              </div>
-            ) : (
-              <>
-                <div><Label>{bn ? 'বিষয়' : 'Subject'}</Label>
-                  <Select value={periodForm.subject_id || ''} onValueChange={v => setPeriodForm(f => ({ ...f, subject_id: v || null }))}>
-                    <SelectTrigger><SelectValue placeholder={bn ? 'বিষয় নির্বাচন' : 'Select subject'} /></SelectTrigger>
-                    <SelectContent>
-                      {subjects?.map(s => <SelectItem key={s.id} value={s.id}>{bn ? s.name_bn : s.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>{bn ? 'শিক্ষক (বাংলা)' : 'Teacher (BN)'}</Label>
-                    <Input value={periodForm.teacher_name_bn} onChange={e => setPeriodForm(f => ({ ...f, teacher_name_bn: e.target.value }))} /></div>
-                  <div><Label>{bn ? 'শিক্ষক (ইংরেজি)' : 'Teacher (EN)'}</Label>
-                    <Input value={periodForm.teacher_name} onChange={e => setPeriodForm(f => ({ ...f, teacher_name: e.target.value }))} /></div>
-                </div>
-                <div><Label>{bn ? 'রুম' : 'Room'}</Label>
-                  <Input value={periodForm.room} onChange={e => setPeriodForm(f => ({ ...f, room: e.target.value }))} /></div>
-              </>
-            )}
-            <div className="flex gap-2">
-              <Button className="flex-1" onClick={() => {
-                savePeriod.mutate(periodForm);
-                setShowPeriodDialog(false);
-              }}>
-                {periodForm.id ? (bn ? 'আপডেট' : 'Update') : (bn ? 'যোগ করুন' : 'Add')}
-              </Button>
-              {periodForm.id && (
-                <Button variant="destructive" size="icon" onClick={async () => {
-                  if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) {
-                    deletePeriod.mutate(periodForm.id!);
-                    setShowPeriodDialog(false);
-                  }
-                }}><Trash2 className="h-4 w-4" /></Button>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Formal Timetable */}
-      <div id="routine-print-area">
-        <Card className="overflow-hidden border-2 border-border shadow-sm">
-          <CardContent className="p-0">
-            {/* Institution Header */}
-            <div className="text-center py-4 px-6 border-b-2 border-border bg-muted/20 relative">
-              <div className="absolute top-3 right-4 text-xs text-muted-foreground">
-                {bn ? 'তারিখ:' : 'Date:'} {new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB')}
-              </div>
-              {institution?.logo_url && (
-                <img src={institution.logo_url} alt="" className="w-10 h-10 object-contain mx-auto mb-1" />
-              )}
-              <h1 className="text-lg font-bold text-foreground">{instName || ''}</h1>
-              <p className="text-sm font-semibold text-foreground">
-                {bn ? 'ক্লাস রুটিন' : 'Class Routine'}: {sess ? (bn ? sess.name_bn || sess.name : sess.name) : ''}
-              </p>
-              {div && cls && (
-                <p className="text-xs text-muted-foreground">
-                  {bn ? `${div.name_bn || ''} শাখা — ${cls.name_bn || ''} শ্রেণী` : `${div.name || ''} — ${cls.name || ''}`}
-                </p>
-              )}
-            </div>
-
-            {allPeriodNums.length === 0 ? (
-              <div className="py-12 px-4 text-center space-y-4">
-                <p className="text-muted-foreground text-sm">
-                  {bn ? 'এই রুটিনে এখনও কোনো পিরিয়ড নেই। নিচে থেকে পিরিয়ড যুক্ত করুন অথবা স্বয়ংক্রিয় ৮টি পিরিয়ড তৈরি করুন।' : 'No periods in this routine yet. Add periods or generate default 8 periods.'}
-                </p>
-                <div className="flex items-center justify-center gap-3 flex-wrap">
-                  <Button size="sm" onClick={() => openNewPeriod(0)} className="gap-1.5">
-                    <Plus className="h-4 w-4" /> {bn ? 'ম্যানুয়ালি পিরিয়ড যোগ করুন' : 'Add Period Manually'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/40 border-emerald-300"
-                    onClick={() => handleCreateDefaultPeriods(selectedRoutineId!)}
-                  >
-                    <Sparkles className="h-4 w-4 text-emerald-600" /> {bn ? 'স্বয়ংক্রিয় ৮টি পিরিয়ড তৈরি করুন' : 'Generate Default 8 Periods'}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse" style={{ minWidth: orderedNums.length * 110 + 100 }}>
-                  <thead>
-                    <tr>
-                      <th className="border border-border bg-muted/40 px-3 py-2 text-left font-semibold text-xs min-w-[80px] sticky left-0 z-10">
-                        {bn ? 'বার / দিন' : 'Day'}
-                      </th>
-                      {orderedNums.map((num, i) => {
-                        const sample = (periods || []).find(p => p.period_number === num);
-                        const isBreak = breakNums.has(num);
-                        const isAfterBreak = breakNums.size > 0 && !isBreak && num > Math.max(...breakNums);
-                        return (
-                          <th
-                            key={num}
-                            className={`border border-border px-2 py-2 text-center font-semibold text-xs ${
-                              isBreak ? 'bg-emerald-100 dark:bg-emerald-900/30 min-w-[30px] max-w-[36px]' : 
-                              isAfterBreak ? 'bg-emerald-50 dark:bg-emerald-900/10' : 'bg-muted/40'
-                            }`}
-                            style={isBreak ? { writingMode: 'vertical-rl', textOrientation: 'mixed', padding: '8px 2px' } : {}}
-                            rowSpan={isBreak ? 1 : undefined}
-                          >
-                            {isBreak ? (
-                              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-                                {bn ? (sample?.break_label_bn || 'বিরতি') : (sample?.break_label || 'Break')}
-                                {sample && (
-                                  <><br /><span className="text-[8px]">{fmtTime(sample.start_time)}-{fmtTime(sample.end_time)}</span></>
-                                )}
-                              </span>
-                            ) : (
-                              <div>
-                                <div className="font-bold">{bn ? (PERIOD_LABELS_BN[beforeBreak.indexOf(num) !== -1 ? beforeBreak.indexOf(num) : (beforeBreak.length + afterBreak.indexOf(num))] || toBnNum(num)) : (PERIOD_LABELS_EN[i] || String(num))}</div>
-                                {sample && <div className="text-[10px] text-muted-foreground font-normal">{fmtTime(sample.start_time)} - {fmtTime(sample.end_time)}</div>}
-                              </div>
-                            )}
-                          </th>
-                        );
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {DAYS.map(day => {
-                      const dayPeriods = (periods || []).filter(p => p.day_of_week === day.value);
-                      return (
-                        <tr key={day.value} className="hover:bg-accent/20 transition-colors">
-                          <td className="border border-border bg-muted/20 px-3 py-2 font-semibold text-xs whitespace-nowrap sticky left-0 z-10">
-                            {bn ? day.label_bn : day.label_en}
-                          </td>
-                          {orderedNums.map(num => {
-                            const p = dayPeriods.find(dp => dp.period_number === num);
-                            const isBreak = breakNums.has(num);
-                            const isAfterBreak = breakNums.size > 0 && !isBreak && num > Math.max(...breakNums);
-                            const subj = p?.subjects as any;
-
-                            if (isBreak) {
-                              return (
-                                <td key={num} className="border border-border bg-emerald-50 dark:bg-emerald-900/20 text-center cursor-pointer" onClick={() => p && openEditPeriod(p)}>
-                                  {p && !p.is_break && subj && (
-                                    <div className="text-[10px]">{bn ? subj.name_bn : subj.name}</div>
-                                  )}
-                                </td>
-                              );
-                            }
-
-                            if (!p) {
-                              return (
-                                <td key={num} className={`border border-border text-center ${isAfterBreak ? 'bg-emerald-50/50 dark:bg-emerald-900/5' : ''}`}>
-                                  <button className="p-1 text-muted-foreground/40 hover:text-primary transition-colors" onClick={() => {
-                                    const sample = (periods || []).find(sp => sp.period_number === num);
-                                    setPeriodForm({
-                                      day_of_week: day.value, period_number: num,
-                                      start_time: sample?.start_time || '08:00', end_time: sample?.end_time || '08:45',
-                                      subject_id: null, teacher_name: '', teacher_name_bn: '', room: '',
-                                      is_break: false, break_label: '', break_label_bn: '',
-                                    });
-                                    setShowPeriodDialog(true);
-                                  }}>
-                                    <Plus className="h-3 w-3" />
-                                  </button>
-                                </td>
-                              );
-                            }
-
-                            return (
-                              <td
-                                key={num}
-                                className={`border border-border px-2 py-1.5 text-center cursor-pointer hover:bg-primary/5 transition-colors ${isAfterBreak ? 'bg-emerald-50/50 dark:bg-emerald-900/5' : ''}`}
-                                onClick={() => openEditPeriod(p)}
-                              >
-                                <div className="text-xs font-semibold text-foreground leading-tight">
-                                  {subj ? (bn ? subj.name_bn : subj.name) : '-'}
-                                </div>
-                                {(p.teacher_name_bn || p.teacher_name) && (
-                                  <div className="text-[10px] text-muted-foreground leading-tight mt-0.5">
-                                    {bn ? p.teacher_name_bn : p.teacher_name}
-                                  </div>
-                                )}
-                                {p.room && (
-                                  <div className="text-[9px] text-muted-foreground/70">{p.room}</div>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Footer */}
-            <div className="px-4 py-2 border-t border-border text-[10px] text-muted-foreground">
-              {bn ? 'বি.দ্র. কর্তৃপক্ষ কর্তৃক পরিবর্তন করার ক্ষমতা এবং বিশেষ প্রয়োজনে অতিরিক্ত ক্লাশ নিতে পারবেন।' : 'Note: Schedule subject to change by administration.'}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <MasterRoutineView
+        initialClassId={selectedRoutine?.class_id || (selectedRoutineId === 'all' ? 'all' : undefined)}
+        initialSessionId={selectedRoutine?.academic_session_id || undefined}
+        onBack={() => setSelectedRoutineId(null)}
+        showBackToList={true}
+      />
     </div>
   );
 };

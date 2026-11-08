@@ -732,6 +732,9 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
   useEffect(() => {
     if (initialClassId) {
       setSelectedClassId(initialClassId);
+      if (initialClassId !== 'all') {
+        setSelectedClassIds([]);
+      }
     }
   }, [initialClassId]);
 
@@ -741,6 +744,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
     }
   }, [initialSessionId]);
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>(() => {
+    if (initialClassId && initialClassId !== 'all') return [];
     try {
       const saved = localStorage.getItem('routine_selected_class_ids');
       if (saved) return JSON.parse(saved);
