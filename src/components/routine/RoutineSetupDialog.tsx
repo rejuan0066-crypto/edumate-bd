@@ -10,6 +10,8 @@ import {
   DEFAULT_BREAK_TIME,
   autoFillMadrasaRoutine,
   clearRoutineAssignmentsOnly,
+  clearAllRoutineTimesAndAssignments,
+  clearPeriodTimesOnly,
 } from './routineDefaults';
 
 interface RoutineSetupDialogProps {
@@ -86,6 +88,53 @@ export const RoutineSetupDialog: React.FC<RoutineSetupDialogProps> = ({
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || (bn ? 'খালি করতে ব্যর্থ হয়েছে' : 'Failed to clear'));
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleClearAllWithTimes = async () => {
+    setLoadingAction('clear-all');
+    try {
+      await clearAllRoutineTimesAndAssignments({
+        supabase,
+        periodCount,
+        dayOfWeek,
+      });
+      qc.invalidateQueries({ queryKey: ['all-classes-periods'] });
+      qc.invalidateQueries({ queryKey: ['all-class-routines'] });
+      qc.invalidateQueries({ queryKey: ['weekly-routine-periods'] });
+      toast.success(
+        bn
+          ? 'সম্পূর্ণ রুটিন রিসেট সম্পন্ন: বিষয়, শিক্ষক ও সময়সূচী খালি করা হয়েছে'
+          : 'Complete reset: subjects, teachers and times cleared'
+      );
+      onSuccess?.();
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || (bn ? 'রিসেট ব্যর্থ হয়েছে' : 'Reset failed'));
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleClearTimesOnly = async () => {
+    setLoadingAction('clear-times');
+    try {
+      await clearPeriodTimesOnly({
+        supabase,
+        periodCount,
+      });
+      qc.invalidateQueries({ queryKey: ['all-classes-periods'] });
+      qc.invalidateQueries({ queryKey: ['all-class-routines'] });
+      qc.invalidateQueries({ queryKey: ['weekly-routine-periods'] });
+      toast.success(bn ? 'সকল পিরিয়ডের সময়সূচী খালি করা হয়েছে' : 'Period times cleared');
+      onSuccess?.();
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || (bn ? 'ব্যর্থ হয়েছে' : 'Failed'));
     } finally {
       setLoadingAction(null);
     }
@@ -174,12 +223,46 @@ export const RoutineSetupDialog: React.FC<RoutineSetupDialogProps> = ({
             </Button>
           </div>
 
-          {/* Option 2: Clear assignments only */}
+          {/* Option 2: Complete Reset (Empty everything including period times) */}
+          <div className="p-3.5 rounded-xl border border-red-300 dark:border-red-800 bg-red-50/70 dark:bg-red-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-red-900 dark:text-red-200">
+                <Trash2 className="h-4 w-4 text-red-600" />
+                <span>{bn ? 'সম্পূর্ণ রিসেট (সময়সূচী, বিষয় ও শিক্ষক সহ সব খালি করুন)' : 'Complete Reset (Clear Times & Cells)'}</span>
+              </div>
+              <p className="text-[11px] text-red-800/80 dark:text-red-300/80 leading-relaxed">
+                {bn
+                  ? 'রুটিনের সকল বিষয়, শিক্ষক এবং সকল পিরিয়ডের সময়সূচীর ঘর সম্পূর্ণ খালি হয়ে যাবে।'
+                  : 'Empties all subject & teacher assignments and clears all period timings.'}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-red-400 text-red-800 hover:bg-red-100 dark:text-red-200 shrink-0 font-semibold text-xs"
+              onClick={handleClearAllWithTimes}
+              disabled={!!loadingAction}
+            >
+              {loadingAction === 'clear-all' ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                  <span>{bn ? 'রিসেট হচ্ছে...' : 'Resetting...'}</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  <span>{bn ? 'সব খালি করুন' : 'Clear All'}</span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Option 3: Clear assignments only */}
           <div className="p-3.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-1.5 font-bold text-xs text-amber-900 dark:text-amber-200">
-                <Trash2 className="h-4 w-4 text-amber-600" />
-                <span>{bn ? 'শুধু বিষয় ও শিক্ষক খালি করুন' : 'Clear Cells Only'}</span>
+                <RotateCcw className="h-4 w-4 text-amber-600" />
+                <span>{bn ? 'শুধু বিষয় ও শিক্ষক খালি করুন (সময়সূচী অক্ষুণ্ণ থাকবে)' : 'Clear Cells Only (Keep Timings)'}</span>
               </div>
               <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 leading-relaxed">
                 {bn
@@ -201,8 +284,42 @@ export const RoutineSetupDialog: React.FC<RoutineSetupDialogProps> = ({
                 </>
               ) : (
                 <>
-                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  <RotateCcw className="h-3.5 w-3.5 mr-1" />
                   <span>{bn ? 'ঘর খালি করুন' : 'Clear Cells'}</span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Option 4: Clear timings only */}
+          <div className="p-3.5 rounded-xl border border-orange-300 dark:border-orange-800 bg-orange-50/70 dark:bg-orange-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-orange-900 dark:text-orange-200">
+                <Clock className="h-4 w-4 text-orange-600" />
+                <span>{bn ? 'শুধু সময়সূচীর ঘর খালি করুন' : 'Clear Timings Only'}</span>
+              </div>
+              <p className="text-[11px] text-orange-800/80 dark:text-orange-300/80 leading-relaxed">
+                {bn
+                  ? 'সকল পিরিয়ডের সময়সূচী খালি হয়ে যাবে (বিষয় ও শিক্ষক অপরিবর্তিত থাকবে)।'
+                  : 'Clears only the period start & end timings without touching subjects and teachers.'}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-orange-400 text-orange-800 hover:bg-orange-100 dark:text-orange-200 shrink-0 font-semibold text-xs"
+              onClick={handleClearTimesOnly}
+              disabled={!!loadingAction}
+            >
+              {loadingAction === 'clear-times' ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                  <span>{bn ? 'খালি হচ্ছে...' : 'Clearing...'}</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="h-3.5 w-3.5 mr-1" />
+                  <span>{bn ? 'সময় খালি করুন' : 'Clear Times'}</span>
                 </>
               )}
             </Button>

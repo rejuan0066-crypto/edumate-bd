@@ -133,7 +133,7 @@ export async function autoFillMadrasaRoutine({
 }
 
 /**
- * Clears subjects & teachers from all routine cells while keeping period times and routine slots 100% intact!
+ * Clears subjects & teachers from all routine cells while keeping period times and routine slots intact.
  */
 export async function clearRoutineAssignmentsOnly({
   supabase,
@@ -158,7 +158,6 @@ export async function clearRoutineAssignmentsOnly({
       .limit(1);
 
     if (existingPeriods && existingPeriods.length > 0) {
-      // Clear subjects & teachers but keep start/end times
       await supabase
         .from('routine_periods')
         .update({
@@ -170,41 +169,82 @@ export async function clearRoutineAssignmentsOnly({
         })
         .in('routine_id', routineIds)
         .eq('day_of_week', dayOfWeek);
-    } else {
-      // Re-seed empty period slots with default times so structure is never blank!
-      const { data: classes } = await supabase.from('classes').select('id, name, name_bn');
-      const slots: any[] = [];
-      for (const cls of classes || []) {
-        const routineId = routines?.find((r: any) => r.class_id === cls.id)?.id;
-        if (!routineId) continue;
-        for (let p = 1; p <= periodCount; p++) {
-          const time = DEFAULT_PERIOD_TIMES[p] || { start: '09:00', end: '09:45' };
-          slots.push({
-            routine_id: routineId,
-            day_of_week: dayOfWeek,
-            period_number: p,
-            subject_id: null,
-            start_time: time.start,
-            end_time: time.end,
-            is_break: false,
-            teacher_name: null,
-            teacher_name_bn: null,
-            room: null,
-            break_label_bn: null,
-          });
-        }
-      }
-      if (slots.length > 0) {
-        for (let i = 0; i < slots.length; i += 50) {
-          await supabase.from('routine_periods').insert(slots.slice(i, i + 50));
-        }
-      }
     }
   }
+}
 
-  // Preserve local storage times
+/**
+ * Completely resets routine: empties all subjects, teachers, and CLEARS ALL PERIOD TIMES!
+ */
+export async function clearAllRoutineTimesAndAssignments({
+  supabase,
+  periodCount = 8,
+  dayOfWeek = 0,
+}: {
+  supabase: any;
+  periodCount?: number;
+  dayOfWeek?: number;
+}) {
+  const { data: routines } = await supabase.from('class_routines').select('id');
+  const routineIds = (routines || []).map((r: any) => r.id);
+
+  if (routineIds.length > 0) {
+    await supabase
+      .from('routine_periods')
+      .update({
+        subject_id: null,
+        teacher_name: null,
+        teacher_name_bn: null,
+        start_time: null,
+        end_time: null,
+        room: null,
+        break_label_bn: null,
+      })
+      .in('routine_id', routineIds);
+  }
+
+  // Clear in localStorage
   try {
-    localStorage.setItem('routine_period_times', JSON.stringify(DEFAULT_PERIOD_TIMES));
-    localStorage.setItem('routine_break_time', JSON.stringify(DEFAULT_BREAK_TIME));
+    const emptyTimes: Record<number, { start: string; end: string }> = {};
+    for (let p = 1; p <= periodCount; p++) {
+      emptyTimes[p] = { start: '', end: '' };
+    }
+    localStorage.setItem('routine_period_times', JSON.stringify(emptyTimes));
+    localStorage.setItem('routine_break_time', JSON.stringify({ start: '', end: '' }));
   } catch {}
 }
+
+/**
+ * Clears only the period times (start_time & end_time) across all classes.
+ */
+export async function clearPeriodTimesOnly({
+  supabase,
+  periodCount = 8,
+}: {
+  supabase: any;
+  periodCount?: number;
+}) {
+  const { data: routines } = await supabase.from('class_routines').select('id');
+  const routineIds = (routines || []).map((r: any) => r.id);
+
+  if (routineIds.length > 0) {
+    await supabase
+      .from('routine_periods')
+      .update({
+        start_time: null,
+        end_time: null,
+      })
+      .in('routine_id', routineIds);
+  }
+
+  // Clear in localStorage
+  try {
+    const emptyTimes: Record<number, { start: string; end: string }> = {};
+    for (let p = 1; p <= periodCount; p++) {
+      emptyTimes[p] = { start: '', end: '' };
+    }
+    localStorage.setItem('routine_period_times', JSON.stringify(emptyTimes));
+    localStorage.setItem('routine_break_time', JSON.stringify({ start: '', end: '' }));
+  } catch {}
+}
+

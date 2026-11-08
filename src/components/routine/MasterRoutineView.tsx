@@ -770,8 +770,8 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
       const saved = localStorage.getItem('routine_period_times');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
-          return { ...DEFAULT_PERIOD_TIMES, ...parsed };
+        if (parsed && typeof parsed === 'object') {
+          return parsed;
         }
       }
     } catch {}
@@ -790,7 +790,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
       const saved = localStorage.getItem('routine_break_time');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed?.start) return parsed;
+        if (parsed && typeof parsed === 'object') return parsed;
       }
     } catch {}
     return { ...DEFAULT_BREAK_TIME };
@@ -799,14 +799,14 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
   // Customizable Footer Note
   const [footerNote, setFooterNote] = useState<string>(() => {
     const saved = localStorage.getItem('master_routine_footer_note');
-    if (saved) return saved.replace(/^(বি[\.ঃ\s]*দ্র[\.ঃ\s]*[:ঃ]?\s*|Note:\s*)/i, '').trim();
+    if (saved) return saved.replace(/^(\s*বি[\.ঃ\s]*দ্র[\.ঃ\s]*[:ঃ\-–—]?\s*|Note:\s*)+/gi, '').trim();
     return 'কর্তৃপক্ষ কর্তৃক পরিবর্তন করার ক্ষমতা এবং বিশেষ প্রয়োজনে অতিরিক্ত ক্লাস নিতে পারবেন।';
   });
   const [isEditingFooterNote, setIsEditingFooterNote] = useState(false);
 
   const cleanFooterNote = useMemo(() => {
     if (!footerNote) return 'কর্তৃপক্ষ কর্তৃক পরিবর্তন করার ক্ষমতা এবং বিশেষ প্রয়োজনে অতিরিক্ত ক্লাস নিতে পারবেন।';
-    return footerNote.replace(/^(বি[\.ঃ\s]*দ্র[\.ঃ\s]*[:ঃ]?\s*|Note:\s*)/i, '').trim();
+    return footerNote.replace(/^(\s*বি[\.ঃ\s]*দ্র[\.ঃ\s]*[:ঃ\-–—]?\s*|Note:\s*)+/gi, '').trim();
   }, [footerNote]);
 
   // Signatories Config (Nazim & Principal)
@@ -1068,16 +1068,40 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
 
   // Helper to get period time
   const getPeriodTime = useCallback((periodNum: number) => {
-    if (periodTimes[periodNum] && periodTimes[periodNum].start) {
+    if (periodTimes[periodNum] !== undefined) {
       return periodTimes[periodNum];
     }
     const source = allClassesPeriods || allPeriods;
-    if (source) {
+    if (source && source.length > 0) {
       const p = source.find((pp: any) => pp.period_number === periodNum && !pp.is_break && pp.start_time);
-      if (p) return { start: p.start_time || '', end: p.end_time || '' };
+      if (p && p.start_time) return { start: p.start_time || '', end: p.end_time || '' };
     }
-    return DEFAULT_PERIOD_TIMES[periodNum] || { start: '09:00', end: '09:45' };
+    return { start: '', end: '' };
   }, [periodTimes, allClassesPeriods, allPeriods]);
+
+  // Clear period time across all classes for that period number
+  const handleClearPeriodTime = async (periodNum: number) => {
+    const nextTimes = { ...periodTimes, [periodNum]: { start: '', end: '' } };
+    setPeriodTimes(nextTimes);
+    try {
+      localStorage.setItem('routine_period_times', JSON.stringify(nextTimes));
+    } catch {}
+
+    if (allRoutines && allRoutines.length > 0) {
+      try {
+        const routineIds = allRoutines.map(r => r.id);
+        await supabase
+          .from('routine_periods')
+          .update({ start_time: null, end_time: null })
+          .in('routine_id', routineIds)
+          .eq('period_number', periodNum);
+        queryClient.invalidateQueries({ queryKey: ['all-classes-periods'] });
+        toast.success(bn ? `${periodLabelsMap[periodNum]} পিরিয়ডের সময় খালি করা হয়েছে` : 'Period time cleared');
+      } catch (err: any) {
+        console.error(err);
+      }
+    }
+  };
 
   // Save period time across all classes for that period number
   const handleSavePeriodTimeToAllClasses = async (periodNum: number, start: string, end: string) => {
@@ -1159,6 +1183,37 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
         ? `${finalLabel}র সময় সংরক্ষিত হয়েছে (${fmtTime(start, bn)} - ${fmtTime(end, bn)})`
         : `Break time saved (${start} - ${end})`
     );
+  };
+
+  // Clear Break Time across all classes and local storage
+  const handleClearBreakTime = async () => {
+    const nextBreak = { start: '', end: '' };
+    setBreakTime(nextBreak);
+    try {
+      localStorage.setItem('routine_break_time', JSON.stringify(nextBreak));
+    } catch {}
+
+    if (selectedSessionId && allRoutines && allRoutines.length > 0) {
+      try {
+        const routineIds = allRoutines.map(r => r.id);
+        await supabase
+          .from('routine_periods')
+          .update({
+            start_time: null,
+            end_time: null,
+          })
+          .in('routine_id', routineIds)
+          .eq('is_break', true);
+
+        queryClient.invalidateQueries({ queryKey: ['all-classes-periods'] });
+        queryClient.invalidateQueries({ queryKey: ['weekly-routine-periods'] });
+        toast.success(bn ? 'বিরতির সময় খালি করা হয়েছে' : 'Break time cleared');
+      } catch (err: any) {
+        console.error(err);
+      }
+    } else {
+      toast.success(bn ? 'বিরতির সময় খালি করা হয়েছে' : 'Break time cleared');
+    }
   };
 
   // Save or delete a single period slot in Master Grid (All/Multi Classes mode)
@@ -2631,14 +2686,26 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                                     />
                                   </div>
                                 </div>
-                                <Button
-                                  size="sm"
-                                  className="w-full h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1 mt-1 font-medium"
-                                  onClick={() => handleSaveBreakTime(breakLabel, breakTime.start, breakTime.end)}
-                                >
-                                  <Save className="h-3 w-3" />
-                                  <span>{bn ? 'বিরতির সময় সেভ করুন' : 'Save Break Time'}</span>
-                                </Button>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <Button
+                                    size="sm"
+                                    className="flex-1 h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1 font-medium"
+                                    onClick={() => handleSaveBreakTime(breakLabel, breakTime.start, breakTime.end)}
+                                  >
+                                    <Save className="h-3 w-3" />
+                                    <span>{bn ? 'বিরতির সময় সেভ' : 'Save Break Time'}</span>
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs px-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 dark:border-red-800"
+                                    title={bn ? 'বিরতির সময় খালি করুন' : 'Clear Break Time'}
+                                    onClick={handleClearBreakTime}
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    <span>{bn ? 'খালি করুন' : 'Clear'}</span>
+                                  </Button>
+                                </div>
                               </PopoverContent>
                             </Popover>
                           </th>
@@ -2720,6 +2787,16 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                                 >
                                   <Save className="h-3 w-3" />
                                   <span>{bn ? 'সকল ক্লাসের জন্য সেভ' : 'Apply to All Classes'}</span>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs px-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 dark:border-red-800"
+                                  title={bn ? 'পিরিয়ডের সময় খালি করুন' : 'Clear Period Time'}
+                                  onClick={() => handleClearPeriodTime(col.num)}
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  <span>{bn ? 'খালি করুন' : 'Clear'}</span>
                                 </Button>
                                 <Button
                                   size="sm"
@@ -2951,11 +3028,11 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
             {/* Footnote / বি.দ্র. Section */}
             <div className="px-4 py-2.5 border-t border-border footnote flex items-center justify-between gap-3 flex-wrap bg-muted/10">
               <div className="flex items-center gap-1.5 flex-1 min-w-[280px]">
-                <span className="text-xs font-bold text-foreground whitespace-nowrap">
-                  {bn ? 'বি.দ্র.' : 'Note:'}
-                </span>
                 {isEditingFooterNote ? (
                   <div className="flex items-center gap-1.5 flex-1">
+                    <span className="text-xs font-bold text-foreground whitespace-nowrap">
+                      {bn ? 'বি.দ্র.' : 'Note:'}
+                    </span>
                     <Input
                       value={footerNote}
                       onChange={e => setFooterNote(e.target.value)}
@@ -2966,7 +3043,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                       size="sm"
                       className="h-7 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
                       onClick={() => {
-                        const sanitized = footerNote.replace(/^(বি[\.ঃ\s]*দ্র[\.ঃ\s]*[:ঃ]?\s*|Note:\s*)/i, '').trim();
+                        const sanitized = footerNote.replace(/^(\s*বি[\.ঃ\s]*দ্র[\.ঃ\s]*[:ঃ\-–—]?\s*|Note:\s*)+/gi, '').trim();
                         setFooterNote(sanitized);
                         setIsEditingFooterNote(false);
                         localStorage.setItem('master_routine_footer_note', sanitized);
@@ -2980,6 +3057,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                 ) : (
                   <div className="flex items-center gap-1.5 flex-1">
                     <span className="text-xs text-foreground/85 font-medium">
+                      <strong className="font-bold text-foreground mr-1">{bn ? 'বি.দ্র.' : 'Note:'}</strong>
                       {cleanFooterNote}
                     </span>
                     <button
@@ -3142,14 +3220,26 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                                     />
                                   </div>
                                 </div>
-                                <Button
-                                  size="sm"
-                                  className="w-full h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1 mt-1 font-medium"
-                                  onClick={() => handleSaveBreakTime(breakLabel, breakTime.start, breakTime.end)}
-                                >
-                                  <Save className="h-3 w-3" />
-                                  <span>{bn ? 'বিরতির সময় সেভ করুন' : 'Save Break Time'}</span>
-                                </Button>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <Button
+                                    size="sm"
+                                    className="flex-1 h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1 font-medium"
+                                    onClick={() => handleSaveBreakTime(breakLabel, breakTime.start, breakTime.end)}
+                                  >
+                                    <Save className="h-3 w-3" />
+                                    <span>{bn ? 'বিরতির সময় সেভ' : 'Save Break Time'}</span>
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs px-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 dark:border-red-800"
+                                    title={bn ? 'বিরতির সময় খালি করুন' : 'Clear Break Time'}
+                                    onClick={handleClearBreakTime}
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    <span>{bn ? 'খালি করুন' : 'Clear'}</span>
+                                  </Button>
+                                </div>
                               </PopoverContent>
                             </Popover>
                           </th>
@@ -3215,6 +3305,16 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                                 >
                                   <Save className="h-3 w-3" />
                                   <span>{bn ? 'সেভ করুন' : 'Save'}</span>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs px-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 dark:border-red-800"
+                                  title={bn ? 'পিরিয়ডের সময় খালি করুন' : 'Clear Period Time'}
+                                  onClick={() => handleClearPeriodTime(col.num)}
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  <span>{bn ? 'খালি করুন' : 'Clear'}</span>
                                 </Button>
                                 <Button
                                   size="sm"
@@ -3395,10 +3495,10 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
             {/* Footnote */}
             <div className="px-4 py-2.5 border-t border-border footnote flex items-center justify-between gap-3 flex-wrap bg-muted/10">
               <div className="flex items-center gap-2 flex-1 min-w-[280px]">
-                <span className="text-xs font-bold text-foreground whitespace-nowrap">
-                  {bn ? 'বি.দ্র.' : 'Note:'}
+                <span className="text-xs text-foreground/85 font-medium">
+                  <strong className="font-bold text-foreground mr-1">{bn ? 'বি.দ্র.' : 'Note:'}</strong>
+                  {cleanFooterNote}
                 </span>
-                <span className="text-xs text-foreground/85 font-medium">{cleanFooterNote}</span>
               </div>
             </div>
 
@@ -3447,6 +3547,25 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
         periodCount={periodCount}
         breakAfter={breakAfter}
         dayOfWeek={selectedDay}
+        onSuccess={() => {
+          try {
+            const savedP = localStorage.getItem('routine_period_times');
+            if (savedP) {
+              setPeriodTimes(JSON.parse(savedP));
+            } else {
+              setPeriodTimes({});
+            }
+            const savedB = localStorage.getItem('routine_break_time');
+            if (savedB) {
+              setBreakTime(JSON.parse(savedB));
+            } else {
+              setBreakTime({ start: '', end: '' });
+            }
+          } catch {}
+          queryClient.invalidateQueries({ queryKey: ['all-classes-periods'] });
+          queryClient.invalidateQueries({ queryKey: ['all-class-routines'] });
+          queryClient.invalidateQueries({ queryKey: ['weekly-routine-periods'] });
+        }}
       />
     </div>
   );
