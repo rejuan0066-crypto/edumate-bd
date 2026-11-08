@@ -185,33 +185,36 @@ export async function clearAllRoutineTimesAndAssignments({
   periodCount?: number;
   dayOfWeek?: number;
 }) {
-  const { data: routines } = await supabase.from('class_routines').select('id');
-  const routineIds = (routines || []).map((r: any) => r.id);
-
-  if (routineIds.length > 0) {
-    await supabase
-      .from('routine_periods')
-      .update({
-        subject_id: null,
-        teacher_name: null,
-        teacher_name_bn: null,
-        start_time: null,
-        end_time: null,
-        room: null,
-        break_label_bn: null,
-      })
-      .in('routine_id', routineIds);
-  }
-
-  // Clear in localStorage
   try {
+    localStorage.setItem('routine_times_cleared', 'true');
     const emptyTimes: Record<number, { start: string; end: string }> = {};
-    for (let p = 1; p <= periodCount; p++) {
+    for (let p = 1; p <= 12; p++) {
       emptyTimes[p] = { start: '', end: '' };
     }
     localStorage.setItem('routine_period_times', JSON.stringify(emptyTimes));
     localStorage.setItem('routine_break_time', JSON.stringify({ start: '', end: '' }));
   } catch {}
+
+  const { data: routines } = await supabase.from('class_routines').select('id');
+  const routineIds = (routines || []).map((r: any) => r.id);
+
+  if (routineIds.length > 0) {
+    for (let i = 0; i < routineIds.length; i += 20) {
+      const slice = routineIds.slice(i, i + 20);
+      await supabase
+        .from('routine_periods')
+        .update({
+          subject_id: null,
+          teacher_name: null,
+          teacher_name_bn: null,
+          start_time: null,
+          end_time: null,
+          room: null,
+          break_label_bn: null,
+        })
+        .in('routine_id', slice);
+    }
+  }
 }
 
 /**
@@ -224,27 +227,30 @@ export async function clearPeriodTimesOnly({
   supabase: any;
   periodCount?: number;
 }) {
-  const { data: routines } = await supabase.from('class_routines').select('id');
-  const routineIds = (routines || []).map((r: any) => r.id);
-
-  if (routineIds.length > 0) {
-    await supabase
-      .from('routine_periods')
-      .update({
-        start_time: null,
-        end_time: null,
-      })
-      .in('routine_id', routineIds);
-  }
-
-  // Clear in localStorage
   try {
+    localStorage.setItem('routine_times_cleared', 'true');
     const emptyTimes: Record<number, { start: string; end: string }> = {};
-    for (let p = 1; p <= periodCount; p++) {
+    for (let p = 1; p <= 12; p++) {
       emptyTimes[p] = { start: '', end: '' };
     }
     localStorage.setItem('routine_period_times', JSON.stringify(emptyTimes));
     localStorage.setItem('routine_break_time', JSON.stringify({ start: '', end: '' }));
   } catch {}
+
+  const { data: routines } = await supabase.from('class_routines').select('id');
+  const routineIds = (routines || []).map((r: any) => r.id);
+
+  if (routineIds.length > 0) {
+    for (let i = 0; i < routineIds.length; i += 20) {
+      const slice = routineIds.slice(i, i + 20);
+      await supabase
+        .from('routine_periods')
+        .update({
+          start_time: null,
+          end_time: null,
+        })
+        .in('routine_id', slice);
+    }
+  }
 }
 

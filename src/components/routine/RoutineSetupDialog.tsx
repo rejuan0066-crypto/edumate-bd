@@ -41,6 +41,7 @@ export const RoutineSetupDialog: React.FC<RoutineSetupDialogProps> = ({
   const handleAutoFill = async () => {
     setLoadingAction('autofill');
     try {
+      localStorage.removeItem('routine_times_cleared');
       const res = await autoFillMadrasaRoutine({
         supabase,
         sessionId,
@@ -96,6 +97,7 @@ export const RoutineSetupDialog: React.FC<RoutineSetupDialogProps> = ({
   const handleClearAllWithTimes = async () => {
     setLoadingAction('clear-all');
     try {
+      localStorage.setItem('routine_times_cleared', 'true');
       await clearAllRoutineTimesAndAssignments({
         supabase,
         periodCount,
@@ -122,6 +124,7 @@ export const RoutineSetupDialog: React.FC<RoutineSetupDialogProps> = ({
   const handleClearTimesOnly = async () => {
     setLoadingAction('clear-times');
     try {
+      localStorage.setItem('routine_times_cleared', 'true');
       await clearPeriodTimesOnly({
         supabase,
         periodCount,
@@ -143,6 +146,7 @@ export const RoutineSetupDialog: React.FC<RoutineSetupDialogProps> = ({
   const handleRestoreTimings = async () => {
     setLoadingAction('timings');
     try {
+      localStorage.removeItem('routine_times_cleared');
       localStorage.setItem('routine_period_times', JSON.stringify(DEFAULT_PERIOD_TIMES));
       localStorage.setItem('routine_break_time', JSON.stringify(DEFAULT_BREAK_TIME));
 

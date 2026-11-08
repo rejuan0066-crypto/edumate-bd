@@ -767,6 +767,15 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
   });
   const [periodTimes, setPeriodTimes] = useState<Record<number, { start: string; end: string }>>(() => {
     try {
+      const isCleared = localStorage.getItem('routine_times_cleared') === 'true';
+      if (isCleared) {
+        const emptyTimes: Record<number, { start: string; end: string }> = {};
+        for (let p = 1; p <= 12; p++) {
+          emptyTimes[p] = { start: '', end: '' };
+        }
+        return emptyTimes;
+      }
+
       const saved = localStorage.getItem('routine_period_times');
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -775,7 +784,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
         }
       }
     } catch {}
-    return { ...DEFAULT_PERIOD_TIMES };
+    return {};
   });
   const [selectedDay, setSelectedDay] = useState<number>(0);
   const [classSearchTerm, setClassSearchTerm] = useState('');
@@ -787,13 +796,18 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
   });
   const [breakTime, setBreakTime] = useState<{ start: string; end: string }>(() => {
     try {
+      const isCleared = localStorage.getItem('routine_times_cleared') === 'true';
+      if (isCleared) {
+        return { start: '', end: '' };
+      }
+
       const saved = localStorage.getItem('routine_break_time');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') return parsed;
       }
     } catch {}
-    return { ...DEFAULT_BREAK_TIME };
+    return { start: '', end: '' };
   });
 
   // Customizable Footer Note
@@ -1039,8 +1053,11 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
     }
   });
 
-  // Pre-populate period start and end times from DB periods
+  // Pre-populate period start and end times from DB periods (only if NOT explicitly cleared)
   useEffect(() => {
+    const isCleared = localStorage.getItem('routine_times_cleared') === 'true';
+    if (isCleared) return;
+
     const sourcePeriods = allClassesPeriods || allPeriods;
     if (sourcePeriods && sourcePeriods.length > 0) {
       setPeriodTimes(prev => {
@@ -1068,6 +1085,14 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
 
   // Helper to get period time
   const getPeriodTime = useCallback((periodNum: number) => {
+    const isCleared = localStorage.getItem('routine_times_cleared') === 'true';
+    if (isCleared) {
+      if (periodTimes[periodNum]?.start) {
+        return periodTimes[periodNum];
+      }
+      return { start: '', end: '' };
+    }
+
     if (periodTimes[periodNum] !== undefined) {
       return periodTimes[periodNum];
     }
@@ -1112,6 +1137,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
     const nextTimes = { ...periodTimes, [periodNum]: { start, end } };
     setPeriodTimes(nextTimes);
     try {
+      localStorage.removeItem('routine_times_cleared');
       localStorage.setItem('routine_period_times', JSON.stringify(nextTimes));
     } catch {}
 
@@ -1154,8 +1180,11 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
     const finalLabel = label.trim() || (bn ? 'বিরতি' : 'Break');
     setBreakLabel(finalLabel);
     setBreakTime({ start, end });
-    localStorage.setItem('routine_break_label', finalLabel);
-    localStorage.setItem('routine_break_time', JSON.stringify({ start, end }));
+    try {
+      localStorage.removeItem('routine_times_cleared');
+      localStorage.setItem('routine_break_label', finalLabel);
+      localStorage.setItem('routine_break_time', JSON.stringify({ start, end }));
+    } catch {}
 
     if (selectedSessionId && allRoutines && allRoutines.length > 0) {
       try {

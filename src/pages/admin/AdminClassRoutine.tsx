@@ -430,6 +430,10 @@ const AdminClassRoutine = () => {
           onOpenChange={setShowSetupDialog}
           bn={bn}
           sessionId={sessions[0]?.id}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['class-routines'] });
+            queryClient.invalidateQueries({ queryKey: ['all-classes-periods'] });
+          }}
         />
       </div>
     );
