@@ -1455,13 +1455,52 @@ const MasterRoutineView = () => {
       font-weight: 700 !important;
       padding: 3px 1px !important;
     }
-    .break-col {
-      background-color: #c8e6c9 !important;
+    table th:first-child, table td:first-child {
+      width: 135px !important;
+      min-width: 135px !important;
+      max-width: 145px !important;
+      text-align: left !important;
+      padding: 3px 6px !important;
+    }
+    .class-col-cell {
+      text-align: left !important;
+    }
+    .class-name-text {
+      display: block !important;
       font-weight: 700 !important;
+      font-size: 10.5px !important;
+      color: #000 !important;
+      line-height: 1.2 !important;
+    }
+    .class-div-text {
+      display: block !important;
+      font-size: 8.5px !important;
+      color: #444 !important;
+      margin-top: 1px !important;
+      line-height: 1.1 !important;
+    }
+    .break-col {
+      background-color: #d1fae5 !important;
+      font-weight: 700 !important;
+      font-size: 8.5px !important;
+      width: 62px !important;
+      min-width: 58px !important;
+      max-width: 68px !important;
+    }
+    .break-label {
+      display: block !important;
       font-size: 9px !important;
-      width: 48px !important;
-      min-width: 42px !important;
-      max-width: 52px !important;
+      font-weight: 700 !important;
+      color: #064e3b !important;
+      margin-bottom: 1px !important;
+    }
+    .break-time-text {
+      display: block !important;
+      font-size: 7.5px !important;
+      font-weight: 500 !important;
+      color: #047857 !important;
+      line-height: 1.15 !important;
+      white-space: nowrap !important;
     }
     .custom-cell {
       background-color: #fef3c7 !important;
@@ -1481,56 +1520,73 @@ const MasterRoutineView = () => {
       cursor: default !important;
       font: inherit !important;
     }
+    .empty-cell-placeholder {
+      min-height: 26px !important;
+    }
     .cell-subj {
       font-weight: 700 !important;
-      font-size: 9.5px !important;
+      font-size: 9px !important;
       padding: 2px 1px !important;
-      border-bottom: 0.5px solid #888 !important;
-      min-height: 14px !important;
       line-height: 1.15 !important;
       color: #000 !important;
     }
     .cell-teacher {
-      font-size: 8.5px !important;
+      font-size: 8px !important;
       color: #333 !important;
       padding: 1px !important;
-      min-height: 12px !important;
       line-height: 1.1 !important;
-      background-color: #fcfcfc !important;
+      background-color: #fbfbfb !important;
     }
     .footnote {
-      margin-top: 5px;
+      margin-top: 4px;
       font-size: 8.5px;
-      color: #444;
-      border-top: 1px solid #888;
+      color: #333;
+      border-top: 1px solid #777;
       padding-top: 2px;
       font-weight: 500;
     }
     .signatures {
-      margin-top: 28px;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      text-align: center;
+      margin-top: 22px !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: flex-end !important;
+      padding: 0 40px !important;
+      page-break-inside: avoid !important;
     }
     .sig-block {
-      width: 170px;
+      display: inline-block !important;
+      width: 190px !important;
+      text-align: center !important;
+    }
+    .sig-block:only-child {
+      margin-left: auto !important;
     }
     .sig-line {
-      border-top: 1.5px solid #222;
-      margin-bottom: 3px;
-    }
-    .sig-title {
-      font-size: 9.5px;
-      font-weight: 700;
+      border-top: 1.5px solid #222 !important;
+      margin: 0 auto 4px auto !important;
+      width: 160px !important;
     }
     .sig-name {
-      font-size: 9px;
-      color: #222;
+      display: block !important;
+      font-size: 10.5px !important;
+      font-weight: 700 !important;
+      color: #000 !important;
+      line-height: 1.25 !important;
+      margin-bottom: 1px !important;
+    }
+    .sig-title {
+      display: block !important;
+      font-size: 9px !important;
+      font-weight: 600 !important;
+      color: #333 !important;
+      line-height: 1.2 !important;
     }
     .sig-sub {
-      font-size: 8px;
-      color: #666;
+      display: block !important;
+      font-size: 8px !important;
+      color: #555 !important;
+      margin-top: 1px !important;
+      line-height: 1.15 !important;
     }
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -2151,8 +2207,8 @@ const MasterRoutineView = () => {
                                   type="button"
                                   className="w-full cursor-pointer hover:bg-emerald-300/60 dark:hover:bg-emerald-800/80 p-1 rounded transition-colors focus:outline-none"
                                 >
-                                  <div className="font-bold text-xs text-emerald-950 dark:text-emerald-100">{breakLabel}</div>
-                                  <div className="text-[9px] font-medium text-emerald-900 dark:text-emerald-200 mt-0.5 flex items-center justify-center gap-0.5">
+                                  <div className="break-label font-bold text-xs text-emerald-950 dark:text-emerald-100">{breakLabel}</div>
+                                  <div className="break-time-text text-[9px] font-medium text-emerald-900 dark:text-emerald-200 mt-0.5 flex items-center justify-center gap-0.5">
                                     <Clock className="w-2.5 h-2.5 opacity-70 print-hidden" />
                                     <span>
                                       {breakTime.start
@@ -2317,14 +2373,14 @@ const MasterRoutineView = () => {
                       <tr key={cls.id} className="hover:bg-accent/5 transition-colors group">
                         <td className="border border-border bg-accent/5 px-2.5 py-1.5 text-center">
                           <div className="flex items-center justify-between gap-1">
-                            <div className="text-left flex-1 min-w-0">
-                              <span className="font-bold text-[11px] text-foreground block truncate">
+                            <div className="class-col-cell text-left flex-1 min-w-0">
+                              <div className="class-name-text font-bold text-[11px] text-foreground leading-snug">
                                 {bn ? cls.name_bn : cls.name}
-                              </span>
+                              </div>
                               {divName && (
-                                <span className="text-[9px] text-muted-foreground block truncate">
-                                  {divName}
-                                </span>
+                                <div className="class-div-text text-[9px] text-muted-foreground leading-tight mt-0.5">
+                                  ({divName})
+                                </div>
                               )}
                             </div>
                             <div className="flex items-center gap-0.5 print-hidden opacity-0 group-hover:opacity-100 transition-opacity">
@@ -2457,19 +2513,27 @@ const MasterRoutineView = () => {
                                 }}
                               >
                                 <button className="w-full cursor-pointer hover:bg-accent/15 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/40 rounded-none text-left">
-                                  <div className="flex flex-col min-h-[44px]">
-                                    <div className="flex-1 flex items-center justify-center px-1 py-0.5 cell-subj">
-                                      <span className="text-[10px] font-semibold text-foreground leading-tight text-center">
-                                        {subjName || <span className="text-muted-foreground/30 font-bold">+</span>}
-                                      </span>
+                                  {!subjName && !teacherDisplay ? (
+                                    <div className="flex flex-col min-h-[44px] items-center justify-center empty-cell-placeholder">
+                                      <span className="text-muted-foreground/30 font-bold text-xs print-hidden">+</span>
                                     </div>
-                                    <div className="border-t border-border/70" />
-                                    <div className="flex-1 flex items-center justify-center px-1 py-0.5 bg-muted/10 cell-teacher">
-                                      <span className="text-[8.5px] text-muted-foreground leading-tight text-center truncate max-w-[85px]">
-                                        {teacherDisplay || <span className="opacity-30">—</span>}
-                                      </span>
+                                  ) : (
+                                    <div className="flex flex-col min-h-[44px]">
+                                      <div className="flex-1 flex items-center justify-center px-1 py-0.5 cell-subj">
+                                        <span className="text-[10px] font-semibold text-foreground leading-tight text-center">
+                                          {subjName}
+                                        </span>
+                                      </div>
+                                      {teacherDisplay && <div className="border-t border-border/70" />}
+                                      {teacherDisplay && (
+                                        <div className="flex-1 flex items-center justify-center px-1 py-0.5 bg-muted/10 cell-teacher">
+                                          <span className="text-[8.5px] text-muted-foreground leading-tight text-center truncate max-w-[85px]">
+                                            {teacherDisplay}
+                                          </span>
+                                        </div>
+                                      )}
                                     </div>
-                                  </div>
+                                  )}
                                 </button>
                               </CellEditor>
                             </td>
@@ -2539,34 +2603,34 @@ const MasterRoutineView = () => {
             </div>
 
             {/* Signatures Section (নাজিম ও প্রিন্সিপাল স্বাক্ষর) */}
-            <div className="signatures pt-10 pb-5 px-10 grid grid-cols-2 gap-8 text-center border-t border-border/40">
+            <div className={`signatures pt-8 pb-4 px-10 flex ${signatories.nazim.show && signatories.principal.show ? 'justify-between' : signatories.principal.show ? 'justify-end' : 'justify-start'} items-end text-center border-t border-border/40`}>
               {signatories.nazim.show && (
                 <div className="sig-block flex flex-col items-center">
-                  <div className="sig-line w-48 border-t-2 border-foreground/70 mb-1.5" />
-                  <span className="sig-name font-bold text-xs text-foreground">
+                  <div className="sig-line w-44 border-t-2 border-foreground/70 mb-1.5" />
+                  <div className="sig-name font-bold text-xs text-foreground">
                     {signatories.nazim.name_bn || (bn ? 'নাজিম / শিক্ষা সচিব' : 'Education Secretary')}
-                  </span>
-                  <span className="sig-title text-[10px] text-muted-foreground">
+                  </div>
+                  <div className="sig-title text-[10px] text-muted-foreground mt-0.5">
                     {signatories.nazim.title_bn || (bn ? 'নাজিম / শিক্ষা সচিব' : 'Nazim')}
-                  </span>
-                  <span className="sig-sub text-[9px] text-muted-foreground/80 mt-0.5">
+                  </div>
+                  <div className="sig-sub text-[9px] text-muted-foreground/80 mt-0.5">
                     {instName}
-                  </span>
+                  </div>
                 </div>
               )}
 
               {signatories.principal.show && (
                 <div className="sig-block flex flex-col items-center">
-                  <div className="sig-line w-48 border-t-2 border-foreground/70 mb-1.5" />
-                  <span className="sig-name font-bold text-xs text-foreground">
+                  <div className="sig-line w-44 border-t-2 border-foreground/70 mb-1.5" />
+                  <div className="sig-name font-bold text-xs text-foreground">
                     {signatories.principal.name_bn || (bn ? 'আলহাজ্ব আব্দুছ ছোবহান' : 'Principal')}
-                  </span>
-                  <span className="sig-title text-[10px] text-muted-foreground">
+                  </div>
+                  <div className="sig-title text-[10px] text-muted-foreground mt-0.5">
                     {signatories.principal.title_bn || (bn ? 'প্রতিষ্ঠাতা ও প্রিন্সিপাল' : 'Founder & Principal')}
-                  </span>
-                  <span className="sig-sub text-[9px] text-muted-foreground/80 mt-0.5">
+                  </div>
+                  <div className="sig-sub text-[9px] text-muted-foreground/80 mt-0.5">
                     {instName}
-                  </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -2634,8 +2698,8 @@ const MasterRoutineView = () => {
                                   type="button"
                                   className="w-full cursor-pointer hover:bg-emerald-300/60 dark:hover:bg-emerald-800/80 p-1 rounded transition-colors focus:outline-none"
                                 >
-                                  <div className="font-bold text-xs text-emerald-950 dark:text-emerald-100">{breakLabel}</div>
-                                  <div className="text-[9px] font-medium text-emerald-900 dark:text-emerald-200 mt-0.5 flex items-center justify-center gap-0.5">
+                                  <div className="break-label font-bold text-xs text-emerald-950 dark:text-emerald-100">{breakLabel}</div>
+                                  <div className="break-time-text text-[9px] font-medium text-emerald-900 dark:text-emerald-200 mt-0.5 flex items-center justify-center gap-0.5">
                                     <Clock className="w-2.5 h-2.5 opacity-70 print-hidden" />
                                     <span>
                                       {breakTime.start
@@ -2880,19 +2944,27 @@ const MasterRoutineView = () => {
                                 }
                               >
                                 <button className="w-full cursor-pointer hover:bg-accent/15 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/40 rounded-none text-left">
-                                  <div className="flex flex-col min-h-[44px]">
-                                    <div className="flex-1 flex items-center justify-center px-1 py-0.5 cell-subj">
-                                      <span className="text-[10px] font-semibold text-foreground leading-tight text-center">
-                                        {subjName || <span className="text-muted-foreground/30 font-bold">+</span>}
-                                      </span>
+                                  {!subjName && !teacherDisplay ? (
+                                    <div className="flex flex-col min-h-[44px] items-center justify-center empty-cell-placeholder">
+                                      <span className="text-muted-foreground/30 font-bold text-xs print-hidden">+</span>
                                     </div>
-                                    <div className="border-t border-border/70" />
-                                    <div className="flex-1 flex items-center justify-center px-1 py-0.5 bg-muted/10 cell-teacher">
-                                      <span className="text-[8.5px] text-muted-foreground leading-tight text-center truncate max-w-[85px]">
-                                        {teacherDisplay || <span className="opacity-30">—</span>}
-                                      </span>
+                                  ) : (
+                                    <div className="flex flex-col min-h-[44px]">
+                                      <div className="flex-1 flex items-center justify-center px-1 py-0.5 cell-subj">
+                                        <span className="text-[10px] font-semibold text-foreground leading-tight text-center">
+                                          {subjName}
+                                        </span>
+                                      </div>
+                                      {teacherDisplay && <div className="border-t border-border/70" />}
+                                      {teacherDisplay && (
+                                        <div className="flex-1 flex items-center justify-center px-1 py-0.5 bg-muted/10 cell-teacher">
+                                          <span className="text-[8.5px] text-muted-foreground leading-tight text-center truncate max-w-[85px]">
+                                            {teacherDisplay}
+                                          </span>
+                                        </div>
+                                      )}
                                     </div>
-                                  </div>
+                                  )}
                                 </button>
                               </CellEditor>
                             </td>
@@ -2916,34 +2988,34 @@ const MasterRoutineView = () => {
             </div>
 
             {/* Signatures */}
-            <div className="signatures pt-10 pb-5 px-10 grid grid-cols-2 gap-8 text-center border-t border-border/40">
+            <div className={`signatures pt-8 pb-4 px-10 flex ${signatories.nazim.show && signatories.principal.show ? 'justify-between' : signatories.principal.show ? 'justify-end' : 'justify-start'} items-end text-center border-t border-border/40`}>
               {signatories.nazim.show && (
                 <div className="sig-block flex flex-col items-center">
-                  <div className="sig-line w-48 border-t-2 border-foreground/70 mb-1.5" />
-                  <span className="sig-name font-bold text-xs text-foreground">
+                  <div className="sig-line w-44 border-t-2 border-foreground/70 mb-1.5" />
+                  <div className="sig-name font-bold text-xs text-foreground">
                     {signatories.nazim.name_bn || (bn ? 'নাজিম / শিক্ষা সচিব' : 'Education Secretary')}
-                  </span>
-                  <span className="sig-title text-[10px] text-muted-foreground">
+                  </div>
+                  <div className="sig-title text-[10px] text-muted-foreground mt-0.5">
                     {signatories.nazim.title_bn || (bn ? 'নাজিম / শিক্ষা সচিব' : 'Nazim')}
-                  </span>
-                  <span className="sig-sub text-[9px] text-muted-foreground/80 mt-0.5">
+                  </div>
+                  <div className="sig-sub text-[9px] text-muted-foreground/80 mt-0.5">
                     {instName}
-                  </span>
+                  </div>
                 </div>
               )}
 
               {signatories.principal.show && (
                 <div className="sig-block flex flex-col items-center">
-                  <div className="sig-line w-48 border-t-2 border-foreground/70 mb-1.5" />
-                  <span className="sig-name font-bold text-xs text-foreground">
+                  <div className="sig-line w-44 border-t-2 border-foreground/70 mb-1.5" />
+                  <div className="sig-name font-bold text-xs text-foreground">
                     {signatories.principal.name_bn || (bn ? 'আলহাজ্ব আব্দুছ ছোবহান' : 'Principal')}
-                  </span>
-                  <span className="sig-title text-[10px] text-muted-foreground">
+                  </div>
+                  <div className="sig-title text-[10px] text-muted-foreground mt-0.5">
                     {signatories.principal.title_bn || (bn ? 'প্রতিষ্ঠাতা ও প্রিন্সিপাল' : 'Founder & Principal')}
-                  </span>
-                  <span className="sig-sub text-[9px] text-muted-foreground/80 mt-0.5">
+                  </div>
+                  <div className="sig-sub text-[9px] text-muted-foreground/80 mt-0.5">
                     {instName}
-                  </span>
+                  </div>
                 </div>
               )}
             </div>
