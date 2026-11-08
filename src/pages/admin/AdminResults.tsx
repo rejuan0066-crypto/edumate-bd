@@ -1803,444 +1803,381 @@ const AdminResults = () => {
             )}
           </div>
 
-          {/* Global Filter Bar: 3 Column Dropdowns */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 pt-1">
-            <div>
-              <Label className="block text-xs font-medium text-muted-foreground mb-1">
-                {bn ? 'শিক্ষাবর্ষ' : 'Academic Session'}
-              </Label>
-              <Select value={examYear} onValueChange={handleSelectYear}>
-                <SelectTrigger className="w-full bg-muted/40 border-border rounded-xl px-3 py-2 text-sm font-semibold">
-                  <SelectValue placeholder={bn ? 'শিক্ষাবর্ষ নির্বাচন করুন' : 'Select Academic Session'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {academicSessions.map((s: any) => (
-                    <SelectItem key={s.id} value={s.id} className="text-sm font-medium">
-                      {bn ? (s.name_bn || s.name) : s.name} {s.is_current ? (bn ? '(বর্তমান)' : '(Current)') : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="block text-xs font-medium text-muted-foreground mb-1">
-                {bn ? 'পরীক্ষা নির্বাচন' : 'Exam Session'}
-              </Label>
-              <Select value={examSessionId || 'none'} onValueChange={handleSelectExamSession} disabled={!examYear || examSessions.length === 0}>
-                <SelectTrigger className="w-full bg-muted/40 border-border rounded-xl px-3 py-2 text-sm font-semibold">
-                  <SelectValue placeholder={bn ? 'পরীক্ষা নির্বাচন করুন' : 'Select Exam Session'} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none" className="text-sm font-medium text-muted-foreground">
-                    {bn ? '— সকল পরীক্ষা তালিকা —' : '— All Exams —'}
-                  </SelectItem>
-                  {examSessions.map((es: any) => (
-                    <SelectItem key={es.id} value={es.id} className="text-sm font-medium">
-                      {bn ? (es.name_bn || es.name) : es.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="block text-xs font-medium text-muted-foreground mb-1">
-                {bn ? 'শ্রেণি / জামাত' : 'Class / Jamaat'}
-              </Label>
-              <Select value={selectedClass || 'all'} onValueChange={handleSelectClass} disabled={!examSessionId}>
-                <SelectTrigger className="w-full bg-muted/40 border-border rounded-xl px-3 py-2 text-sm font-semibold">
-                  <SelectValue placeholder={bn ? 'শ্রেণি / জামাত নির্বাচন করুন' : 'Select Class'} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="text-sm font-medium text-muted-foreground">
-                    {bn ? '— সব শ্রেণি / জামাত তালিকা —' : '— All Classes / Overview —'}
-                  </SelectItem>
-                  {examClasses.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id} className="text-sm font-medium">
-                      {bn ? (c.name_bn || c.name) : c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        {/* Standalone High-Contrast Navigation Pills (Mockup Style) */}
-        <div className="bg-card p-1.5 rounded-2xl shadow-sm border border-border flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            onClick={() => {
-              setSearchMode('entry');
-              setReadOnlyView(false);
-              setViewingStudentId(null);
-            }}
-            className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition duration-200 ${
-              searchMode === 'entry'
-                ? 'bg-emerald-800 text-white shadow'
-                : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <span>✍️</span> {bn ? 'নম্বর এন্ট্রি (Marks Entry)' : 'Marks Entry'}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setSearchMode('class');
-              setReadOnlyView(true);
-              setViewingStudentId(null);
-            }}
-            className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition duration-200 ${
-              searchMode === 'class'
-                ? 'bg-emerald-800 text-white shadow'
-                : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <span>📋</span> {bn ? 'ক্লাস রেজাল্ট শিট (Tabulation Sheet)' : 'Tabulation Sheet'}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setSearchMode('individual');
-              setReadOnlyView(true);
-            }}
-            className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition duration-200 ${
-              searchMode === 'individual'
-                ? 'bg-emerald-800 text-white shadow'
-                : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <span>📄</span> {bn ? 'একক মার্কশীট (Marksheet)' : 'Marksheet'}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setSearchMode('analytics');
-              setReadOnlyView(true);
-              setViewingStudentId(null);
-            }}
-            className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition duration-200 ${
-              searchMode === 'analytics'
-                ? 'bg-emerald-800 text-white shadow'
-                : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <span>📊</span> {bn ? 'ফলাফল বিশ্লেষণ (Analytics)' : 'Analytics'}
-          </button>
-        </div>
-
-        {/* Main Content Area based on Active Tab */}
-        <div ref={resultsSectionRef} className="scroll-mt-24 space-y-4">
-          {/* TAB 1: Marks Entry */}
-          {searchMode === 'entry' && (
-            selectedClass && showResults ? (
-              <ClassResultTable
-                students={students}
-                subjects={subjects}
-                marksMap={marksMap as any}
-                onMarksChange={(key, value) => setMarksMap(prev => ({ ...prev, [key]: value }))}
-                onSave={() => saveMutation.mutate()}
-                isSaving={saveMutation.isPending}
-                title={getExamTitle()}
-                lastSaved={lastSavedInfo || null}
-                readOnly={isClassLocked ? true : false}
-                onEdit={() => {
-                  if (isClassLocked) {
-                    toast.warning(bn ? '🔒 এই ক্লাসের ফলাফল পাবলিশড এবং লক করা রয়েছে।' : '🔒 This class result is published and locked.');
-                    return;
-                  }
-                  setReadOnlyView(false);
-                }}
-                className={bn ? examClasses.find((c: any) => c.id === selectedClass)?.name_bn : examClasses.find((c: any) => c.id === selectedClass)?.name}
-                examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
-                sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
-                signatories={signatories}
-                statusOverrides={statusOverrides}
-                onStatusOverrideChange={handleStatusOverrideChange}
-                onViewMarksheet={(id) => {
-                  setViewingStudentId(id);
-                  setSearchMode('individual');
-                }}
-                onClose={() => {
-                  setShowResults(false);
-                  setSelectedExamId(null);
-                  setSelectedClass('');
-                  setMarksMap({});
-                }}
-              />
-            ) : !examSessionId ? (
-              /* LEVEL 1: Exams List / Cards */
-              <div className="bg-card rounded-2xl p-5 border border-border shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-4">
-                  <div>
-                    <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                      <span>📋</span>
-                      {bn ? 'নম্বর এন্ট্রির জন্য পরীক্ষা বাছাই করুন' : 'Select Exam for Marks Entry'}
-                    </h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {bn ? 'নিচের তালিকা থেকে যে পরীক্ষার নম্বর এন্ট্রি করতে চান, সেই পরীক্ষায় ক্লিক করুন।' : 'Click on an exam below to view classes and enter marks.'}
-                    </p>
-                  </div>
-                </div>
-
-                {examSessions.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground text-sm">
-                    {bn ? 'এই শিক্ষাবর্ষে কোনো পরীক্ষা পাওয়া যায়নি।' : 'No exam sessions found for this year.'}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {examSessions.map((es: any) => (
-                      <div
-                        key={es.id}
-                        onClick={() => handleSelectExamSession(es.id)}
-                        className="p-5 rounded-xl border border-border bg-card/60 hover:border-emerald-500/70 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 cursor-pointer transition-all flex flex-col justify-between gap-4 shadow-xs hover:shadow group"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <span className="font-bold text-foreground text-base group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
-                              {bn ? (es.name_bn || es.name) : es.name}
-                            </span>
-                            <Badge variant="outline" className="text-emerald-700 dark:text-emerald-400 border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/30 text-[11px] font-semibold gap-1">
-                              <span>📅</span> {bn ? 'পরীক্ষা' : 'Exam'}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {bn ? 'শিক্ষাবর্ষ:' : 'Academic Year:'} {(() => { const y = academicSessions.find((s: any) => s.id === (es.academic_session_id || examYear)); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
-                          </p>
-                          {(es.start_date || es.end_date) && (
-                            <p className="text-[11px] text-muted-foreground/80 mt-1">
-                              {bn ? 'তারিখ:' : 'Date:'} {es.start_date ? enToBn(es.start_date) : ''} {es.end_date ? ` — ${enToBn(es.end_date)}` : ''}
-                            </p>
-                          )}
-                        </div>
-
-                        <Button
-                          variant="outline"
-                          className="w-full border-emerald-600/40 text-emerald-800 dark:text-emerald-300 group-hover:bg-emerald-700 group-hover:text-white font-semibold text-xs py-2 rounded-xl shadow-xs gap-1.5 transition-colors"
-                        >
-                          <span>👉</span>
-                          {bn ? 'এন্টির ক্লাস সমূহ দেখুন' : 'View Classes for Entry'}
-                        </Button>
-                      </div>
+          {/* Global Filter Bar: When on exam list view (!examSessionId) */}
+          {!examSessionId ? (
+            <div className="mt-4 pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="w-full sm:w-72">
+                <Label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  {bn ? 'শিক্ষাবর্ষ ফিল্টার' : 'Academic Session'}
+                </Label>
+                <Select value={examYear} onValueChange={handleSelectYear}>
+                  <SelectTrigger className="w-full bg-muted/40 border-border rounded-xl px-3 py-2 text-sm font-semibold">
+                    <SelectValue placeholder={bn ? 'শিক্ষাবর্ষ নির্বাচন করুন' : 'Select Academic Session'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {academicSessions.map((s: any) => (
+                      <SelectItem key={s.id} value={s.id} className="text-sm font-medium">
+                        {bn ? (s.name_bn || s.name) : s.name} {s.is_current ? (bn ? '(বর্তমান)' : '(Current)') : ''}
+                      </SelectItem>
                     ))}
-                  </div>
-                )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-xs text-muted-foreground font-medium">
+                {bn ? 'নিচের যেকোনো পরীক্ষায় ক্লিক করে নম্বর এন্ট্রি ও ফলাফল পরিচালনা করুন' : 'Click on an exam below to enter marks and manage results'}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* View 1: When no exam is selected yet -> Show Exams List / Cards ONLY */}
+        {!examSessionId ? (
+          <div className="bg-card rounded-2xl p-5 md:p-6 border border-border shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-4">
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+                  <span>📋</span>
+                  {bn ? 'নম্বর এন্ট্রির জন্য পরীক্ষা বাছাই করুন' : 'Select Exam for Marks Entry'}
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  {bn ? 'নিচের তালিকা থেকে যে পরীক্ষার নম্বর এন্ট্রি করতে চান, সেই পরীক্ষায় ক্লিক করুন।' : 'Click on an exam below to enter marks, view tabulation sheets, and marksheets.'}
+                </p>
+              </div>
+              <Badge variant="outline" className="self-start sm:self-auto text-xs font-semibold px-3 py-1">
+                {bn ? `মোট পরীক্ষা: ${enToBn(examSessions.length)}টি` : `Total Exams: ${examSessions.length}`}
+              </Badge>
+            </div>
+
+            {examSessions.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground text-sm">
+                {bn ? 'এই শিক্ষাবর্ষে কোনো পরীক্ষা পাওয়া যায়নি।' : 'No exam sessions found for this year.'}
               </div>
             ) : (
-              /* LEVEL 2: Classes for Selected Exam */
-              <div className="bg-card rounded-2xl p-5 border border-border shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-4">
-                  <div className="flex items-center gap-3 flex-wrap">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {examSessions.map((es: any) => (
+                  <div
+                    key={es.id}
+                    onClick={() => handleSelectExamSession(es.id)}
+                    className="p-5 rounded-2xl border border-border bg-card/60 hover:border-emerald-500/70 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 cursor-pointer transition-all flex flex-col justify-between gap-4 shadow-xs hover:shadow-md group"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="font-bold text-foreground text-base group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
+                          {bn ? (es.name_bn || es.name) : es.name}
+                        </span>
+                        <Badge variant="outline" className="text-emerald-700 dark:text-emerald-400 border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/30 text-[11px] font-semibold gap-1">
+                          <span>📅</span> {bn ? 'পরীক্ষা' : 'Exam'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {bn ? 'শিক্ষাবর্ষ:' : 'Academic Year:'} {(() => { const y = academicSessions.find((s: any) => s.id === (es.academic_session_id || examYear)); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
+                      </p>
+                      {(es.start_date || es.end_date) && (
+                        <p className="text-[11px] text-muted-foreground/80 mt-1">
+                          {bn ? 'তারিখ:' : 'Date:'} {es.start_date ? enToBn(es.start_date) : ''} {es.end_date ? ` — ${enToBn(es.end_date)}` : ''}
+                        </p>
+                      )}
+                    </div>
+
                     <Button
                       variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setExamSessionId('');
-                        setSelectedClass('');
-                        setShowResults(false);
-                      }}
-                      className="h-8 gap-1.5 text-xs font-semibold hover:bg-muted"
+                      className="w-full border-emerald-600/40 text-emerald-800 dark:text-emerald-300 group-hover:bg-emerald-700 group-hover:text-white font-semibold text-xs py-2 rounded-xl shadow-xs gap-1.5 transition-colors"
                     >
-                      <span>←</span> {bn ? 'পরীক্ষা তালিকায় ফিরুন' : 'Back to Exams'}
+                      <span>👉</span>
+                      {bn ? 'এন্টির ক্লাস সমূহ দেখুন' : 'View Classes for Entry'}
                     </Button>
-                    <div>
-                      <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                        <span>✍️</span>
-                        <span>{bn ? currentExamSession?.name_bn || currentExamSession?.name : currentExamSession?.name}</span>
-                        <Badge variant="secondary" className="text-xs font-normal">
-                          {bn ? 'শ্রেণি / জামাত তালিকা' : 'Classes List'}
-                        </Badge>
-                      </h2>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {bn ? 'নিচের যে কোনো জামাতের নম্বর এন্ট্রি বোতামে চাপ দিয়ে দ্রুত নম্বর ইনপুট শুরু করুন।' : 'Click on any class below to start entering marks.'}
-                      </p>
-                    </div>
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* View 2: When an exam is selected -> Dedicated Exam Workspace with 4 Tabs */
+          <div className="space-y-4">
+            {/* Dedicated Exam Workspace Header */}
+            <div className="bg-card rounded-2xl p-4 md:p-5 shadow-sm border border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setExamSessionId('');
+                    setSelectedClass('');
+                    setShowResults(false);
+                  }}
+                  className="h-9 px-3 rounded-xl gap-2 font-bold text-xs hover:bg-muted shrink-0 border-emerald-600/40 text-emerald-800 dark:text-emerald-300"
+                >
+                  <span>←</span> {bn ? 'পরীক্ষা তালিকায় ফিরুন' : 'Back to Exams'}
+                </Button>
+                <div className="h-6 w-px bg-border/60 hidden sm:block" />
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-base md:text-lg font-bold text-foreground">
+                      {bn ? currentExamSession?.name_bn || currentExamSession?.name : currentExamSession?.name}
+                    </span>
+                    <Badge className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 text-xs font-semibold">
+                      {(() => { const y = academicSessions.find((s: any) => s.id === (currentExamSession?.academic_session_id || examYear)); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {bn ? 'এই পরীক্ষার সকল জামাত, নম্বর এন্ট্রি ও ফলাফল পরিচালনা করুন' : 'Manage classes, marks entry and results for this exam'}
+                  </p>
                 </div>
-                {examClasses.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground text-sm">
-                    {bn ? 'এই পরীক্ষায় কোনো জামাত পাওয়া যায়নি।' : 'No classes found for this exam.'}
-                  </div>
+              </div>
+
+              {/* Quick Class Dropdown Filter */}
+              <div className="w-full md:w-64">
+                <Select value={selectedClass || 'all'} onValueChange={handleSelectClass}>
+                  <SelectTrigger className="w-full bg-muted/40 border-border rounded-xl px-3 py-2 text-xs font-semibold">
+                    <SelectValue placeholder={bn ? 'শ্রেণি / জামাত ফিল্টার' : 'Filter by Class'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="text-xs font-medium text-muted-foreground">
+                      {bn ? '— সব শ্রেণি / জামাত তালিকা —' : '— All Classes / Overview —'}
+                    </SelectItem>
+                    {examClasses.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id} className="text-xs font-medium">
+                        {bn ? (c.name_bn || c.name) : c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Standalone High-Contrast Navigation Pills (Mockup Style) */}
+            <div className="bg-card p-1.5 rounded-2xl shadow-sm border border-border flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchMode('entry');
+                  setReadOnlyView(false);
+                  setViewingStudentId(null);
+                }}
+                className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition duration-200 ${
+                  searchMode === 'entry'
+                    ? 'bg-emerald-800 text-white shadow'
+                    : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <span>✍️</span> {bn ? 'নম্বর এন্ট্রি (Marks Entry)' : 'Marks Entry'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchMode('class');
+                  setReadOnlyView(true);
+                  setViewingStudentId(null);
+                }}
+                className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition duration-200 ${
+                  searchMode === 'class'
+                    ? 'bg-emerald-800 text-white shadow'
+                    : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <span>📋</span> {bn ? 'ক্লাস রেজাল্ট শিট (Tabulation Sheet)' : 'Tabulation Sheet'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchMode('individual');
+                  setReadOnlyView(true);
+                }}
+                className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition duration-200 ${
+                  searchMode === 'individual'
+                    ? 'bg-emerald-800 text-white shadow'
+                    : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <span>📄</span> {bn ? 'একক মার্কশীট (Marksheet)' : 'Marksheet'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchMode('analytics');
+                  setReadOnlyView(true);
+                  setViewingStudentId(null);
+                }}
+                className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition duration-200 ${
+                  searchMode === 'analytics'
+                    ? 'bg-emerald-800 text-white shadow'
+                    : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <span>📊</span> {bn ? 'ফলাফল বিশ্লেষণ (Analytics)' : 'Analytics'}
+              </button>
+            </div>
+
+            {/* Main Content Area based on Active Tab */}
+            <div ref={resultsSectionRef} className="scroll-mt-24 space-y-4">
+              {/* TAB 1: Marks Entry */}
+              {searchMode === 'entry' && (
+                selectedClass && showResults ? (
+                  <ClassResultTable
+                    students={students}
+                    subjects={subjects}
+                    marksMap={marksMap as any}
+                    onMarksChange={(key, value) => setMarksMap(prev => ({ ...prev, [key]: value }))}
+                    onSave={() => saveMutation.mutate()}
+                    isSaving={saveMutation.isPending}
+                    title={getExamTitle()}
+                    lastSaved={lastSavedInfo || null}
+                    readOnly={isClassLocked ? true : false}
+                    onEdit={() => {
+                      if (isClassLocked) {
+                        toast.warning(bn ? '🔒 এই ক্লাসের ফলাফল পাবলিশড এবং লক করা রয়েছে।' : '🔒 This class result is published and locked.');
+                        return;
+                      }
+                      setReadOnlyView(false);
+                    }}
+                    className={bn ? examClasses.find((c: any) => c.id === selectedClass)?.name_bn : examClasses.find((c: any) => c.id === selectedClass)?.name}
+                    examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
+                    sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
+                    signatories={signatories}
+                    statusOverrides={statusOverrides}
+                    onStatusOverrideChange={handleStatusOverrideChange}
+                    onViewMarksheet={(id) => {
+                      setViewingStudentId(id);
+                      setSearchMode('individual');
+                    }}
+                    onClose={() => {
+                      setShowResults(false);
+                      setSelectedExamId(null);
+                      setSelectedClass('');
+                      setMarksMap({});
+                    }}
+                  />
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {examClasses.map((c: any) => {
-                      const isDone = classResultStatus[c.id];
-                      return (
-                        <div
-                          key={c.id}
-                          className={`p-4 rounded-xl border transition-all flex flex-col justify-between gap-4 ${
-                            isDone
-                              ? 'border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/20 dark:bg-emerald-950/10'
-                              : 'border-border bg-card/50 hover:border-amber-500/50'
-                          }`}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between gap-2 mb-1.5">
-                              <span className="font-bold text-foreground text-base">
-                                {bn ? (c.name_bn || c.name) : c.name}
-                              </span>
+                  /* LEVEL 2: Classes for Selected Exam */
+                  <div className="bg-card rounded-2xl p-5 border border-border shadow-sm space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-4">
+                      <div>
+                        <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                          <span>✍️</span>
+                          <span>{bn ? 'নম্বর এন্ট্রির জন্য শ্রেণি / জামাত বাছাই করুন' : 'Select Class for Marks Entry'}</span>
+                        </h2>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {bn ? 'নিচের যে কোনো জামাতের নম্বর এন্ট্রি বোতামে চাপ দিয়ে দ্রুত নম্বর ইনপুট শুরু করুন।' : 'Click on any class below to start entering marks.'}
+                        </p>
+                      </div>
+                    </div>
+                    {examClasses.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground text-sm">
+                        {bn ? 'এই পরীক্ষায় কোনো জামাত পাওয়া যায়নি।' : 'No classes found for this exam.'}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {examClasses.map((c: any) => {
+                          const isDone = classResultStatus[c.id];
+                          return (
+                            <div
+                              key={c.id}
+                              className={`p-4 rounded-xl border transition-all flex flex-col justify-between gap-4 ${
+                                isDone
+                                  ? 'border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/20 dark:bg-emerald-950/10'
+                                  : 'border-border bg-card/50 hover:border-amber-500/50'
+                              }`}
+                            >
+                              <div>
+                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                  <span className="font-bold text-foreground text-base">
+                                    {bn ? (c.name_bn || c.name) : c.name}
+                                  </span>
+                                  {isDone ? (
+                                    <Badge className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 text-[11px] font-semibold gap-1">
+                                      <span>✅</span> {bn ? 'এন্ট্রি সম্পন্ন' : 'Marks Entered'}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-amber-700 dark:text-amber-400 border-amber-300 bg-amber-50/50 dark:bg-amber-950/20 text-[11px] font-semibold gap-1">
+                                      <span>⏳</span> {bn ? 'বাকি রয়েছে' : 'Pending'}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {bn ? 'পরীক্ষা:' : 'Exam:'} {bn ? (currentExamSession?.name_bn || currentExamSession?.name) : currentExamSession?.name}
+                                </p>
+                              </div>
                               {isDone ? (
-                                <Badge className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 text-[11px] font-semibold gap-1">
-                                  <span>✅</span> {bn ? 'এন্ট্রি সম্পন্ন' : 'Marks Entered'}
-                                </Badge>
+                                <Button
+                                  onClick={() => handleClassFromList(c.id, 'entry')}
+                                  variant="outline"
+                                  className="w-full border-emerald-600/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/50 font-semibold text-xs py-2 rounded-xl shadow-sm gap-1.5"
+                                >
+                                  <span>✏️</span>
+                                  {bn ? 'নম্বর সংশোধন / পরিবর্তন করুন' : 'Edit / Update Marks'}
+                                </Button>
                               ) : (
-                                <Badge variant="outline" className="text-amber-700 dark:text-amber-400 border-amber-300 bg-amber-50/50 dark:bg-amber-950/20 text-[11px] font-semibold gap-1">
-                                  <span>⏳</span> {bn ? 'বাকি রয়েছে' : 'Pending'}
-                                </Badge>
+                                <Button
+                                  onClick={() => handleClassFromList(c.id, 'entry')}
+                                  className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2 rounded-xl shadow-sm gap-1.5"
+                                >
+                                  <span>✍️</span>
+                                  {bn ? 'নম্বর এন্ট্রি শুরু করুন' : 'Start Marks Entry'}
+                                </Button>
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              {bn ? 'পরীক্ষা:' : 'Exam:'} {bn ? (currentExamSession?.name_bn || currentExamSession?.name) : currentExamSession?.name}
-                            </p>
-                          </div>
-                          {isDone ? (
-                            <Button
-                              onClick={() => handleClassFromList(c.id, 'entry')}
-                              variant="outline"
-                              className="w-full border-emerald-600/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/50 font-semibold text-xs py-2 rounded-xl shadow-sm gap-1.5"
-                            >
-                              <span>✏️</span>
-                              {bn ? 'নম্বর সংশোধন / পরিবর্তন করুন' : 'Edit / Update Marks'}
-                            </Button>
-                          ) : (
-                            <Button
-                              onClick={() => handleClassFromList(c.id, 'entry')}
-                              className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2 rounded-xl shadow-sm gap-1.5"
-                            >
-                              <span>✍️</span>
-                              {bn ? 'নম্বর এন্ট্রি শুরু করুন' : 'Start Marks Entry'}
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )
-          )}
-
-          {/* TAB 2: Tabulation Sheet (Class Result Sheet) */}
-          {searchMode === 'class' && (
-            selectedClass && showResults ? (
-              <ClassResultTable
-                students={students}
-                subjects={subjects}
-                marksMap={marksMap as any}
-                onMarksChange={(key, value) => setMarksMap(prev => ({ ...prev, [key]: value }))}
-                onSave={() => saveMutation.mutate()}
-                isSaving={saveMutation.isPending}
-                title={getExamTitle()}
-                lastSaved={lastSavedInfo || null}
-                readOnly={true}
-                className={bn ? examClasses.find((c: any) => c.id === selectedClass)?.name_bn : examClasses.find((c: any) => c.id === selectedClass)?.name}
-                examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
-                sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
-                signatories={signatories}
-                statusOverrides={statusOverrides}
-                onStatusOverrideChange={handleStatusOverrideChange}
-                onViewMarksheet={(id) => {
-                  setViewingStudentId(id);
-                  setSearchMode('individual');
-                }}
-                onClose={() => {
-                  setShowResults(false);
-                  setSelectedExamId(null);
-                  setSelectedClass('');
-                  setMarksMap({});
-                }}
-              />
-            ) : !examSessionId ? (
-              <div className="bg-card rounded-2xl p-5 border border-border shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-4">
-                  <div>
-                    <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                      <span>📋</span>
-                      {bn ? 'রেজাল্ট শিটের জন্য পরীক্ষা বাছাই করুন' : 'Select Exam for Tabulation Sheet'}
-                    </h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {bn ? 'যে পরীক্ষার ক্লাস রেজাল্ট শিট দেখতে চান, সেই পরীক্ষায় ক্লিক করুন।' : 'Click on an exam to view its class result sheets.'}
-                    </p>
-                  </div>
-                </div>
-
-                {examSessions.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground text-sm">
-                    {bn ? 'এই শিক্ষাবর্ষে কোনো পরীক্ষা পাওয়া যায়নি।' : 'No exam sessions found for this year.'}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {examSessions.map((es: any) => (
-                      <div
-                        key={es.id}
-                        onClick={() => handleSelectExamSession(es.id)}
-                        className="p-5 rounded-xl border border-border bg-card/60 hover:border-emerald-500/70 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 cursor-pointer transition-all flex flex-col justify-between gap-4 shadow-xs hover:shadow group"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <span className="font-bold text-foreground text-base group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
-                              {bn ? (es.name_bn || es.name) : es.name}
-                            </span>
-                            <Badge variant="outline" className="text-emerald-700 dark:text-emerald-400 border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/30 text-[11px] font-semibold gap-1">
-                              <span>📊</span> {bn ? 'রেজাল্ট শিট' : 'Result Sheet'}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {bn ? 'শিক্ষাবর্ষ:' : 'Academic Year:'} {(() => { const y = academicSessions.find((s: any) => s.id === (es.academic_session_id || examYear)); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
-                          </p>
-                        </div>
-
-                        <Button
-                          variant="outline"
-                          className="w-full border-emerald-600/40 text-emerald-800 dark:text-emerald-300 group-hover:bg-emerald-700 group-hover:text-white font-semibold text-xs py-2 rounded-xl shadow-xs gap-1.5 transition-colors"
-                        >
-                          <span>👉</span>
-                          {bn ? 'এই পরীক্ষার রেজাল্ট শিট দেখুন' : 'View Tabulation Sheet'}
-                        </Button>
+                          );
+                        })}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
-            ) : (
-              <div>
-                <div className="mb-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setExamSessionId('');
-                      setSelectedClass('');
-                      setShowResults(false);
+                )
+              )}
+
+              {/* TAB 2: Tabulation Sheet (Class Result Sheet) */}
+              {searchMode === 'class' && (
+                selectedClass && showResults ? (
+                  <ClassResultTable
+                    students={students}
+                    subjects={subjects}
+                    marksMap={marksMap as any}
+                    onMarksChange={(key, value) => setMarksMap(prev => ({ ...prev, [key]: value }))}
+                    onSave={() => saveMutation.mutate()}
+                    isSaving={saveMutation.isPending}
+                    title={getExamTitle()}
+                    lastSaved={lastSavedInfo || null}
+                    readOnly={true}
+                    className={bn ? examClasses.find((c: any) => c.id === selectedClass)?.name_bn : examClasses.find((c: any) => c.id === selectedClass)?.name}
+                    examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
+                    sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
+                    signatories={signatories}
+                    statusOverrides={statusOverrides}
+                    onStatusOverrideChange={handleStatusOverrideChange}
+                    onViewMarksheet={(id) => {
+                      setViewingStudentId(id);
+                      setSearchMode('individual');
                     }}
-                    className="h-8 gap-1.5 text-xs font-semibold hover:bg-muted"
-                  >
-                    <span>←</span> {bn ? 'পরীক্ষা তালিকায় ফিরুন' : 'Back to Exams'}
-                  </Button>
-                </div>
-                <ClassResultStatusList
-                  classes={examClasses}
-                  resultStatusMap={classResultStatus as Record<string, boolean>}
-                  publishStatusMap={classPublishStatus as any}
-                  onClassClick={(id) => handleClassFromList(id, 'view')}
-                  onExport={handleClassExport}
-                  onPublishToggle={handlePublishToggle}
-                  onApprovePublishClass={handleApprovePublishClass}
-                  onRejectPublishClass={handleRejectPublishClass}
-                  onRevokePublishClass={handleRevokePublishClass}
-                  onResetAllPublish={handleResetAllPublish}
-                  exportingClassId={exportingClassId}
-                  examSessionName={getExamSessionName()}
-                  publishApprovalStatus={publishApprovalStatus}
-                  publishRejectionReason={currentExamSession?.publish_rejection_reason}
-                  isAdmin={isAdmin}
-                  onApprovePublish={handleApprovePublish}
-                  onRejectPublish={() => setRejectPublishOpen(true)}
-                />
-              </div>
-            )
-          )}
+                    onClose={() => {
+                      setShowResults(false);
+                      setSelectedExamId(null);
+                      setSelectedClass('');
+                      setMarksMap({});
+                    }}
+                  />
+                ) : (
+                  <div>
+                    <ClassResultStatusList
+                      classes={examClasses}
+                      resultStatusMap={classResultStatus as Record<string, boolean>}
+                      publishStatusMap={classPublishStatus as any}
+                      onClassClick={(id) => handleClassFromList(id, 'view')}
+                      onExport={handleClassExport}
+                      onPublishToggle={handlePublishToggle}
+                      onApprovePublishClass={handleApprovePublishClass}
+                      onRejectPublishClass={handleRejectPublishClass}
+                      onRevokePublishClass={handleRevokePublishClass}
+                      onResetAllPublish={handleResetAllPublish}
+                      exportingClassId={exportingClassId}
+                      examSessionName={getExamSessionName()}
+                      publishApprovalStatus={publishApprovalStatus}
+                      publishRejectionReason={currentExamSession?.publish_rejection_reason}
+                      isAdmin={isAdmin}
+                      onApprovePublish={handleApprovePublish}
+                      onRejectPublish={() => setRejectPublishOpen(true)}
+                    />
+                  </div>
+                )
+              )}
 
           {/* TAB 3: Individual Marksheet */}
           {searchMode === 'individual' && (
@@ -2391,6 +2328,8 @@ const AdminResults = () => {
             )
           )}
         </div>
+      </div>
+    )}
         <Dialog open={rejectPublishOpen} onOpenChange={setRejectPublishOpen}>
           <DialogContent className="rounded-[28px]">
             <DialogHeader>
