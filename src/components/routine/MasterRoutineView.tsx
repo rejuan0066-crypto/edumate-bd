@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import {
   Printer, Plus, Minus, Save, Trash2, Clock, CheckSquare,
   X, Filter, Check, ChevronDown, RefreshCw, PenTool, Edit, BookOpen, Layers,
-  ArrowLeft, RotateCcw, Sparkles, AlertTriangle
+  ArrowLeft, RotateCcw, Sparkles, AlertTriangle, FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
@@ -798,10 +798,16 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
 
   // Customizable Footer Note
   const [footerNote, setFooterNote] = useState<string>(() => {
-    return localStorage.getItem('master_routine_footer_note') || 
-      'বি.দ্র. কর্তৃপক্ষ কর্তৃক পরিবর্তন করার ক্ষমতা এবং বিশেষ প্রয়োজনে অতিরিক্ত ক্লাস নিতে পারবেন।';
+    const saved = localStorage.getItem('master_routine_footer_note');
+    if (saved) return saved.replace(/^(বি[\.ঃ\s]*দ্র[\.ঃ\s]*[:ঃ]?\s*|Note:\s*)/i, '').trim();
+    return 'কর্তৃপক্ষ কর্তৃক পরিবর্তন করার ক্ষমতা এবং বিশেষ প্রয়োজনে অতিরিক্ত ক্লাস নিতে পারবেন।';
   });
   const [isEditingFooterNote, setIsEditingFooterNote] = useState(false);
+
+  const cleanFooterNote = useMemo(() => {
+    if (!footerNote) return 'কর্তৃপক্ষ কর্তৃক পরিবর্তন করার ক্ষমতা এবং বিশেষ প্রয়োজনে অতিরিক্ত ক্লাস নিতে পারবেন।';
+    return footerNote.replace(/^(বি[\.ঃ\s]*দ্র[\.ঃ\s]*[:ঃ]?\s*|Note:\s*)/i, '').trim();
+  }, [footerNote]);
 
   // Signatories Config (Nazim & Principal)
   const [signatories, setSignatories] = useState<{
@@ -1404,6 +1410,224 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
     toast.success(bn ? 'স্বাক্ষরকারী তথ্য সংরক্ষিত হয়েছে' : 'Signatories saved');
   };
 
+  // Download as Word Document (.doc) with SutonnyMJ font and 2-row period cells
+  const handleDownloadWordDoc = () => {
+    try {
+      const routineName = bn ? 'দৈনিক ক্লাস রুটিন' : 'Daily Class Routine';
+      const fileName = `${instName}_${routineName}_${sessionLabel || '2026-27'}`.replace(/\s+/g, '_');
+
+      // Table Header row: Class column + Periods columns (with Break)
+      const thHtml = periodColumns.map((col) => {
+        if (col.isBreak) {
+          const bTimeStr = breakTime.start ? `${fmtTime(breakTime.start, bn)} - ${fmtTime(breakTime.end, bn)}` : '';
+          return `<th style="background-color:#d1fae5; color:#064e3b; width:55pt; font-size:9pt; font-weight:bold; padding:4pt 2pt; text-align:center; vertical-align:middle; border:1pt solid #333;">
+            <div style="font-weight:bold; font-size:9.5pt;">${breakLabel}</div>
+            ${bTimeStr ? `<div style="font-size:7.5pt; color:#047857; margin-top:2pt;">${bTimeStr}</div>` : ''}
+          </th>`;
+        }
+        const time = getPeriodTime(col.num);
+        const timeStr = time.start ? `${fmtTime(time.start, bn)} - ${fmtTime(time.end, bn)}` : '';
+        const pLabel = periodLabelsMap[col.num] || `${col.num}`;
+        return `<th style="background-color:#e8f5e9; color:#052e16; font-size:9pt; font-weight:bold; padding:4pt 2pt; text-align:center; vertical-align:middle; border:1pt solid #333;">
+          <div style="font-weight:bold; font-size:9.5pt;">${pLabel}</div>
+          ${timeStr ? `<div style="font-size:7.5pt; color:#065f46; font-weight:normal; margin-top:2pt;">${timeStr}</div>` : ''}
+        </th>`;
+      }).join('');
+
+      // Table Body rows: 11 Classes
+      let rowsHtml = '';
+      for (const cls of displayClasses) {
+        const routineId = allRoutines?.find(r => r.class_id === cls.id)?.id;
+        const periods = allClassesPeriods?.filter(p => p.routine_id === routineId && p.day_of_week === selectedDay) || [];
+
+        const clsName = bn ? cls.name_bn : cls.name;
+        const divName = bn ? cls.divisions?.name_bn : cls.divisions?.name;
+
+        let skipC = 0;
+        let cellsHtml = '';
+
+        for (let idx = 0; idx < periodColumns.length; idx++) {
+          const col = periodColumns[idx];
+          if (col.isBreak) {
+            cellsHtml += `<td style="background-color:#d1fae5; width:55pt; border:1pt solid #333;"></td>`;
+            continue;
+          }
+
+          if (skipC > 0) {
+            skipC--;
+            continue;
+          }
+
+          const period = periods.find(p => p.period_number === col.num && !p.is_break);
+          let customMeta: CustomEventMeta | null = null;
+          if (period?.room && period.room.startsWith('{')) {
+            try {
+              const parsed = JSON.parse(period.room);
+              if (parsed.is_custom) customMeta = parsed;
+            } catch {}
+          }
+
+          let consecutive = 1;
+          for (let c = idx + 1; c < periodColumns.length; c++) {
+            if (periodColumns[c].isBreak) break;
+            consecutive++;
+          }
+
+          let span = 1;
+          if (customMeta && customMeta.span > 1) {
+            span = Math.min(customMeta.span, consecutive);
+            skipC = span - 1;
+          }
+
+          if (customMeta) {
+            cellsHtml += `<td colspan="${span}" style="background-color:#fef3c7; color:#78350f; font-weight:bold; font-size:10pt; text-align:center; vertical-align:middle; padding:6pt 2pt; border:1pt solid #333;">
+              <div style="font-weight:bold; font-size:10.5pt; color:#92400e;">${customMeta.title || 'সেমিনার'}</div>
+              ${customMeta.note ? `<div style="font-size:8.5pt; color:#78350f; margin-top:2pt;">${customMeta.note}</div>` : ''}
+            </td>`;
+          } else {
+            const subj = period?.subjects as any;
+            const subjName = subj ? (bn ? subj.name_bn : subj.name) : '';
+            const teacherDisplay = bn
+              ? period?.teacher_name_bn || period?.teacher_name || ''
+              : period?.teacher_name || period?.teacher_name_bn || '';
+
+            cellsHtml += `<td style="padding:0; vertical-align:middle; border:1pt solid #333; height:45pt;">
+              <div style="width:100%; height:100%; display:table; table-layout:fixed;">
+                <div style="display:table-row; height:24pt;">
+                  <div style="display:table-cell; vertical-align:middle; text-align:center; font-weight:bold; font-size:9.5pt; color:#000; padding:2pt 1pt;">
+                    ${subjName || '&nbsp;'}
+                  </div>
+                </div>
+                <div style="display:table-row; height:1pt; border-top:1pt solid #777;">
+                  <div style="display:table-cell; border-top:1pt solid #777; font-size:1pt; line-height:1pt;"></div>
+                </div>
+                <div style="display:table-row; height:20pt; background-color:#f8fafc;">
+                  <div style="display:table-cell; vertical-align:middle; text-align:center; font-size:8.5pt; color:#333; padding:2pt 1pt; background-color:#f8fafc;">
+                    ${teacherDisplay || '&nbsp;'}
+                  </div>
+                </div>
+              </div>
+            </td>`;
+          }
+        }
+
+        rowsHtml += `<tr>
+          <td style="width:115pt; text-align:left; padding:4pt 6pt; background-color:#f8fafc; border:1pt solid #333; vertical-align:middle;">
+            <div style="font-weight:bold; font-size:10pt; color:#0f172a;">${clsName}</div>
+            ${divName ? `<div style="font-size:8pt; color:#64748b; margin-top:1pt;">(${divName})</div>` : ''}
+          </td>
+          ${cellsHtml}
+        </tr>`;
+      }
+
+      // Build complete Word Document HTML with SutonnyMJ font and landscape A4 setup
+      const docHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+  <meta charset='utf-8'>
+  <title>${instName} - ${routineName}</title>
+  <!--[if gte mso 9]>
+  <xml>
+    <w:WordDocument>
+      <w:View>Print</w:View>
+      <w:Zoom>100</w:Zoom>
+      <w:DoNotOptimizeForBrowser/>
+    </w:WordDocument>
+  </xml>
+  <![endif]-->
+  <style>
+    @page Section1 {
+      size: 841.9pt 595.3pt;
+      mso-page-orientation: landscape;
+      margin: 28.3pt 28.3pt 28.3pt 28.3pt;
+    }
+    div.Section1 {
+      page: Section1;
+    }
+    body, table, td, th, p, span, div, b {
+      font-family: 'SutonnyMJ', 'SutonnyOMJ', 'Kalpurush', 'Nikosh', 'SolaimanLipi', sans-serif !important;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+    }
+  </style>
+</head>
+<body class="Section1" style="font-family:'SutonnyMJ', 'SutonnyOMJ', 'Kalpurush', 'Nikosh', sans-serif; background:#ffffff; color:#000000; margin:0; padding:10pt;">
+  <div style="text-align:center; margin-bottom:8pt;">
+    <div style="font-size:18pt; font-weight:bold; color:#064e3b; margin-bottom:2pt;">${instName}</div>
+    ${instAddress ? `<div style="font-size:9.5pt; color:#333; margin-bottom:2pt;">${instAddress}</div>` : ''}
+    <div style="font-size:9pt; color:#444; margin-bottom:4pt;">
+      ${instPhone ? `মোবাইল: ${toBn(instPhone)}` : ''}
+      ${instPhone && instEmail ? ' | ' : ''}
+      ${instEmail ? `ইমেইল: ${instEmail}` : ''}
+    </div>
+    <div style="display:inline-block; font-size:10.5pt; font-weight:bold; color:#064e3b; background-color:#e8f5e9; border:1pt solid #86efac; padding:2pt 14pt; border-radius:12pt; margin-top:2pt;">
+      ${routineName} — ${sessionLabel}
+    </div>
+  </div>
+
+  <table style="width:100%; border-collapse:collapse; margin-top:4pt;">
+    <thead>
+      <tr>
+        <th style="background-color:#e8f5e9; color:#052e16; width:115pt; text-align:left; padding:4pt 6pt; font-size:9.5pt; font-weight:bold; border:1pt solid #333;">
+          <div>শ্রেণী / পিরিয়ড</div>
+          <div style="font-size:7.5pt; color:#047857; font-weight:normal;">(${displayClasses.length}টি ক্লাস সিরিয়াল অনুযায়ী)</div>
+        </th>
+        ${thHtml}
+      </tr>
+    </thead>
+    <tbody>
+      ${rowsHtml}
+    </tbody>
+  </table>
+
+  <!-- Footnote (Exactly Once) -->
+  <div style="margin-top:6pt; font-size:9pt; color:#333; border-top:1pt solid #777; padding-top:3pt;">
+    <b>${bn ? 'বি.দ্র.' : 'Note:'}</b> ${cleanFooterNote}
+  </div>
+
+  <!-- Signatures -->
+  <table style="width:100%; border:none; margin-top:28pt; border-collapse:collapse;">
+    <tr>
+      ${signatories.nazim.show ? `
+      <td style="border:none; text-align:center; vertical-align:bottom; width:50%;">
+        <div style="border-top:1.5pt solid #333; width:140pt; margin:0 auto 3pt auto;"></div>
+        <div style="font-weight:bold; font-size:10pt; color:#000;">${signatories.nazim.name_bn || 'নাজিম / শিক্ষা সচিব'}</div>
+        <div style="font-size:8.5pt; color:#444;">${signatories.nazim.title_bn || 'নাজিম / শিক্ষা সচিব'}</div>
+        <div style="font-size:7.5pt; color:#666;">${instName}</div>
+      </td>` : '<td style="border:none; width:50%;"></td>'}
+
+      ${signatories.principal.show ? `
+      <td style="border:none; text-align:center; vertical-align:bottom; width:50%;">
+        <div style="border-top:1.5pt solid #333; width:140pt; margin:0 auto 3pt auto;"></div>
+        <div style="font-weight:bold; font-size:10pt; color:#000;">${signatories.principal.name_bn || 'আলহাজ্ব আব্দুছ ছোবহান'}</div>
+        <div style="font-size:8.5pt; color:#444;">${signatories.principal.title_bn || 'প্রতিষ্ঠাতা ও প্রিন্সিপাল'}</div>
+        <div style="font-size:7.5pt; color:#666;">${instName}</div>
+      </td>` : '<td style="border:none; width:50%;"></td>'}
+    </tr>
+  </table>
+</body>
+</html>`;
+
+      const blob = new Blob(['\ufeff' + docHtml], { type: 'application/msword;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${fileName}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(bn ? 'ওয়ার্ড ফাইল (.doc) সফলভাবে ডাউনলোড হয়েছে' : 'Word file (.doc) downloaded successfully');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || (bn ? 'ওয়ার্ড ফাইল ডাউনলোড ব্যর্থ হয়েছে' : 'Failed to download Word file'));
+    }
+  };
+
   // High Fidelity Print Handler (Single Page Landscape Fit)
   const handlePrint = () => {
     const el = document.getElementById('daily-routine-print');
@@ -1429,8 +1653,18 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
       size: A4 landscape;
       margin: 4mm 6mm;
     }
-    html, body {
-      font-family: 'Noto Sans Bengali', 'Kalpurush', system-ui, sans-serif;
+    @font-face {
+      font-family: 'SutonnyOMJ';
+      src: url('/fonts/SutonnyOMJ.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Kalpurush';
+      src: url('/fonts/Kalpurush.ttf') format('truetype');
+      font-display: swap;
+    }
+    html, body, table, th, td, div, span, p {
+      font-family: 'SutonnyMJ', 'SutonnyOMJ', 'Kalpurush', 'Nikosh', 'SolaimanLipi', sans-serif !important;
       background: #fff !important;
       color: #000 !important;
       width: 100%;
@@ -1578,17 +1812,24 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
     }
     .cell-subj {
       font-weight: 700 !important;
-      font-size: 9px !important;
-      padding: 2px 1px !important;
+      font-size: 9.5px !important;
+      padding: 3px 1px 2px 1px !important;
+      min-height: 25px !important;
       line-height: 1.15 !important;
       color: #000 !important;
     }
+    .cell-divider {
+      border-top: 1px solid #777 !important;
+      width: 100% !important;
+      display: block !important;
+    }
     .cell-teacher {
-      font-size: 8px !important;
-      color: #333 !important;
-      padding: 1px !important;
+      font-size: 8.5px !important;
+      color: #222 !important;
+      padding: 2px 1px 3px 1px !important;
+      min-height: 21px !important;
       line-height: 1.1 !important;
-      background-color: #fbfbfb !important;
+      background-color: #f8fafc !important;
     }
     .footnote {
       margin-top: 4px;
@@ -2031,6 +2272,17 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
 
             <Button
               size="sm"
+              variant="outline"
+              className="h-9 gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800 font-semibold text-xs shadow-xs"
+              onClick={handleDownloadWordDoc}
+              title={bn ? 'সুতন্বীএমজে ফন্টে ওয়ার্ড ফাইল (.doc) ডাউনলোড করুন' : 'Download Word (.doc) with SutonnyMJ'}
+            >
+              <FileText className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+              <span>{bn ? 'ওয়ার্ড ফাইল (.doc)' : 'Download Word'}</span>
+            </Button>
+
+            <Button
+              size="sm"
               className="h-9 gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-medium shadow-xs"
               onClick={handlePrint}
             >
@@ -2277,7 +2529,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
         </div>
       ) : isAllClasses ? (
         /* ─── All Classes Daily Grid (Rows = Classes sorted sequentially, Columns = Periods) ─── */
-        <div id="daily-routine-print">
+        <div id="daily-routine-print" style={{ fontFamily: "'SutonnyMJ', 'SutonnyOMJ', 'Kalpurush', 'Nikosh', sans-serif" }}>
           <div className="border-2 border-border rounded-xl overflow-hidden bg-background shadow-sm">
             {/* Header with All Madrasa Information */}
             <div className="header-wrap text-center py-4 px-4 border-b-2 border-border relative bg-muted/20">
@@ -2611,12 +2863,12 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                                     handleSaveMasterCell(targetClassIds, col.num, sId, tn, tnBn, cMeta);
                                   }}
                                 >
-                                  <button className="w-full h-full min-h-[44px] cursor-pointer hover:bg-amber-100/70 dark:hover:bg-amber-900/40 p-1 flex flex-col items-center justify-center text-center transition-colors">
+                                  <button className="w-full h-full min-h-[58px] cursor-pointer hover:bg-amber-100/70 dark:hover:bg-amber-900/40 p-1 flex flex-col items-center justify-center text-center transition-colors">
                                     <span className="font-bold text-xs text-amber-950 dark:text-amber-200">
                                       {customMeta.title || (bn ? 'সেমিনার' : 'Seminar')}
                                     </span>
                                     {customMeta.note && (
-                                      <span className="text-[9px] text-amber-800 dark:text-amber-300 mt-0.5 truncate max-w-[130px]">
+                                      <span className="text-[9.5px] text-amber-800 dark:text-amber-300 mt-0.5 truncate max-w-[130px]">
                                         {customMeta.note}
                                       </span>
                                     )}
@@ -2658,28 +2910,25 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                                   handleSaveMasterCell(targetClassIds, col.num, sId, tn, tnBn, cMeta);
                                 }}
                               >
-                                <button className="w-full cursor-pointer hover:bg-accent/15 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/40 rounded-none text-left">
-                                  {!subjName && !teacherDisplay ? (
-                                    <div className="flex flex-col min-h-[44px] items-center justify-center empty-cell-placeholder">
-                                      <span className="text-muted-foreground/30 font-bold text-xs print-hidden">+</span>
+                                <button className="w-full h-full cursor-pointer hover:bg-accent/15 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/40 rounded-none text-left">
+                                  <div className="flex flex-col h-full min-h-[58px] justify-between">
+                                    {/* Upper Sub-Cell: Subject */}
+                                    <div className="flex-1 min-h-[30px] flex items-center justify-center px-1.5 py-1 cell-subj bg-background">
+                                      <span className="text-[10.5px] font-bold text-foreground leading-tight text-center">
+                                        {subjName || <span className="text-muted-foreground/30 text-[9.5px] print-hidden font-normal">+ বিষয়</span>}
+                                      </span>
                                     </div>
-                                  ) : (
-                                    <div className="flex flex-col min-h-[44px]">
-                                      <div className="flex-1 flex items-center justify-center px-1 py-0.5 cell-subj">
-                                        <span className="text-[10px] font-semibold text-foreground leading-tight text-center">
-                                          {subjName}
-                                        </span>
-                                      </div>
-                                      {teacherDisplay && <div className="border-t border-border/70" />}
-                                      {teacherDisplay && (
-                                        <div className="flex-1 flex items-center justify-center px-1 py-0.5 bg-muted/10 cell-teacher">
-                                          <span className="text-[8.5px] text-muted-foreground leading-tight text-center truncate max-w-[85px]">
-                                            {teacherDisplay}
-                                          </span>
-                                        </div>
-                                      )}
+
+                                    {/* Solid Dividing Line Between Subject & Teacher */}
+                                    <div className="border-t border-border/80 dark:border-border/60 cell-divider" />
+
+                                    {/* Lower Sub-Cell: Teacher */}
+                                    <div className="flex-1 min-h-[26px] flex items-center justify-center px-1.5 py-0.5 bg-muted/20 dark:bg-muted/10 cell-teacher">
+                                      <span className="text-[9.5px] font-medium text-foreground/85 leading-tight text-center truncate max-w-[95px]">
+                                        {teacherDisplay || <span className="text-muted-foreground/25 text-[8.5px] print-hidden font-normal">— শিক্ষক</span>}
+                                      </span>
                                     </div>
-                                  )}
+                                  </div>
                                 </button>
                               </CellEditor>
                             </td>
@@ -2701,7 +2950,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
 
             {/* Footnote / বি.দ্র. Section */}
             <div className="px-4 py-2.5 border-t border-border footnote flex items-center justify-between gap-3 flex-wrap bg-muted/10">
-              <div className="flex items-center gap-2 flex-1 min-w-[280px]">
+              <div className="flex items-center gap-1.5 flex-1 min-w-[280px]">
                 <span className="text-xs font-bold text-foreground whitespace-nowrap">
                   {bn ? 'বি.দ্র.' : 'Note:'}
                 </span>
@@ -2711,14 +2960,16 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                       value={footerNote}
                       onChange={e => setFooterNote(e.target.value)}
                       className="h-7 text-xs flex-1"
-                      placeholder={bn ? 'বি.দ্র. নোট লিখুন...' : 'Write note...'}
+                      placeholder={bn ? 'নোটের বিবরণ লিখুন...' : 'Write note...'}
                     />
                     <Button
                       size="sm"
                       className="h-7 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
                       onClick={() => {
+                        const sanitized = footerNote.replace(/^(বি[\.ঃ\s]*দ্র[\.ঃ\s]*[:ঃ]?\s*|Note:\s*)/i, '').trim();
+                        setFooterNote(sanitized);
                         setIsEditingFooterNote(false);
-                        localStorage.setItem('master_routine_footer_note', footerNote);
+                        localStorage.setItem('master_routine_footer_note', sanitized);
                         toast.success(bn ? 'বি.দ্র. নোট সংরক্ষিত হয়েছে' : 'Note saved');
                       }}
                     >
@@ -2728,8 +2979,8 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5 flex-1">
-                    <span className="text-xs text-foreground/80 font-medium">
-                      {footerNote}
+                    <span className="text-xs text-foreground/85 font-medium">
+                      {cleanFooterNote}
                     </span>
                     <button
                       type="button"
@@ -2784,7 +3035,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
         </div>
       ) : (
         /* ─── Single Class Weekly Grid (Rows = Days, Columns = Periods) ─── */
-        <div id="daily-routine-print">
+        <div id="daily-routine-print" style={{ fontFamily: "'SutonnyMJ', 'SutonnyOMJ', 'Kalpurush', 'Nikosh', sans-serif" }}>
           <div className="border-2 border-border rounded-xl overflow-hidden bg-background shadow-sm">
             {/* Header */}
             <div className="header-wrap text-center py-4 px-4 border-b-2 border-border relative bg-muted/20">
@@ -3065,7 +3316,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                                     })
                                   }
                                 >
-                                  <button className="w-full h-full min-h-[44px] cursor-pointer hover:bg-amber-100/70 p-1 flex flex-col items-center justify-center text-center">
+                                  <button className="w-full h-full min-h-[58px] cursor-pointer hover:bg-amber-100/70 p-1 flex flex-col items-center justify-center text-center">
                                     <span className="font-bold text-xs text-amber-950 dark:text-amber-200">
                                       {customMeta.title || (bn ? 'সেমিনার' : 'Seminar')}
                                     </span>
@@ -3110,28 +3361,25 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                                   })
                                 }
                               >
-                                <button className="w-full cursor-pointer hover:bg-accent/15 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/40 rounded-none text-left">
-                                  {!subjName && !teacherDisplay ? (
-                                    <div className="flex flex-col min-h-[44px] items-center justify-center empty-cell-placeholder">
-                                      <span className="text-muted-foreground/30 font-bold text-xs print-hidden">+</span>
+                                <button className="w-full h-full cursor-pointer hover:bg-accent/15 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/40 rounded-none text-left">
+                                  <div className="flex flex-col h-full min-h-[58px] justify-between">
+                                    {/* Upper Sub-Cell: Subject */}
+                                    <div className="flex-1 min-h-[30px] flex items-center justify-center px-1.5 py-1 cell-subj bg-background">
+                                      <span className="text-[10.5px] font-bold text-foreground leading-tight text-center">
+                                        {subjName || <span className="text-muted-foreground/30 text-[9.5px] print-hidden font-normal">+ বিষয়</span>}
+                                      </span>
                                     </div>
-                                  ) : (
-                                    <div className="flex flex-col min-h-[44px]">
-                                      <div className="flex-1 flex items-center justify-center px-1 py-0.5 cell-subj">
-                                        <span className="text-[10px] font-semibold text-foreground leading-tight text-center">
-                                          {subjName}
-                                        </span>
-                                      </div>
-                                      {teacherDisplay && <div className="border-t border-border/70" />}
-                                      {teacherDisplay && (
-                                        <div className="flex-1 flex items-center justify-center px-1 py-0.5 bg-muted/10 cell-teacher">
-                                          <span className="text-[8.5px] text-muted-foreground leading-tight text-center truncate max-w-[85px]">
-                                            {teacherDisplay}
-                                          </span>
-                                        </div>
-                                      )}
+
+                                    {/* Solid Dividing Line Between Subject & Teacher */}
+                                    <div className="border-t border-border/80 dark:border-border/60 cell-divider" />
+
+                                    {/* Lower Sub-Cell: Teacher */}
+                                    <div className="flex-1 min-h-[26px] flex items-center justify-center px-1.5 py-0.5 bg-muted/20 dark:bg-muted/10 cell-teacher">
+                                      <span className="text-[9.5px] font-medium text-foreground/85 leading-tight text-center truncate max-w-[95px]">
+                                        {teacherDisplay || <span className="text-muted-foreground/25 text-[8.5px] print-hidden font-normal">— শিক্ষক</span>}
+                                      </span>
                                     </div>
-                                  )}
+                                  </div>
                                 </button>
                               </CellEditor>
                             </td>
@@ -3150,7 +3398,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                 <span className="text-xs font-bold text-foreground whitespace-nowrap">
                   {bn ? 'বি.দ্র.' : 'Note:'}
                 </span>
-                <span className="text-xs text-foreground/80 font-medium">{footerNote}</span>
+                <span className="text-xs text-foreground/85 font-medium">{cleanFooterNote}</span>
               </div>
             </div>
 
