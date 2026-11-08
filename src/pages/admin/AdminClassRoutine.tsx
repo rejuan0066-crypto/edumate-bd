@@ -56,14 +56,7 @@ const AdminClassRoutine = () => {
   const [form, setForm] = useState({ name: '', name_bn: '', class_id: '', academic_session_id: '', is_active: true });
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [filterClassId, setFilterClassId] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<string>(() => {
-    const saved = localStorage.getItem('class_routine_active_tab');
-    if (saved === 'master') {
-      localStorage.setItem('class_routine_active_tab', 'individual');
-      return 'individual';
-    }
-    return saved || 'individual';
-  });
+  const [activeTab, setActiveTab] = useState<string>('individual');
 
   // Fetch institution
   const { data: institution } = useQuery({
@@ -492,7 +485,17 @@ const AdminClassRoutine = () => {
           </TabsContent>
 
           <TabsContent value="master" className="mt-4">
-            <MasterRoutineView />
+            <div className="mb-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveTab('individual')}
+                className="h-8 gap-1.5 text-xs font-semibold hover:bg-muted"
+              >
+                <span>←</span> {bn ? 'রুটিন তালিকায় ফিরুন' : 'Back to Routine List'}
+              </Button>
+            </div>
+            <MasterRoutineView onBack={() => setActiveTab('individual')} showBackToList={true} />
           </TabsContent>
         </Tabs>
 
@@ -574,15 +577,313 @@ const AdminClassRoutine = () => {
     }, 100);
   };
 
-  // ---- DETAIL VIEW (Full Master Routine Table for Selected Class) ----
+  // ---- DETAIL VIEW (Formal Weekly Timetable for Selected Routine) ----
   return (
     <div className="space-y-4">
-      <MasterRoutineView
-        initialClassId={selectedRoutine?.class_id}
-        initialSessionId={selectedRoutine?.academic_session_id || undefined}
-        onBack={() => setSelectedRoutineId(null)}
-        showBackToList={true}
-      />
+      <div className="flex items-center gap-2 flex-wrap mb-2">
+        <Button variant="outline" size="sm" onClick={() => setSelectedRoutineId(null)} className="gap-1.5 text-xs font-semibold hover:bg-muted">
+          <span>←</span> {bn ? 'রুটিন তালিকায় ফিরুন' : 'Back to Routine List'}
+        </Button>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm sm:text-base font-bold truncate text-foreground flex items-center gap-2">
+            <span>{bn ? selectedRoutine?.name_bn : selectedRoutine?.name}</span>
+            {cls && (
+              <Badge variant="outline" className="text-xs font-normal">
+                {bn ? `${div?.name_bn || ''} - ${cls?.name_bn || ''}` : `${div?.name || ''} - ${cls?.name || ''}`}
+              </Badge>
+            )}
+            {sess && (
+              <Badge variant="secondary" className="text-xs font-normal">
+                {bn ? sess.name_bn || sess.name : sess.name}
+              </Badge>
+            )}
+          </h2>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" className="gap-1.5" onClick={() => openNewPeriod(0)}>
+            <Plus className="h-3.5 w-3.5" /> {bn ? 'পিরিয়ড যোগ' : 'Add Period'}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 text-blue-700 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40"
+            onClick={() => {
+              if (selectedRoutine) {
+                setForm({
+                  name: selectedRoutine.name,
+                  name_bn: selectedRoutine.name_bn,
+                  class_id: selectedRoutine.class_id,
+                  academic_session_id: selectedRoutine.academic_session_id || '',
+                  is_active: selectedRoutine.is_active ?? true,
+                });
+                setEditingRoutineId(selectedRoutine.id);
+                setShowEdit(true);
+              }
+            }}
+          >
+            <Edit className="h-3.5 w-3.5" /> {bn ? 'সম্পাদনা' : 'Edit'}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/40 border-amber-300"
+            onClick={async () => {
+              if (selectedRoutineId && (await confirm({
+                title: bn ? 'রুটিন রিসেট নিশ্চিতকরণ' : 'Confirm Routine Reset',
+                description: bn
+                  ? `আপনি কি নিশ্চিত যে "${bn ? selectedRoutine?.name_bn : selectedRoutine?.name}" রুটিনের সকল পিরিয়ড রিসেট করতে চান? সব পিরিয়ড খালি হয়ে যাবে।`
+                  : `Are you sure you want to reset and clear all periods for "${selectedRoutine?.name}"?`,
+                variant: 'destructive',
+              }))) {
+                resetRoutine.mutate(selectedRoutineId);
+              }
+            }}
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> {bn ? 'রুটিন রিসেট' : 'Reset Routine'}
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={handlePrint}>
+            <Printer className="h-3.5 w-3.5" /> {bn ? 'প্রিন্ট' : 'Print'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Period add/edit dialog */}
+      <Dialog open={showPeriodDialog} onOpenChange={setShowPeriodDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{periodForm.id ? (bn ? 'পিরিয়ড সম্পাদনা' : 'Edit Period') : (bn ? 'নতুন পিরিয়ড' : 'New Period')}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{bn ? 'বার' : 'Day'}</Label>
+                <Select value={String(periodForm.day_of_week)} onValueChange={v => setPeriodForm(f => ({ ...f, day_of_week: Number(v) }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{DAYS.map(d => <SelectItem key={d.value} value={String(d.value)}>{bn ? d.label_bn : d.label_en}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label>{bn ? 'পিরিয়ড নম্বর' : 'Period #'}</Label>
+                <Input type="number" min={1} value={periodForm.period_number || ''} onChange={e => setPeriodForm(f => ({ ...f, period_number: Number(e.target.value) }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{bn ? 'শুরু' : 'Start'}</Label>
+                <TimePicker value={periodForm.start_time} onChange={v => setPeriodForm(f => ({ ...f, start_time: v }))} />
+              </div>
+              <div><Label>{bn ? 'শেষ' : 'End'}</Label>
+                <TimePicker value={periodForm.end_time} onChange={v => setPeriodForm(f => ({ ...f, end_time: v }))} />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={periodForm.is_break} onCheckedChange={v => setPeriodForm(f => ({ ...f, is_break: v }))} />
+              <Label>{bn ? 'বিরতি/টিফিন' : 'Break/Tiffin'}</Label>
+            </div>
+            {periodForm.is_break ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>{bn ? 'বিরতি লেবেল (বাংলা)' : 'Break Label (BN)'}</Label>
+                  <Input value={periodForm.break_label_bn} onChange={e => setPeriodForm(f => ({ ...f, break_label_bn: e.target.value }))} placeholder="টিফিন" />
+                </div>
+                <div><Label>{bn ? 'বিরতি লেবেল (ইংরেজি)' : 'Break Label (EN)'}</Label>
+                  <Input value={periodForm.break_label} onChange={e => setPeriodForm(f => ({ ...f, break_label: e.target.value }))} placeholder="Tiffin" />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div><Label>{bn ? 'বিষয়' : 'Subject'}</Label>
+                  <Select value={periodForm.subject_id || ''} onValueChange={v => setPeriodForm(f => ({ ...f, subject_id: v || null }))}>
+                    <SelectTrigger><SelectValue placeholder={bn ? 'বিষয় নির্বাচন' : 'Select subject'} /></SelectTrigger>
+                    <SelectContent>
+                      {subjects?.map(s => <SelectItem key={s.id} value={s.id}>{bn ? s.name_bn : s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>{bn ? 'শিক্ষক (বাংলা)' : 'Teacher (BN)'}</Label>
+                    <Input value={periodForm.teacher_name_bn} onChange={e => setPeriodForm(f => ({ ...f, teacher_name_bn: e.target.value }))} /></div>
+                  <div><Label>{bn ? 'শিক্ষক (ইংরেজি)' : 'Teacher (EN)'}</Label>
+                    <Input value={periodForm.teacher_name} onChange={e => setPeriodForm(f => ({ ...f, teacher_name: e.target.value }))} /></div>
+                </div>
+                <div><Label>{bn ? 'রুম' : 'Room'}</Label>
+                  <Input value={periodForm.room} onChange={e => setPeriodForm(f => ({ ...f, room: e.target.value }))} /></div>
+              </>
+            )}
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={() => {
+                savePeriod.mutate(periodForm);
+                setShowPeriodDialog(false);
+              }}>
+                {periodForm.id ? (bn ? 'আপডেট' : 'Update') : (bn ? 'যোগ করুন' : 'Add')}
+              </Button>
+              {periodForm.id && (
+                <Button variant="destructive" size="icon" onClick={async () => {
+                  if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) {
+                    deletePeriod.mutate(periodForm.id!);
+                    setShowPeriodDialog(false);
+                  }
+                }}><Trash2 className="h-4 w-4" /></Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Formal Timetable */}
+      <div id="routine-print-area">
+        <Card className="overflow-hidden border-2 border-border shadow-sm">
+          <CardContent className="p-0">
+            {/* Institution Header */}
+            <div className="text-center py-4 px-6 border-b-2 border-border bg-muted/20 relative">
+              <div className="absolute top-3 right-4 text-xs text-muted-foreground">
+                {bn ? 'তারিখ:' : 'Date:'} {new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB')}
+              </div>
+              {institution?.logo_url && (
+                <img src={institution.logo_url} alt="" className="w-10 h-10 object-contain mx-auto mb-1" />
+              )}
+              <h1 className="text-lg font-bold text-foreground">{instName || ''}</h1>
+              <p className="text-sm font-semibold text-foreground">
+                {bn ? 'ক্লাস রুটিন' : 'Class Routine'}: {sess ? (bn ? sess.name_bn || sess.name : sess.name) : ''}
+              </p>
+              {div && cls && (
+                <p className="text-xs text-muted-foreground">
+                  {bn ? `${div.name_bn || ''} শাখা — ${cls.name_bn || ''} শ্রেণী` : `${div.name || ''} — ${cls.name || ''}`}
+                </p>
+              )}
+            </div>
+
+            {allPeriodNums.length === 0 ? (
+              <div className="py-12 px-4 text-center space-y-4">
+                <p className="text-muted-foreground text-sm">
+                  {bn ? 'এই রুটিনে এখনও কোনো পিরিয়ড নেই। নিচে থেকে পিরিয়ড যুক্ত করুন অথবা স্বয়ংক্রিয় ৮টি পিরিয়ড তৈরি করুন।' : 'No periods in this routine yet. Add periods or generate default 8 periods.'}
+                </p>
+                <div className="flex items-center justify-center gap-3 flex-wrap">
+                  <Button size="sm" onClick={() => openNewPeriod(0)} className="gap-1.5">
+                    <Plus className="h-4 w-4" /> {bn ? 'ম্যানুয়ালি পিরিয়ড যোগ করুন' : 'Add Period Manually'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/40 border-emerald-300"
+                    onClick={() => handleCreateDefaultPeriods(selectedRoutineId!)}
+                  >
+                    <Sparkles className="h-4 w-4 text-emerald-600" /> {bn ? 'স্বয়ংক্রিয় ৮টি পিরিয়ড তৈরি করুন' : 'Generate Default 8 Periods'}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse" style={{ minWidth: orderedNums.length * 110 + 100 }}>
+                  <thead>
+                    <tr>
+                      <th className="border border-border bg-muted/40 px-3 py-2 text-left font-semibold text-xs min-w-[80px] sticky left-0 z-10">
+                        {bn ? 'বার / দিন' : 'Day'}
+                      </th>
+                      {orderedNums.map((num, i) => {
+                        const sample = (periods || []).find(p => p.period_number === num);
+                        const isBreak = breakNums.has(num);
+                        const isAfterBreak = breakNums.size > 0 && !isBreak && num > Math.max(...breakNums);
+                        return (
+                          <th
+                            key={num}
+                            className={`border border-border px-2 py-2 text-center font-semibold text-xs ${
+                              isBreak ? 'bg-emerald-100 dark:bg-emerald-900/30 min-w-[30px] max-w-[36px]' : 
+                              isAfterBreak ? 'bg-emerald-50 dark:bg-emerald-900/10' : 'bg-muted/40'
+                            }`}
+                            style={isBreak ? { writingMode: 'vertical-rl', textOrientation: 'mixed', padding: '8px 2px' } : {}}
+                            rowSpan={isBreak ? 1 : undefined}
+                          >
+                            {isBreak ? (
+                              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                                {bn ? (sample?.break_label_bn || 'বিরতি') : (sample?.break_label || 'Break')}
+                                {sample && (
+                                  <><br /><span className="text-[8px]">{fmtTime(sample.start_time)}-{fmtTime(sample.end_time)}</span></>
+                                )}
+                              </span>
+                            ) : (
+                              <div>
+                                <div className="font-bold">{bn ? (PERIOD_LABELS_BN[beforeBreak.indexOf(num) !== -1 ? beforeBreak.indexOf(num) : (beforeBreak.length + afterBreak.indexOf(num))] || toBnNum(num)) : (PERIOD_LABELS_EN[i] || String(num))}</div>
+                                {sample && <div className="text-[10px] text-muted-foreground font-normal">{fmtTime(sample.start_time)} - {fmtTime(sample.end_time)}</div>}
+                              </div>
+                            )}
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {DAYS.map(day => {
+                      const dayPeriods = (periods || []).filter(p => p.day_of_week === day.value);
+                      return (
+                        <tr key={day.value} className="hover:bg-accent/20 transition-colors">
+                          <td className="border border-border bg-muted/20 px-3 py-2 font-semibold text-xs whitespace-nowrap sticky left-0 z-10">
+                            {bn ? day.label_bn : day.label_en}
+                          </td>
+                          {orderedNums.map(num => {
+                            const p = dayPeriods.find(dp => dp.period_number === num);
+                            const isBreak = breakNums.has(num);
+                            const isAfterBreak = breakNums.size > 0 && !isBreak && num > Math.max(...breakNums);
+                            const subj = p?.subjects as any;
+
+                            if (isBreak) {
+                              return (
+                                <td key={num} className="border border-border bg-emerald-50 dark:bg-emerald-900/20 text-center cursor-pointer" onClick={() => p && openEditPeriod(p)}>
+                                  {p && !p.is_break && subj && (
+                                    <div className="text-[10px]">{bn ? subj.name_bn : subj.name}</div>
+                                  )}
+                                </td>
+                              );
+                            }
+
+                            if (!p) {
+                              return (
+                                <td key={num} className={`border border-border text-center ${isAfterBreak ? 'bg-emerald-50/50 dark:bg-emerald-900/5' : ''}`}>
+                                  <button className="p-1 text-muted-foreground/40 hover:text-primary transition-colors" onClick={() => {
+                                    const sample = (periods || []).find(sp => sp.period_number === num);
+                                    setPeriodForm({
+                                      day_of_week: day.value, period_number: num,
+                                      start_time: sample?.start_time || '08:00', end_time: sample?.end_time || '08:45',
+                                      subject_id: null, teacher_name: '', teacher_name_bn: '', room: '',
+                                      is_break: false, break_label: '', break_label_bn: '',
+                                    });
+                                    setShowPeriodDialog(true);
+                                  }}>
+                                    <Plus className="h-3 w-3" />
+                                  </button>
+                                </td>
+                              );
+                            }
+
+                            return (
+                              <td
+                                key={num}
+                                className={`border border-border px-2 py-1.5 text-center cursor-pointer hover:bg-primary/5 transition-colors ${isAfterBreak ? 'bg-emerald-50/50 dark:bg-emerald-900/5' : ''}`}
+                                onClick={() => openEditPeriod(p)}
+                              >
+                                <div className="text-xs font-semibold text-foreground leading-tight">
+                                  {subj ? (bn ? subj.name_bn : subj.name) : '-'}
+                                </div>
+                                {(p.teacher_name_bn || p.teacher_name) && (
+                                  <div className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                                    {bn ? p.teacher_name_bn : p.teacher_name}
+                                  </div>
+                                )}
+                                {p.room && (
+                                  <div className="text-[9px] text-muted-foreground/70">{p.room}</div>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="px-4 py-2 border-t border-border text-[10px] text-muted-foreground">
+              {bn ? 'বি.দ্র. কর্তৃপক্ষ কর্তৃক পরিবর্তন করার ক্ষমতা এবং বিশেষ প্রয়োজনে অতিরিক্ত ক্লাশ নিতে পারবেন।' : 'Note: Schedule subject to change by administration.'}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
