@@ -13,12 +13,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import {
   Printer, Plus, Minus, Save, Trash2, Clock, CheckSquare,
   X, Filter, Check, ChevronDown, RefreshCw, PenTool, Edit, BookOpen, Layers,
-  ArrowLeft, RotateCcw
+  ArrowLeft, RotateCcw, Sparkles, AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { to12HourFormat } from '@/hooks/useTimeFormat';
 import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
+import {
+  DEFAULT_PERIOD_TIMES,
+  DEFAULT_BREAK_TIME,
+  DEFAULT_BREAK_LABEL,
+} from './routineDefaults';
+import { RoutineSetupDialog } from './RoutineSetupDialog';
 
 const DAYS = [
   { value: 0, label_bn: 'শনিবার', label_en: 'Saturday', short_bn: 'শনি', short_en: 'Sat' },
@@ -762,23 +768,32 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
   const [periodTimes, setPeriodTimes] = useState<Record<number, { start: string; end: string }>>(() => {
     try {
       const saved = localStorage.getItem('routine_period_times');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+          return { ...DEFAULT_PERIOD_TIMES, ...parsed };
+        }
+      }
     } catch {}
-    return {};
+    return { ...DEFAULT_PERIOD_TIMES };
   });
   const [selectedDay, setSelectedDay] = useState<number>(0);
   const [classSearchTerm, setClassSearchTerm] = useState('');
+  const [showSetupDialog, setShowSetupDialog] = useState(false);
 
   // Break Time & Label state
   const [breakLabel, setBreakLabel] = useState<string>(() => {
-    return localStorage.getItem('routine_break_label') || 'বিরতি';
+    return localStorage.getItem('routine_break_label') || DEFAULT_BREAK_LABEL;
   });
   const [breakTime, setBreakTime] = useState<{ start: string; end: string }>(() => {
     try {
       const saved = localStorage.getItem('routine_break_time');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.start) return parsed;
+      }
     } catch {}
-    return { start: '13:00', end: '13:45' };
+    return { ...DEFAULT_BREAK_TIME };
   });
 
   // Customizable Footer Note
@@ -1055,7 +1070,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
       const p = source.find((pp: any) => pp.period_number === periodNum && !pp.is_break && pp.start_time);
       if (p) return { start: p.start_time || '', end: p.end_time || '' };
     }
-    return { start: '', end: '' };
+    return DEFAULT_PERIOD_TIMES[periodNum] || { start: '09:00', end: '09:45' };
   }, [periodTimes, allClassesPeriods, allPeriods]);
 
   // Save period time across all classes for that period number
@@ -1255,24 +1270,33 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
     toast.info(bn ? 'ক্লাসটি ভিউ থেকে সরানো হয়েছে' : 'Class removed from view');
   };
 
-  // Delete all routine periods for a class
+  // Clear all routine periods for a class (preserving timings)
   const handleDeleteClassRoutine = async (classId: string, className: string) => {
     const confirmMsg = bn
-      ? `আপনি কি নিশ্চিত যে "${className}" শ্রেণীর রুটিনের সকল পিরিয়ড মুছে ফেলতে চান?`
-      : `Are you sure you want to clear all routine periods for "${className}"?`;
+      ? `আপনি কি নিশ্চিত যে "${className}" শ্রেণীর রুটিনের সকল বিষয় ও শিক্ষক খালি করতে চান? সময়সূচী অক্ষুণ্ণ থাকবে।`
+      : `Are you sure you want to clear subject and teacher assignments for "${className}"? (Timetable setup will be preserved)`;
     if (!window.confirm(confirmMsg)) return;
 
     try {
       const routineId = allRoutines?.find(r => r.class_id === classId)?.id;
       if (routineId) {
-        const { error } = await supabase.from('routine_periods').delete().eq('routine_id', routineId);
+        const { error } = await supabase
+          .from('routine_periods')
+          .update({
+            subject_id: null,
+            teacher_name: null,
+            teacher_name_bn: null,
+            room: null,
+            break_label_bn: null,
+          })
+          .eq('routine_id', routineId);
         if (error) throw error;
       }
       queryClient.invalidateQueries({ queryKey: ['all-classes-periods'] });
       queryClient.invalidateQueries({ queryKey: ['all-class-routines'] });
-      toast.success(bn ? `"${className}" শ্রেণীর রুটিন মুছে ফেলা হয়েছে` : `Routine deleted for ${className}`);
+      toast.success(bn ? `"${className}" শ্রেণীর পিরিয়ড সফলভাবে খালি করা হয়েছে` : `Routine cleared for ${className}`);
     } catch (err: any) {
-      toast.error(err.message || (bn ? 'মুছতে ব্যর্থ হয়েছে' : 'Failed to delete'));
+      toast.error(err.message || (bn ? 'খালি করতে ব্যর্থ হয়েছে' : 'Failed to clear'));
     }
   };
 
@@ -1956,6 +1980,29 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
               </Button>
             )}
 
+            {/* Routine Reset & Setup Management Dialog */}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+              onClick={() => setShowSetupDialog(true)}
+              title={bn ? 'রুটিন রিসেট ও সেটআপ ম্যানেজমেন্ট' : 'Reset & Setup Routine'}
+            >
+              <RotateCcw className="h-3.5 w-3.5 text-amber-600" />
+              <span>{bn ? 'রুটিন রিসেট / সেটআপ' : 'Reset / Setup'}</span>
+            </Button>
+
+            {/* Quick Auto-Fill Standard Routine */}
+            <Button
+              size="sm"
+              className="h-9 gap-1.5 text-xs font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs"
+              onClick={() => setShowSetupDialog(true)}
+              title={bn ? '১১টি ক্লাসের স্ট্যান্ডার্ড রুটিন অটো-ফিল' : 'Auto-Fill Standard Routine'}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>{bn ? 'স্ট্যান্ডার্ড রুটিন অটো-ফিল' : 'Auto-Fill Routine'}</span>
+            </Button>
+
             {/* Signatories Selector Button */}
             <Button
               size="sm"
@@ -2202,6 +2249,28 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
         </DialogContent>
       </Dialog>
 
+      {/* Banner if routine is completely empty */}
+      {(!allClassesPeriods || allClassesPeriods.length === 0) && (
+        <div className="p-3.5 bg-gradient-to-r from-amber-50 to-emerald-50 dark:from-amber-950/40 dark:to-emerald-950/40 border border-amber-300 dark:border-amber-700/80 rounded-xl flex items-center justify-between gap-3 text-xs flex-wrap shadow-xs">
+          <div className="flex items-center gap-2.5 text-foreground font-medium">
+            <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span>
+              {bn
+                ? 'রুটিনের ঘরগুলো বর্তমানে খালি রয়েছে। এক ক্লিকে ১১টি জামাতের পূর্ণাঙ্গ ক্লাস রুটিন তৈরি করতে চান?'
+                : 'The timetable is currently empty. Would you like to auto-populate standard routine for all classes?'}
+            </span>
+          </div>
+          <Button
+            size="sm"
+            className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs h-8 gap-1.5 shadow-sm"
+            onClick={() => setShowSetupDialog(true)}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>{bn ? 'স্ট্যান্ডার্ড রুটিন অটো-ফিল করুন' : 'Auto-Fill Standard Routine'}</span>
+          </Button>
+        </div>
+      )}
+
       {!selectedSessionId ? (
         <div className="py-12 text-center text-muted-foreground">
           {bn ? 'অনুগ্রহ করে একটি একাডেমিক সেশন নির্বাচন করুন' : 'Select an academic session'}
@@ -2388,17 +2457,38 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                                   />
                                 </div>
                               </div>
-                              <Button
-                                size="sm"
-                                className="w-full h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1 mt-1 font-medium"
-                                onClick={() => {
-                                  const curTime = periodTimes[col.num] || time;
-                                  handleSavePeriodTimeToAllClasses(col.num, curTime.start, curTime.end);
-                                }}
-                              >
-                                <Save className="h-3 w-3" />
-                                <span>{bn ? 'সকল ক্লাসের জন্য সেভ করুন' : 'Apply to All Classes'}</span>
-                              </Button>
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <Button
+                                  size="sm"
+                                  className="flex-1 h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1 font-medium"
+                                  onClick={() => {
+                                    const curTime = periodTimes[col.num] || time;
+                                    handleSavePeriodTimeToAllClasses(col.num, curTime.start, curTime.end);
+                                  }}
+                                >
+                                  <Save className="h-3 w-3" />
+                                  <span>{bn ? 'সকল ক্লাসের জন্য সেভ' : 'Apply to All Classes'}</span>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+                                  title={bn ? 'ডিফল্ট সময় রিস্টোর' : 'Restore Default Time'}
+                                  onClick={() => {
+                                    const def = DEFAULT_PERIOD_TIMES[col.num];
+                                    if (def) {
+                                      const nextTimes = { ...periodTimes, [col.num]: def };
+                                      setPeriodTimes(nextTimes);
+                                      try {
+                                        localStorage.setItem('routine_period_times', JSON.stringify(nextTimes));
+                                      } catch {}
+                                      handleSavePeriodTimeToAllClasses(col.num, def.start, def.end);
+                                    }
+                                  }}
+                                >
+                                  <RotateCcw className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </PopoverContent>
                           </Popover>
                         </th>
@@ -2863,17 +2953,38 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
                                   />
                                 </div>
                               </div>
-                              <Button
-                                size="sm"
-                                className="w-full h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1 mt-1"
-                                onClick={() => {
-                                  const curTime = periodTimes[col.num] || time;
-                                  handleSavePeriodTimeToAllClasses(col.num, curTime.start, curTime.end);
-                                }}
-                              >
-                                <Save className="h-3 w-3" />
-                                <span>{bn ? 'সেভ করুন' : 'Save'}</span>
-                              </Button>
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <Button
+                                  size="sm"
+                                  className="flex-1 h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+                                  onClick={() => {
+                                    const curTime = periodTimes[col.num] || time;
+                                    handleSavePeriodTimeToAllClasses(col.num, curTime.start, curTime.end);
+                                  }}
+                                >
+                                  <Save className="h-3 w-3" />
+                                  <span>{bn ? 'সেভ করুন' : 'Save'}</span>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+                                  title={bn ? 'ডিফল্ট সময় রিস্টোর' : 'Restore Default Time'}
+                                  onClick={() => {
+                                    const def = DEFAULT_PERIOD_TIMES[col.num];
+                                    if (def) {
+                                      const nextTimes = { ...periodTimes, [col.num]: def };
+                                      setPeriodTimes(nextTimes);
+                                      try {
+                                        localStorage.setItem('routine_period_times', JSON.stringify(nextTimes));
+                                      } catch {}
+                                      handleSavePeriodTimeToAllClasses(col.num, def.start, def.end);
+                                    }
+                                  }}
+                                >
+                                  <RotateCcw className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </PopoverContent>
                           </Popover>
                         </th>
@@ -3078,6 +3189,17 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Routine Setup & Reset Dialog */}
+      <RoutineSetupDialog
+        open={showSetupDialog}
+        onOpenChange={setShowSetupDialog}
+        bn={bn}
+        sessionId={selectedSessionId}
+        periodCount={periodCount}
+        breakAfter={breakAfter}
+        dayOfWeek={selectedDay}
+      />
     </div>
   );
 };

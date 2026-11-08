@@ -19,6 +19,7 @@ import MasterRoutineView from '@/components/routine/MasterRoutineView';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { to12HourFormat } from '@/hooks/useTimeFormat';
+import { RoutineSetupDialog } from '@/components/routine/RoutineSetupDialog';
 
 const DAYS = [
   { value: 0, label_bn: 'শনিবার', label_en: 'Saturday' },
@@ -78,6 +79,7 @@ const AdminClassRoutine = () => {
   const qc = useQueryClient();
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [newRoutineForm, setNewRoutineForm] = useState({
     name: '',
     name_bn: '',
@@ -224,6 +226,16 @@ const AdminClassRoutine = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-emerald-600 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 gap-1.5 font-semibold"
+              onClick={() => setShowSetupDialog(true)}
+            >
+              <Sparkles className="h-4 w-4 text-emerald-600" />
+              <span>{bn ? 'স্ট্যান্ডার্ড রুটিন অটো-ফিল / রিসেট' : 'Auto-Fill / Setup Routine'}</span>
+            </Button>
+
             <Dialog open={showCreate} onOpenChange={setShowCreate}>
               <DialogTrigger asChild>
                 <Button size="sm" className="bg-emerald-700 hover:bg-emerald-800 text-white gap-1.5 font-semibold">
@@ -383,16 +395,8 @@ const AdminClassRoutine = () => {
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40"
-                            title={bn ? 'সকল পিরিয়ড রিসেট' : 'Reset Routine'}
-                            onClick={async () => {
-                              if ((await confirm({
-                                title: bn ? 'রুটিন রিসেট নিশ্চিতকরণ' : 'Confirm Reset',
-                                description: bn ? `আপনি কি নিশ্চিত যে "${bn ? r.name_bn : r.name}" রুটিনের সকল পিরিয়ড রিসেট করতে চান? সব পিরিয়ড খালি হয়ে যাবে।` : `Reset all periods for "${r.name}"?`,
-                                variant: 'destructive',
-                              }))) {
-                                resetAllPeriods.mutate();
-                              }
-                            }}
+                            title={bn ? 'রুটিন রিসেট ও সেটআপ' : 'Reset & Setup Routine'}
+                            onClick={() => setShowSetupDialog(true)}
                           >
                             <RotateCcw className="h-3.5 w-3.5" />
                           </Button>
@@ -420,6 +424,13 @@ const AdminClassRoutine = () => {
             </div>
           </CardContent>
         </Card>
+
+        <RoutineSetupDialog
+          open={showSetupDialog}
+          onOpenChange={setShowSetupDialog}
+          bn={bn}
+          sessionId={sessions[0]?.id}
+        />
       </div>
     );
   }
