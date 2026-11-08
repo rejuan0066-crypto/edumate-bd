@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit, Copy, Eye, Clock, BookOpen, Printer, LayoutGrid, List } from 'lucide-react';
+import { Plus, Trash2, Edit, Copy, Eye, Clock, BookOpen, Printer, LayoutGrid, List, RotateCcw, Sparkles } from 'lucide-react';
 import MasterRoutineView from '@/components/routine/MasterRoutineView';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { useConfirm } from "@/contexts/ConfirmContext";
@@ -57,7 +57,12 @@ const AdminClassRoutine = () => {
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [filterClassId, setFilterClassId] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<string>(() => {
-    return localStorage.getItem('class_routine_active_tab') || 'master';
+    const saved = localStorage.getItem('class_routine_active_tab');
+    if (saved === 'master') {
+      localStorage.setItem('class_routine_active_tab', 'individual');
+      return 'individual';
+    }
+    return saved || 'individual';
   });
 
   // Fetch institution
@@ -171,6 +176,67 @@ const AdminClassRoutine = () => {
       toast.success(language === 'bn' ? 'রুটিন মুছে ফেলা হয়েছে' : 'Routine deleted');
     },
   });
+
+  // Reset all periods of a routine
+  const resetRoutine = useMutation({
+    mutationFn: async (routineId: string) => {
+      const { error } = await supabase.from('routine_periods').delete().eq('routine_id', routineId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['routine-periods', selectedRoutineId] });
+      qc.invalidateQueries({ queryKey: ['all-classes-periods'] });
+      qc.invalidateQueries({ queryKey: ['all-class-routines'] });
+      qc.invalidateQueries({ queryKey: ['weekly-routine-periods'] });
+      toast.success(language === 'bn' ? 'রুটিনের সকল পিরিয়ড রিসেট করা হয়েছে' : 'Routine reset successfully');
+    },
+    onError: () => toast.error(language === 'bn' ? 'রিসেট ব্যর্থ হয়েছে' : 'Reset failed'),
+  });
+
+  // Helper to create default 8 periods for an empty routine
+  const handleCreateDefaultPeriods = async (routineId: string) => {
+    try {
+      const defaultSlots = [
+        { num: 1, start: '09:00', end: '09:45', isBreak: false },
+        { num: 2, start: '09:45', end: '10:30', isBreak: false },
+        { num: 3, start: '10:30', end: '11:15', isBreak: false },
+        { num: 4, start: '11:15', end: '12:00', isBreak: false },
+        { num: 5, start: '12:00', end: '12:45', isBreak: false },
+        { num: 6, start: '12:45', end: '01:30', isBreak: false },
+        { num: 7, start: '01:30', end: '02:15', isBreak: false },
+        { num: 8, start: '02:15', end: '03:00', isBreak: false },
+      ];
+
+      const newRows: any[] = [];
+      for (let day = 0; day <= 5; day++) {
+        for (const slot of defaultSlots) {
+          newRows.push({
+            routine_id: routineId,
+            day_of_week: day,
+            period_number: slot.num,
+            start_time: slot.start,
+            end_time: slot.end,
+            subject_id: null,
+            teacher_name: '',
+            teacher_name_bn: '',
+            room: '',
+            is_break: slot.isBreak,
+          });
+        }
+      }
+
+      const { error } = await supabase.from('routine_periods').insert(newRows);
+      if (error) throw error;
+
+      qc.invalidateQueries({ queryKey: ['routine-periods', routineId] });
+      qc.invalidateQueries({ queryKey: ['all-classes-periods'] });
+      qc.invalidateQueries({ queryKey: ['weekly-routine-periods'] });
+      toast.success(language === 'bn' ? 'ডিফল্ট ৮টি পিরিয়ড তৈরি হয়েছে' : 'Default 8 periods created');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(language === 'bn' ? 'ডিফল্ট পিরিয়ড তৈরিতে সমস্যা হয়েছে' : 'Failed to create default periods');
+    }
+  };
 
   // Add/update period
   const savePeriod = useMutation({
@@ -316,12 +382,12 @@ const AdminClassRoutine = () => {
           }}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-2 max-w-xs">
-            <TabsTrigger value="master" className="gap-1.5 text-xs font-semibold">
-              <LayoutGrid className="h-3.5 w-3.5" /> {bn ? 'দৈনিক ক্লাস রুটিন' : 'Daily Class Routine'}
+          <TabsList className="grid w-full grid-cols-2 max-w-sm">
+            <TabsTrigger value="individual" className="gap-1.5 text-xs font-semibold">
+              <List className="h-3.5 w-3.5" /> {bn ? 'ক্লাস রুটিন তালিকা' : 'Class Routine List'}
             </TabsTrigger>
-            <TabsTrigger value="individual" className="gap-1.5 text-xs">
-              <List className="h-3.5 w-3.5" /> {bn ? 'ক্লাস তালিকা' : 'Class List'}
+            <TabsTrigger value="master" className="gap-1.5 text-xs font-semibold">
+              <LayoutGrid className="h-3.5 w-3.5" /> {bn ? 'দৈনিক মাস্টার রুটিন' : 'Daily Master Routine'}
             </TabsTrigger>
           </TabsList>
 
@@ -389,14 +455,23 @@ const AdminClassRoutine = () => {
                               </TableCell>
                               <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                                 <div className="flex gap-1 justify-end">
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setSelectedRoutineId(r.id)}><Eye className="h-3.5 w-3.5" /></Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyRoutine.mutate(r.id)}><Copy className="h-3.5 w-3.5" /></Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40" title={bn ? 'ফুল রুটিন দেখুন' : 'View Full Routine'} onClick={() => setSelectedRoutineId(r.id)}><Eye className="h-3.5 w-3.5" /></Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40" title={bn ? 'রুটিন তথ্য সম্পাদনা' : 'Edit Routine'} onClick={() => {
                                     setForm({ name: r.name, name_bn: r.name_bn, class_id: r.class_id, academic_session_id: r.academic_session_id || '', is_active: r.is_active ?? true });
                                     setEditingRoutineId(r.id);
                                     setShowEdit(true);
                                   }}><Edit className="h-3.5 w-3.5" /></Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={async () => {
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40" title={bn ? 'রুটিন রিসেট (সকল পিরিয়ড মুছুন)' : 'Reset Routine'} onClick={async () => {
+                                    if ((await confirm({
+                                      title: bn ? 'রুটিন রিসেট নিশ্চিতকরণ' : 'Confirm Reset',
+                                      description: bn ? `আপনি কি নিশ্চিত যে "${bn ? r.name_bn : r.name}" রুটিনের সকল পিরিয়ড রিসেট করতে চান? সব পিরিয়ড খালি হয়ে যাবে।` : `Reset all periods for "${r.name}"?`,
+                                      variant: 'destructive',
+                                    }))) {
+                                      resetRoutine.mutate(r.id);
+                                    }
+                                  }}><RotateCcw className="h-3.5 w-3.5" /></Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" title={bn ? 'রুটিন কপি' : 'Copy Routine'} onClick={() => copyRoutine.mutate(r.id)}><Copy className="h-3.5 w-3.5" /></Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" title={bn ? 'রুটিন ডিলিট' : 'Delete Routine'} onClick={async () => {
                                     if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) deleteRoutine.mutate(r.id);
                                   }}><Trash2 className="h-3.5 w-3.5" /></Button>
                                 </div>
@@ -503,18 +578,70 @@ const AdminClassRoutine = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 flex-wrap mb-2">
-        <Button variant="outline" size="sm" onClick={() => setSelectedRoutineId(null)}>
-          <span className="mr-1">←</span> {bn ? 'পেছনে যান' : 'Go Back'}
+        <Button variant="outline" size="sm" onClick={() => setSelectedRoutineId(null)} className="gap-1">
+          <span className="mr-0.5">←</span> {bn ? 'রুটিন তালিকায় ফিরুন' : 'Back to Routine List'}
         </Button>
-        <h2 className="text-sm font-bold flex-1 min-w-0 truncate text-foreground">
-          {bn ? selectedRoutine?.name_bn : selectedRoutine?.name}
-        </h2>
-        <Button size="sm" className="gap-1.5" onClick={() => openNewPeriod(0)}>
-          <Plus className="h-3.5 w-3.5" /> {bn ? 'পিরিয়ড যোগ' : 'Add Period'}
-        </Button>
-        <Button size="sm" variant="outline" className="gap-1.5" onClick={handlePrint}>
-          <Printer className="h-3.5 w-3.5" /> {bn ? 'প্রিন্ট' : 'Print'}
-        </Button>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm sm:text-base font-bold truncate text-foreground flex items-center gap-2">
+            <span>{bn ? selectedRoutine?.name_bn : selectedRoutine?.name}</span>
+            {cls && (
+              <Badge variant="outline" className="text-xs font-normal">
+                {bn ? `${div?.name_bn || ''} - ${cls?.name_bn || ''}` : `${div?.name || ''} - ${cls?.name || ''}`}
+              </Badge>
+            )}
+            {sess && (
+              <Badge variant="secondary" className="text-xs font-normal">
+                {bn ? sess.name_bn || sess.name : sess.name}
+              </Badge>
+            )}
+          </h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" className="gap-1.5" onClick={() => openNewPeriod(0)}>
+            <Plus className="h-3.5 w-3.5" /> {bn ? 'পিরিয়ড যোগ' : 'Add Period'}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 text-blue-700 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40"
+            onClick={() => {
+              if (selectedRoutine) {
+                setForm({
+                  name: selectedRoutine.name,
+                  name_bn: selectedRoutine.name_bn,
+                  class_id: selectedRoutine.class_id,
+                  academic_session_id: selectedRoutine.academic_session_id || '',
+                  is_active: selectedRoutine.is_active ?? true,
+                });
+                setEditingRoutineId(selectedRoutine.id);
+                setShowEdit(true);
+              }
+            }}
+          >
+            <Edit className="h-3.5 w-3.5" /> {bn ? 'সম্পাদনা' : 'Edit'}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/40 border-amber-300"
+            onClick={async () => {
+              if (selectedRoutineId && (await confirm({
+                title: bn ? 'রুটিন রিসেট নিশ্চিতকরণ' : 'Confirm Routine Reset',
+                description: bn
+                  ? `আপনি কি নিশ্চিত যে "${bn ? selectedRoutine?.name_bn : selectedRoutine?.name}" রুটিনের সকল পিরিয়ড রিসেট করতে চান? সব পিরিয়ড খালি হয়ে যাবে।`
+                  : `Are you sure you want to reset and clear all periods for "${selectedRoutine?.name}"?`,
+                variant: 'destructive',
+              }))) {
+                resetRoutine.mutate(selectedRoutineId);
+              }
+            }}
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> {bn ? 'রুটিন রিসেট' : 'Reset Routine'}
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={handlePrint}>
+            <Printer className="h-3.5 w-3.5" /> {bn ? 'প্রিন্ট' : 'Print'}
+          </Button>
+        </div>
       </div>
 
       {/* Period add/edit dialog */}
@@ -618,8 +745,23 @@ const AdminClassRoutine = () => {
             </div>
 
             {allPeriodNums.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground">
-                {bn ? 'কোনো পিরিয়ড নেই। উপরের বাটন থেকে পিরিয়ড যোগ করুন।' : 'No periods yet. Add periods using the button above.'}
+              <div className="py-12 px-4 text-center space-y-4">
+                <p className="text-muted-foreground text-sm">
+                  {bn ? 'এই রুটিনে এখনও কোনো পিরিয়ড নেই। নিচে থেকে পিরিয়ড যুক্ত করুন অথবা স্বয়ংক্রিয় ৮টি পিরিয়ড তৈরি করুন।' : 'No periods in this routine yet. Add periods or generate default 8 periods.'}
+                </p>
+                <div className="flex items-center justify-center gap-3 flex-wrap">
+                  <Button size="sm" onClick={() => openNewPeriod(0)} className="gap-1.5">
+                    <Plus className="h-4 w-4" /> {bn ? 'ম্যানুয়ালি পিরিয়ড যোগ করুন' : 'Add Period Manually'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/40 border-emerald-300"
+                    onClick={() => handleCreateDefaultPeriods(selectedRoutineId!)}
+                  >
+                    <Sparkles className="h-4 w-4 text-emerald-600" /> {bn ? 'স্বয়ংক্রিয় ৮টি পিরিয়ড তৈরি করুন' : 'Generate Default 8 Periods'}
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="overflow-x-auto">
