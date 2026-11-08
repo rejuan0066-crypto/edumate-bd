@@ -12,7 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   Printer, Plus, Minus, Save, Trash2, Clock, CheckSquare,
-  X, Filter, Check, ChevronDown, RefreshCw, PenTool, Edit, BookOpen, Layers
+  X, Filter, Check, ChevronDown, RefreshCw, PenTool, Edit, BookOpen, Layers,
+  ArrowLeft, RotateCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
@@ -700,21 +701,45 @@ const CellEditor = ({
   );
 };
 
+export interface MasterRoutineViewProps {
+  initialClassId?: string;
+  initialSessionId?: string;
+  onBack?: () => void;
+  showBackToList?: boolean;
+}
+
 /* ─── Main Component ─── */
-const MasterRoutineView = () => {
+const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
+  initialClassId,
+  initialSessionId,
+  onBack,
+  showBackToList,
+}) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
 
   const [selectedSessionId, setSelectedSessionId] = useState<string>(() => {
-    return localStorage.getItem('routine_selected_session_id') || '';
+    return initialSessionId || localStorage.getItem('routine_selected_session_id') || '';
   });
   const [selectedDivisionId, setSelectedDivisionId] = useState<string>(() => {
     return localStorage.getItem('routine_selected_division_id') || 'all';
   });
   const [selectedClassId, setSelectedClassId] = useState<string>(() => {
-    return localStorage.getItem('routine_selected_class_id') || 'all';
+    return initialClassId || localStorage.getItem('routine_selected_class_id') || 'all';
   });
+
+  useEffect(() => {
+    if (initialClassId) {
+      setSelectedClassId(initialClassId);
+    }
+  }, [initialClassId]);
+
+  useEffect(() => {
+    if (initialSessionId) {
+      setSelectedSessionId(initialSessionId);
+    }
+  }, [initialSessionId]);
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('routine_selected_class_ids');
@@ -1899,7 +1924,34 @@ const MasterRoutineView = () => {
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-2 ml-auto flex-wrap">
+            {showBackToList && onBack && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-9 gap-1.5 text-xs font-semibold hover:bg-muted"
+                onClick={onBack}
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span>{bn ? 'রুটিন তালিকায় ফিরুন' : 'Back to List'}</span>
+              </Button>
+            )}
+
+            {!isAllClasses && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-9 gap-1.5 text-xs font-semibold text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-amber-300"
+                onClick={() => {
+                  const curCls = allClasses?.find(c => c.id === selectedClassId);
+                  handleDeleteClassRoutine(selectedClassId, curCls ? (bn ? curCls.name_bn : curCls.name) : (bn ? 'এই শ্রেণী' : 'this class'));
+                }}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>{bn ? 'রুটিন রিসেট' : 'Reset Routine'}</span>
+              </Button>
+            )}
+
             {/* Signatories Selector Button */}
             <Button
               size="sm"
