@@ -1494,7 +1494,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
     toast.success(bn ? 'স্বাক্ষরকারী তথ্য সংরক্ষিত হয়েছে' : 'Signatories saved');
   };
 
-  // Download as Word Document (.doc) with SutonnyMJ font and 2-row period cells
+  // Download as Word Document (.doc) with crisp Bengali fonts, native Word layout and single-page landscape A4 setup
   const handleDownloadWordDoc = () => {
     try {
       const routineName = bn ? 'দৈনিক ক্লাস রুটিন' : 'Daily Class Routine';
@@ -1504,17 +1504,17 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
       const thHtml = periodColumns.map((col) => {
         if (col.isBreak) {
           const bTimeStr = breakTime.start ? `${fmtTime(breakTime.start, bn)} - ${fmtTime(breakTime.end, bn)}` : '';
-          return `<th style="background-color:#d1fae5; color:#064e3b; width:52pt; font-size:9pt; font-weight:bold; padding:3pt 1pt; text-align:center; vertical-align:middle; border:1pt solid #222; line-height:1.2;">
-            <div style="font-weight:bold; font-size:9pt;">${breakLabel}</div>
-            ${bTimeStr ? `<div style="font-size:7.5pt; color:#047857; margin-top:1.5pt; font-weight:normal;">${bTimeStr}</div>` : ''}
+          return `<th style="background-color:#d1fae5; color:#064e3b; width:50pt; font-size:9pt; font-weight:bold; padding:3pt 2pt; text-align:center; vertical-align:middle; border:1pt solid #222222;">
+            <p style="margin:0; font-weight:bold; font-size:9pt; line-height:12pt; color:#064e3b;">${breakLabel}</p>
+            ${bTimeStr ? `<p style="margin:1.5pt 0 0 0; font-size:7.5pt; color:#047857; font-weight:normal; line-height:10pt;">${bTimeStr}</p>` : ''}
           </th>`;
         }
         const time = getPeriodTime(col.num);
         const timeStr = time.start ? `${fmtTime(time.start, bn)} - ${fmtTime(time.end, bn)}` : '';
         const pLabel = periodLabelsMap[col.num] || `${col.num}`;
-        return `<th style="background-color:#e8f5e9; color:#052e16; font-size:9pt; font-weight:bold; padding:3pt 1pt; text-align:center; vertical-align:middle; border:1pt solid #222; line-height:1.2;">
-          <div style="font-weight:bold; font-size:9pt;">${pLabel}</div>
-          ${timeStr ? `<div style="font-size:7.5pt; color:#065f46; font-weight:normal; margin-top:1.5pt;">${timeStr}</div>` : ''}
+        return `<th style="background-color:#e8f5e9; color:#052e16; font-size:9pt; font-weight:bold; padding:3pt 2pt; text-align:center; vertical-align:middle; border:1pt solid #222222;">
+          <p style="margin:0; font-weight:bold; font-size:9pt; line-height:12pt; color:#052e16;">${pLabel}</p>
+          ${timeStr ? `<p style="margin:1.5pt 0 0 0; font-size:7.5pt; color:#065f46; font-weight:normal; line-height:10pt;">${timeStr}</p>` : ''}
         </th>`;
       }).join('');
 
@@ -1533,7 +1533,9 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
         for (let idx = 0; idx < periodColumns.length; idx++) {
           const col = periodColumns[idx];
           if (col.isBreak) {
-            cellsHtml += `<td style="background-color:#d1fae5; width:52pt; border:1pt solid #222; height:30pt;"></td>`;
+            cellsHtml += `<td style="background-color:#d1fae5; width:50pt; border:1pt solid #222222; text-align:center; vertical-align:middle;">
+              <p style="margin:0; font-size:8pt; line-height:11pt;">&nbsp;</p>
+            </td>`;
             continue;
           }
 
@@ -1564,9 +1566,9 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
           }
 
           if (customMeta) {
-            cellsHtml += `<td colspan="${span}" style="background-color:#fef3c7; color:#78350f; font-weight:bold; font-size:9pt; text-align:center; vertical-align:middle; padding:2pt 3pt; border:1pt solid #222; height:30pt;">
-              <div style="font-weight:bold; font-size:9.5pt; color:#92400e; line-height:1.2;">${customMeta.title || 'সেমিনার'}</div>
-              ${customMeta.note ? `<div style="font-size:7.5pt; color:#78350f; line-height:1.1; margin-top:1pt;">${customMeta.note}</div>` : ''}
+            cellsHtml += `<td colspan="${span}" style="background-color:#fef3c7; color:#78350f; font-weight:bold; font-size:9pt; text-align:center; vertical-align:middle; padding:2pt 3pt; border:1pt solid #222222;">
+              <p style="margin:0; font-weight:bold; font-size:9pt; color:#92400e; line-height:12pt;">${customMeta.title || 'সেমিনার'}</p>
+              ${customMeta.note ? `<p style="margin:1.5pt 0 0 0; font-size:7.5pt; color:#78350f; line-height:10pt;">${customMeta.note}</p>` : ''}
             </td>`;
           } else {
             const subj = period?.subjects as any;
@@ -1575,30 +1577,21 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
               ? period?.teacher_name_bn || period?.teacher_name || ''
               : period?.teacher_name || period?.teacher_name_bn || '';
 
-            cellsHtml += `<td style="padding:0; vertical-align:middle; border:1pt solid #222; height:30pt;">
-              <div style="width:100%; height:30pt; display:table; table-layout:fixed;">
-                <div style="display:table-row; height:16pt;">
-                  <div style="display:table-cell; vertical-align:middle; text-align:center; font-weight:bold; font-size:9pt; color:#000; padding:1pt 1pt; line-height:1.2;">
-                    ${subjName || '&nbsp;'}
-                  </div>
-                </div>
-                <div style="display:table-row; height:1pt; border-top:1pt solid #555;">
-                  <div style="display:table-cell; border-top:1pt solid #555; font-size:0pt; line-height:0pt; height:1pt;"></div>
-                </div>
-                <div style="display:table-row; height:13pt; background-color:#f8fafc;">
-                  <div style="display:table-cell; vertical-align:middle; text-align:center; font-size:8pt; color:#222; padding:1pt 1pt; background-color:#f8fafc; line-height:1.1;">
-                    ${teacherDisplay || '&nbsp;'}
-                  </div>
-                </div>
-              </div>
+            cellsHtml += `<td style="padding:2pt 2pt; text-align:center; vertical-align:middle; border:1pt solid #222222; background-color:#ffffff;">
+              <p style="margin:0 0 1.5pt 0; font-size:9pt; font-weight:bold; color:#000000; line-height:12pt; border-bottom:0.75pt solid #888888; padding-bottom:1.5pt;">
+                ${subjName || '&nbsp;'}
+              </p>
+              <p style="margin:1.5pt 0 0 0; font-size:8pt; color:#222222; line-height:10.5pt; background-color:#f8fafc;">
+                ${teacherDisplay || '&nbsp;'}
+              </p>
             </td>`;
           }
         }
 
-        rowsHtml += `<tr style="page-break-inside:avoid; height:30pt;">
-          <td style="width:105pt; text-align:left; padding:2pt 5pt; background-color:#f8fafc; border:1pt solid #222; vertical-align:middle; height:30pt;">
-            <div style="font-weight:bold; font-size:9.5pt; color:#0f172a; line-height:1.2;">${clsName}</div>
-            ${divName ? `<div style="font-size:7.5pt; color:#555; line-height:1.1; margin-top:1pt;">(${divName})</div>` : ''}
+        rowsHtml += `<tr style="page-break-inside:avoid;">
+          <td style="width:105pt; text-align:left; padding:3pt 5pt; background-color:#f8fafc; border:1pt solid #222222; vertical-align:middle;">
+            <p style="margin:0; font-weight:bold; font-size:9.5pt; color:#0f172a; line-height:12pt;">${clsName}</p>
+            ${divName ? `<p style="margin:1.5pt 0 0 0; font-size:7.5pt; color:#555555; line-height:10pt;">(${divName})</p>` : ''}
           </td>
           ${cellsHtml}
         </tr>`;
@@ -1622,7 +1615,7 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
     @page Section1 {
       size: 841.9pt 595.3pt;
       mso-page-orientation: landscape;
-      margin: 14pt 18pt 14pt 18pt;
+      margin: 12pt 16pt 12pt 16pt;
       mso-header-margin: 0pt;
       mso-footer-margin: 0pt;
     }
@@ -1632,6 +1625,9 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
     }
     body, table, td, th, p, span, div, b, strong {
       font-family: 'SutonnyOMJ', 'Kalpurush', 'SolaimanLipi', 'Nikosh', 'NikoshBAN', 'Vrinda', 'Nirmala UI', sans-serif !important;
+      mso-ascii-font-family: 'Kalpurush';
+      mso-hansi-font-family: 'Kalpurush';
+      mso-bidi-font-family: 'Kalpurush';
       color: #000000;
     }
     table {
@@ -1648,31 +1644,34 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
     }
     th, td {
       border: 1pt solid #222222;
-      mso-line-height-rule: exactly;
       word-wrap: break-word;
+    }
+    p {
+      margin: 0;
+      padding: 0;
     }
   </style>
 </head>
 <body class="Section1" style="background:#ffffff; color:#000000; margin:0; padding:0;">
   <div style="text-align:center; margin-bottom:5pt;">
-    <div style="font-size:16pt; font-weight:bold; color:#064e3b; margin-bottom:1.5pt; line-height:1.2;">${instName}</div>
-    <div style="font-size:8.5pt; color:#333; margin-bottom:2pt; line-height:1.2;">
+    <p style="font-size:15pt; font-weight:bold; color:#064e3b; margin-bottom:1.5pt; line-height:18pt;">${instName}</p>
+    <p style="font-size:8.5pt; color:#333333; margin-bottom:2pt; line-height:11pt;">
       ${instAddress ? `${instAddress} | ` : ''}
       ${instPhone ? `মোবাইল: ${toBn(instPhone)}` : ''}
       ${instPhone && instEmail ? ' | ' : ''}
       ${instEmail ? `ইমেইল: ${instEmail}` : ''}
-    </div>
-    <div style="display:inline-block; font-size:9.5pt; font-weight:bold; color:#064e3b; background-color:#e8f5e9; border:1pt solid #86efac; padding:1.5pt 12pt; border-radius:10pt;">
+    </p>
+    <p style="margin:0 auto; display:inline-block; font-size:9.5pt; font-weight:bold; color:#064e3b; background-color:#e8f5e9; border:1pt solid #86efac; padding:1.5pt 12pt; border-radius:10pt; line-height:13pt;">
       ${routineName} — ${sessionLabel}
-    </div>
+    </p>
   </div>
 
   <table style="width:100%; border-collapse:collapse; margin-top:3pt; table-layout:fixed;">
     <thead>
       <tr style="page-break-inside:avoid;">
-        <th style="background-color:#e8f5e9; color:#052e16; width:105pt; text-align:left; padding:3pt 5pt; font-size:9.5pt; font-weight:bold; border:1pt solid #222; line-height:1.2;">
-          <div>শ্রেণী / পিরিয়ড</div>
-          <div style="font-size:7pt; color:#047857; font-weight:normal;">(${displayClasses.length}টি ক্লাস সিরিয়াল অনুযায়ী)</div>
+        <th style="background-color:#e8f5e9; color:#052e16; width:105pt; text-align:left; padding:3pt 5pt; border:1pt solid #222222; vertical-align:middle;">
+          <p style="margin:0; font-size:9.5pt; font-weight:bold; color:#052e16; line-height:12pt;">শ্রেণী / পিরিয়ড</p>
+          <p style="margin:1.5pt 0 0 0; font-size:7pt; color:#047857; font-weight:normal; line-height:9.5pt;">(${displayClasses.length}টি ক্লাস সিরিয়াল অনুযায়ী)</p>
         </th>
         ${thHtml}
       </tr>
@@ -1683,27 +1682,29 @@ const MasterRoutineView: React.FC<MasterRoutineViewProps> = ({
   </table>
 
   <!-- Footnote (Single Line) -->
-  <div style="margin-top:4pt; font-size:8.5pt; color:#222; border-top:1pt solid #666; padding-top:2.5pt; line-height:1.2;">
-    <b>${bn ? 'বি.দ্র.' : 'Note:'}</b> ${cleanFooterNote}
+  <div style="margin-top:4pt; border-top:1pt solid #666666; padding-top:2.5pt;">
+    <p style="margin:0; font-size:8.5pt; color:#222222; line-height:11pt;">
+      <b>${bn ? 'বি.দ্র.' : 'Note:'}</b> ${cleanFooterNote}
+    </p>
   </div>
 
   <!-- Signatures -->
-  <table style="width:100%; border:none; margin-top:16pt; border-collapse:collapse;">
+  <table style="width:100%; border:none; margin-top:14pt; border-collapse:collapse;">
     <tr>
       ${signatories.nazim.show ? `
       <td style="border:none; text-align:center; vertical-align:bottom; width:50%;">
         <div style="border-top:1.5pt solid #333; width:140pt; margin:0 auto 3pt auto;"></div>
-        <div style="font-weight:bold; font-size:9.5pt; color:#000; line-height:1.2;">${signatories.nazim.name_bn || 'নাজিম / শিক্ষা সচিব'}</div>
-        <div style="font-size:8pt; color:#444; line-height:1.1;">${signatories.nazim.title_bn || 'নাজিম / শিক্ষা সচিব'}</div>
-        <div style="font-size:7pt; color:#666; line-height:1;">${instName}</div>
+        <p style="margin:0; font-weight:bold; font-size:9.5pt; color:#000; line-height:12pt;">${signatories.nazim.name_bn || 'নাজিম / শিক্ষা সচিব'}</p>
+        <p style="margin:1pt 0 0 0; font-size:8pt; color:#444; line-height:10pt;">${signatories.nazim.title_bn || 'নাজিম / শিক্ষা সচিব'}</p>
+        <p style="margin:1pt 0 0 0; font-size:7pt; color:#666; line-height:9pt;">${instName}</p>
       </td>` : '<td style="border:none; width:50%;"></td>'}
 
       ${signatories.principal.show ? `
       <td style="border:none; text-align:center; vertical-align:bottom; width:50%;">
         <div style="border-top:1.5pt solid #333; width:140pt; margin:0 auto 3pt auto;"></div>
-        <div style="font-weight:bold; font-size:9.5pt; color:#000; line-height:1.2;">${signatories.principal.name_bn || 'আলহাজ্ব আব্দুছ ছোবহান'}</div>
-        <div style="font-size:8pt; color:#444; line-height:1.1;">${signatories.principal.title_bn || 'প্রতিষ্ঠাতা ও প্রিন্সিপাল'}</div>
-        <div style="font-size:7pt; color:#666; line-height:1;">${instName}</div>
+        <p style="margin:0; font-weight:bold; font-size:9.5pt; color:#000; line-height:12pt;">${signatories.principal.name_bn || 'আলহাজ্ব আব্দুছ ছোবহান'}</p>
+        <p style="margin:1pt 0 0 0; font-size:8pt; color:#444; line-height:10pt;">${signatories.principal.title_bn || 'প্রতিষ্ঠাতা ও প্রিন্সিপাল'}</p>
+        <p style="margin:1pt 0 0 0; font-size:7pt; color:#666; line-height:9pt;">${instName}</p>
       </td>` : '<td style="border:none; width:50%;"></td>'}
     </tr>
   </table>
