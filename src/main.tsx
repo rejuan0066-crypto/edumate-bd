@@ -38,12 +38,11 @@ createRoot(document.getElementById("root")!).render(<App />);
     return;
   }
 
-  let refreshing = false;
+  // Prevent unprompted page reload on SW takeover / controllerchange.
+  // In modern SPAs, forcing a reload causes a disruptive page flash right after initial load.
+  // The new service worker seamlessly controls subsequent requests without requiring a hard reload.
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!refreshing) {
-      refreshing = true;
-      window.location.reload();
-    }
+    console.log('[PWA] Service Worker controller updated smoothly without reload.');
   });
 
   window.addEventListener('load', () => {
