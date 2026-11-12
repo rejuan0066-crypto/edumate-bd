@@ -270,26 +270,157 @@ const ManageExamSessionDialog = ({ open, onOpenChange, examSession }: Props) => 
               </div>
             </TabsContent>
 
-            <TabsContent value="subjects" className="mt-3">
-              <div className="flex justify-end gap-2 mb-2">
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSubjectIds(sortedSubjects.map((s: any) => s.id))}>{bn ? 'সব নির্বাচন' : 'Select All'}</Button>
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSubjectIds([])}>{bn ? 'সব বাদ' : 'Deselect All'}</Button>
+            <TabsContent value="subjects" className="mt-3 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="text-xs text-muted-foreground">
+                  {bn ? 'প্রতি ক্লাসের বিষয় আলাদা সেকশনে নির্বাচন করুন।' : 'Select subjects grouped by each class.'}
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSubjectIds(sortedSubjects.map((s: any) => s.id))}>{bn ? 'সব নির্বাচন' : 'Select All'}</Button>
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSubjectIds([])}>{bn ? 'সব বাদ' : 'Deselect All'}</Button>
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {sortedSubjects.map((subj: any) => {
-                  const cls = (classes as any[]).find((c: any) => c.id === subj.class_id);
+
+              {(() => {
+                const selectedClasses = sortedClasses.filter((c: any) => classIds.includes(c.id));
+                const unassignedSubjects = sortedSubjects.filter((s: any) => !s.class_id);
+
+                if (selectedClasses.length === 0 && unassignedSubjects.length === 0) {
                   return (
-                    <label key={subj.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${subjectIds.includes(subj.id) ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
-                      <Checkbox checked={subjectIds.includes(subj.id)} onCheckedChange={() => toggle(setSubjectIds, subj.id)} />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-foreground">{bn ? subj.name_bn : subj.name}</span>
-                        {cls && <p className="text-xs text-muted-foreground">{bn ? cls.name_bn : cls.name}</p>}
-                      </div>
-                    </label>
+                    <p className="text-sm text-muted-foreground py-6 text-center">
+                      {classIds.length === 0
+                        ? (bn ? 'আগে ক্লাস নির্বাচন করুন' : 'Select classes first')
+                        : (bn ? 'কোনো বিষয় নেই' : 'No subjects')}
+                    </p>
                   );
-                })}
-                {sortedSubjects.length === 0 && <p className="text-sm text-muted-foreground col-span-full py-4 text-center">{bn ? 'কোনো বিষয় নেই' : 'No subjects'}</p>}
-              </div>
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {selectedClasses.map((cls: any) => {
+                      const clsSubjects = sortedSubjects.filter((s: any) => s.class_id === cls.id);
+                      if (clsSubjects.length === 0) return null;
+                      const included = clsSubjects.filter((s: any) => subjectIds.includes(s.id)).length;
+                      return (
+                        <div key={cls.id} className="border border-border rounded-xl overflow-hidden">
+                          <div className="px-3.5 py-2.5 bg-secondary/50 border-b border-border/60 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-sm font-semibold text-foreground truncate">
+                                {bn ? cls.name_bn : cls.name}
+                              </span>
+                              {cls.divisions && (
+                                <span className="text-[11px] text-muted-foreground">
+                                  ({bn ? cls.divisions.name_bn : cls.divisions.name})
+                                </span>
+                              )}
+                              <span className="text-xs font-medium text-primary">
+                                ({included}/{clsSubjects.length})
+                              </span>
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-xs"
+                                onClick={() =>
+                                  setSubjectIds((prev) => [...new Set([...prev, ...clsSubjects.map((s: any) => s.id)])])
+                                }
+                              >
+                                {bn ? 'সব রাখুন' : 'All'}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-xs text-destructive"
+                                onClick={() =>
+                                  setSubjectIds((prev) => prev.filter((id) => !clsSubjects.some((s: any) => s.id === id)))
+                                }
+                              >
+                                {bn ? 'সব বাদ' : 'None'}
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5">
+                            {clsSubjects.map((subj: any) => (
+                              <label
+                                key={subj.id}
+                                className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                                  subjectIds.includes(subj.id)
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border hover:border-primary/50'
+                                }`}
+                              >
+                                <Checkbox
+                                  checked={subjectIds.includes(subj.id)}
+                                  onCheckedChange={() => toggle(setSubjectIds, subj.id)}
+                                />
+                                <span className="text-sm font-medium text-foreground flex-1">
+                                  {bn ? subj.name_bn : subj.name}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {unassignedSubjects.length > 0 && (
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <div className="px-3.5 py-2.5 bg-secondary/50 border-b border-border/60 flex items-center justify-between gap-2">
+                          <span className="text-sm font-semibold text-foreground">
+                            {bn ? 'সাধারণ / অন্যান্য বিষয়' : 'General / Other Subjects'}{' '}
+                            <span className="text-xs font-medium text-primary">
+                              ({unassignedSubjects.filter((s: any) => subjectIds.includes(s.id)).length}/{unassignedSubjects.length})
+                            </span>
+                          </span>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-xs"
+                              onClick={() =>
+                                setSubjectIds((prev) => [...new Set([...prev, ...unassignedSubjects.map((s: any) => s.id)])])
+                              }
+                            >
+                              {bn ? 'সব রাখুন' : 'All'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-xs text-destructive"
+                              onClick={() =>
+                                setSubjectIds((prev) => prev.filter((id) => !unassignedSubjects.some((s: any) => s.id === id)))
+                              }
+                            >
+                              {bn ? 'সব বাদ' : 'None'}
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5">
+                          {unassignedSubjects.map((subj: any) => (
+                            <label
+                              key={subj.id}
+                              className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                                subjectIds.includes(subj.id)
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-border hover:border-primary/50'
+                              }`}
+                            >
+                              <Checkbox
+                                checked={subjectIds.includes(subj.id)}
+                                onCheckedChange={() => toggle(setSubjectIds, subj.id)}
+                              />
+                              <span className="text-sm font-medium text-foreground flex-1">
+                                {bn ? subj.name_bn : subj.name}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </TabsContent>
 
             <TabsContent value="students" className="mt-3 space-y-3">
