@@ -1573,6 +1573,7 @@ const AdminUserManagement = () => {
           </div>
         ) : (
           <PermissionPageEditor
+            key={activePermEditor.mode + '-' + activePermEditor.target.id}
             mode={activePermEditor.mode}
             target={activePermEditor.target}
             allMenuPaths={allMenuPaths}

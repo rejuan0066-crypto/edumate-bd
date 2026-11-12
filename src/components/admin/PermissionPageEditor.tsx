@@ -96,9 +96,15 @@ export const PermissionPageEditor = ({
         can_edit: found?.can_edit ?? false,
         can_delete: found?.can_delete ?? false,
         can_approve: found?.can_approve ?? false,
-        approval_add: initialHiddenFeatures[`${mp.path}:approval_add`] ?? found?.approval_add ?? false,
-        approval_edit: initialHiddenFeatures[`${mp.path}:approval_edit`] ?? found?.approval_edit ?? false,
-        approval_delete: initialHiddenFeatures[`${mp.path}:approval_delete`] ?? found?.approval_delete ?? false,
+        approval_add: mode === 'user'
+          ? (found?.approval_add ?? initialHiddenFeatures[`${mp.path}:approval_add`] ?? false)
+          : (initialHiddenFeatures[`${mp.path}:approval_add`] ?? found?.approval_add ?? false),
+        approval_edit: mode === 'user'
+          ? (found?.approval_edit ?? initialHiddenFeatures[`${mp.path}:approval_edit`] ?? false)
+          : (initialHiddenFeatures[`${mp.path}:approval_edit`] ?? found?.approval_edit ?? false),
+        approval_delete: mode === 'user'
+          ? (found?.approval_delete ?? initialHiddenFeatures[`${mp.path}:approval_delete`] ?? false)
+          : (initialHiddenFeatures[`${mp.path}:approval_delete`] ?? found?.approval_delete ?? false),
       };
     });
     return map;
@@ -396,6 +402,16 @@ export const PermissionPageEditor = ({
           if (p.approval_delete) finalFeaturesMap[`${p.menu_path}:approval_delete`] = true;
           else delete finalFeaturesMap[`${p.menu_path}:approval_delete`];
         });
+        allPerms.forEach((p) => {
+          if (p.approval_add) finalFeaturesMap[`${p.menu_path}:approval_add`] = true;
+          else delete finalFeaturesMap[`${p.menu_path}:approval_add`];
+
+          if (p.approval_edit) finalFeaturesMap[`${p.menu_path}:approval_edit`] = true;
+          else delete finalFeaturesMap[`${p.menu_path}:approval_edit`];
+
+          if (p.approval_delete) finalFeaturesMap[`${p.menu_path}:approval_delete`] = true;
+          else delete finalFeaturesMap[`${p.menu_path}:approval_delete`];
+        });
 
         const saveRolePerms = async () => {
           const { error: delErr } = await supabase.from('role_permissions').delete().eq('role', target.name);
@@ -443,6 +459,16 @@ export const PermissionPageEditor = ({
         const toInsert = activeRows.length > 0 ? activeRows : mappedPerms.slice(0, 1);
 
         const finalFeaturesMap: Record<string, boolean> = { ...subFeaturesMap };
+        allPerms.forEach((p) => {
+          if (p.approval_add) finalFeaturesMap[`${p.menu_path}:approval_add`] = true;
+          else delete finalFeaturesMap[`${p.menu_path}:approval_add`];
+
+          if (p.approval_edit) finalFeaturesMap[`${p.menu_path}:approval_edit`] = true;
+          else delete finalFeaturesMap[`${p.menu_path}:approval_edit`];
+
+          if (p.approval_delete) finalFeaturesMap[`${p.menu_path}:approval_delete`] = true;
+          else delete finalFeaturesMap[`${p.menu_path}:approval_delete`];
+        });
 
         const saveUserPerms = async () => {
           const { error: delErr } = await supabase.from('user_permissions').delete().eq('user_id', target.id);
