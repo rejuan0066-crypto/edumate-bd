@@ -39,9 +39,10 @@ interface AdmissionFormProps {
   editStudent?: any; // pass existing student record for edit mode
   embedded?: boolean; // render inline on a page instead of modal dialog
   onSuccess?: () => void;
+  bypassRequirements?: boolean;
 }
 
-const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSuccess }: AdmissionFormProps) => {
+const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSuccess, bypassRequirements }: AdmissionFormProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
@@ -53,9 +54,10 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
 
   // Admin or user with explicit permission can bypass required fields
   const canBypassRequirements = useMemo(() => {
+    if (bypassRequirements !== undefined) return bypassRequirements;
     if (isAdminRole(role)) return true;
-    return !!isFeatureAllowed('/admin/students', 'action_bypass_requirements');
-  }, [role, isFeatureAllowed]);
+    return !!isFeatureAllowed('/admin/students', 'action_bypass_requirements') || !!isFeatureAllowed('/admin/students/admission', 'action_bypass_requirements');
+  }, [bypassRequirements, role, isFeatureAllowed]);
 
   // Form state
   const [currentStep, setCurrentStep] = useState(0);
@@ -2154,14 +2156,26 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-muted-foreground mt-0.5">
-                {bn ? 'আবশ্যকীয় তথ্যগুলো পূরণ করে পরবর্তী ধাপে এগিয়ে যান। ' : 'Fill in required fields to proceed. '}
-                <span className="text-rose-500 font-bold">*</span>
-                {bn ? ' চিহ্নিত ঘর বাধ্যতামূলক।' : ' denotes required.'}
+                {canBypassRequirements
+                  ? (bn ? 'রিকোয়ারমেন্ট শিথিল সক্রিয়: যেকোনো তথ্য ছাড়া সরাসরি ফরমটি পূরণ ও সংরক্ষণ করতে পারবেন।' : 'Requirement bypass active: Mandatory fields are optional.')
+                  : (bn ? 'আবশ্যকীয় তথ্যগুলো পূরণ করে পরবর্তী ধাপে এগিয়ে যান। ' : 'Fill in required fields to proceed. ')}
+                {!canBypassRequirements && (
+                  <>
+                    <span className="text-rose-500 font-bold">*</span>
+                    {bn ? ' চিহ্নিত ঘর বাধ্যতামূলক।' : ' denotes required.'}
+                  </>
+                )}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-center">
+            {canBypassRequirements && (
+              <Badge variant="outline" className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 text-xs px-2.5 py-1 font-bold gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                {bn ? 'রিকোয়ারমেন্ট ছাড়া সংরক্ষণের অনুমতি রয়েছে' : 'Bypass Active'}
+              </Badge>
+            )}
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-card border border-slate-200 dark:border-border shadow-sm">
               <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
               <span className="text-xs font-bold text-slate-700 dark:text-foreground">

@@ -35,6 +35,11 @@ export const KNOWN_PAGE_FEATURES: Record<string, SubFeatureItem[]> = {
     { key: 'action_delete_student', label_bn: 'শিক্ষার্থী মুছে ফেলার বাটন', label_en: 'Delete Student Button', type: 'action' },
   ],
 
+  // ভর্তি আবেদন ব্যবস্থাপনা (/admin/students/admission)
+  '/admin/students/admission': [
+    { key: 'action_bypass_requirements', label_bn: 'রিকোয়ারমেন্ট ছাড়া ভর্তি ও তথ্য সংরক্ষণের অনুমতি', label_en: 'Allow Bypassing Required Fields', type: 'action', defaultAllowed: false },
+  ],
+
   // শিক্ষক ও স্টাফ (/admin/staff)
   '/admin/staff': [
     { key: 'tab_staff_list', label_bn: 'স্টাফ ও শিক্ষক তালিকা', label_en: 'Staff List', type: 'tab' },

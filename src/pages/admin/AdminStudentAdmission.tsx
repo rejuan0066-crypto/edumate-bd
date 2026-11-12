@@ -48,6 +48,8 @@ import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useConfirm } from '@/contexts/ConfirmContext';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
 import { printStudentProfile } from '@/lib/studentProfilePrint';
 import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 import { bnToEn, enToBn, formatDigits, cn } from '@/lib/utils';
@@ -65,9 +67,11 @@ const AdminStudentAdmission = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const confirm = useConfirm();
+  const { role } = useAuth();
   const { data: institution } = useInstitutionInfo();
   const { checkApproval } = useApprovalCheck('/admin/students', 'students');
   const { canAddItem, canEditItem, canDeleteItem, canApproveItem, isFeatureAllowed } = usePagePermissions('/admin/students');
+  const canBypassRequirements = isAdminRole(role) || isFeatureAllowed('action_bypass_requirements');
 
   const [showAdd, setShowAdd] = useState(false);
   const [editStudent, setEditStudent] = useState<any>(null);
@@ -1052,6 +1056,7 @@ const AdminStudentAdmission = () => {
           if (!o) setEditStudent(null);
         }}
         editStudent={editStudent}
+        bypassRequirements={canBypassRequirements}
       />
 
       {/* Detail View Dialog */}

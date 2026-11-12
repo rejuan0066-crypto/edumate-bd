@@ -31,12 +31,16 @@ import AdmissionForm from '@/components/admission/AdmissionForm';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { bnToEn, enToBn, formatDigits, cn } from '@/lib/utils';
 import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
 
 const AdminStudents = () => {
   const { t, language } = useLanguage();
+  const { role } = useAuth();
   const queryClient = useQueryClient();
   const { checkApproval, isRecordPending } = useApprovalCheck('/admin/students', 'students');
   const { canAddItem, canEditItem, canDeleteItem, canApproveItem, isFeatureAllowed } = usePagePermissions('/admin/students');
+  const canBypassRequirements = isAdminRole(role) || isFeatureAllowed('action_bypass_requirements');
   const confirm = useConfirm();
   const bn = language === 'bn';
   const navigate = useNavigate();
@@ -1054,7 +1058,12 @@ const AdminStudents = () => {
           )}
         </div>
       {/* Dynamic Admission Form */}
-      <AdmissionForm open={showAdd} onOpenChange={(o) => { setShowAdd(o); if (!o) setEditStudent(null); }} editStudent={editStudent} />
+      <AdmissionForm
+        open={showAdd}
+        onOpenChange={(o) => { setShowAdd(o); if (!o) setEditStudent(null); }}
+        editStudent={editStudent}
+        bypassRequirements={canBypassRequirements}
+      />
 
       {/* Detail View Dialog */}
       <Dialog open={!!showDetail} onOpenChange={o => { if (!o) setShowDetail(null); }}>
