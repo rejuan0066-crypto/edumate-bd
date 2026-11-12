@@ -85,9 +85,10 @@ export const PermissionPageEditor = ({
 
   // Local state for permissions (including approval_add, approval_edit, approval_delete)
   const [permsMap, setPermsMap] = useState<Record<string, PagePermItem>>(() => {
+    const initialByPath = new Map(initialPerms.map((p) => [p.menu_path, p]));
     const map: Record<string, PagePermItem> = {};
     allMenuPaths.forEach((mp) => {
-      const found = initialPerms.find((p) => p.menu_path === mp.path);
+      const found = initialByPath.get(mp.path);
       map[mp.path] = {
         menu_path: mp.path,
         can_view: found?.can_view ?? false,
@@ -335,16 +336,44 @@ export const PermissionPageEditor = ({
     });
   };
 
+  const saveFeatureSettings = async (settingsKey: string, featuresMap: Record<string, boolean>) => {
+    const { data: existingSettings, error: readErr } = await supabase
+      .from('website_settings')
+      .select('id, value')
+      .eq('key', 'role_feature_permissions')
+      .maybeSingle();
+
+    if (readErr) throw readErr;
+
+    const currentVal = (existingSettings?.value as Record<string, Record<string, boolean>>) || {};
+    const updatedVal = {
+      ...currentVal,
+      [settingsKey]: featuresMap,
+    };
+
+    if (existingSettings?.id) {
+      const { error: updErr } = await supabase
+        .from('website_settings')
+        .update({ value: updatedVal as any, updated_at: new Date().toISOString() })
+        .eq('id', existingSettings.id);
+      if (updErr) throw updErr;
+    } else {
+      const { error: insErr } = await supabase
+        .from('website_settings')
+        .insert({ key: 'role_feature_permissions', value: updatedVal as any });
+      if (insErr) throw insErr;
+    }
+  };
+
   // Save handler for both Role and User
   const handleSave = async () => {
     setSaving(true);
     try {
+      const allPerms = Object.values(permsMap);
+
       if (mode === 'role') {
         // --- ROLE MODE SAVE ---
-        // 1. Delete and re-insert role_permissions
-        await supabase.from('role_permissions').delete().eq('role', target.name);
-
-        const toInsert = Object.values(permsMap)
+        const toInsert = allPerms
           .filter((p) => p.can_view || p.can_add || p.can_edit || p.can_delete || p.can_approve)
           .map((p) => ({
             role: target.name,
@@ -356,14 +385,8 @@ export const PermissionPageEditor = ({
             can_approve: p.can_approve,
           }));
 
-        if (toInsert.length > 0) {
-          const { error: permErr } = await supabase.from('role_permissions').insert(toInsert);
-          if (permErr) throw permErr;
-        }
-
-        // 2. Prepare sub-features map including approval flags: `${menuPath}:approval_${action}`
         const finalFeaturesMap: Record<string, boolean> = { ...subFeaturesMap };
-        Object.values(permsMap).forEach((p) => {
+        allPerms.forEach((p) => {
           if (p.approval_add) finalFeaturesMap[`${p.menu_path}:approval_add`] = true;
           else delete finalFeaturesMap[`${p.menu_path}:approval_add`];
 
@@ -374,101 +397,86 @@ export const PermissionPageEditor = ({
           else delete finalFeaturesMap[`${p.menu_path}:approval_delete`];
         });
 
-        // Save into website_settings key 'role_feature_permissions'
-        const { data: existingSettings } = await supabase
-          .from('website_settings')
-          .select('id, value')
-          .eq('key', 'role_feature_permissions')
-          .maybeSingle();
-
-        const currentVal = (existingSettings?.value as Record<string, Record<string, boolean>>) || {};
-        const updatedVal = {
-          ...currentVal,
-          [target.name]: finalFeaturesMap,
+        const saveRolePerms = async () => {
+          const { error: delErr } = await supabase.from('role_permissions').delete().eq('role', target.name);
+          if (delErr) throw delErr;
+          if (toInsert.length > 0) {
+            const { error: permErr } = await supabase.from('role_permissions').insert(toInsert);
+            if (permErr) throw permErr;
+          }
         };
 
-        if (existingSettings?.id) {
-          await supabase
-            .from('website_settings')
-            .update({ value: updatedVal as any, updated_at: new Date().toISOString() })
-            .eq('id', existingSettings.id);
-        } else {
-          await supabase
-            .from('website_settings')
-            .insert({ key: 'role_feature_permissions', value: updatedVal as any });
-        }
+        await Promise.all([
+          saveRolePerms(),
+          saveFeatureSettings(target.name, finalFeaturesMap),
+        ]);
 
         toast.success(bn ? '✅ রোলের সকল পারমিশন ও অপশন সফলভাবে সেভ হয়েছে!' : '✅ Role permissions saved successfully!');
       } else {
         // --- USER MODE SAVE ---
-        // 1. Delete and re-insert user_permissions (save explicit permissions for all configured pages)
-        await supabase.from('user_permissions').delete().eq('user_id', target.id);
+        const mappedPerms = allPerms.map((p) => ({
+          user_id: target.id,
+          menu_path: p.menu_path,
+          can_view: !!p.can_view,
+          can_add: !!p.can_add,
+          can_edit: !!p.can_edit,
+          can_delete: !!p.can_delete,
+          can_approve: !!p.can_approve,
+          approval_view: false,
+          approval_add: !!p.approval_add,
+          approval_edit: !!p.approval_edit,
+          approval_delete: !!p.approval_delete,
+        }));
 
-        const toInsert = Object.values(permsMap)
-          .map((p) => ({
-            user_id: target.id,
-            menu_path: p.menu_path,
-            can_view: !!p.can_view,
-            can_add: !!p.can_add,
-            can_edit: !!p.can_edit,
-            can_delete: !!p.can_delete,
-            can_approve: !!p.can_approve,
-            approval_view: false,
-            approval_add: !!p.approval_add,
-            approval_edit: !!p.approval_edit,
-            approval_delete: !!p.approval_delete,
-          }));
+        const activeRows = mappedPerms.filter(
+          (p) =>
+            p.can_view ||
+            p.can_add ||
+            p.can_edit ||
+            p.can_delete ||
+            p.can_approve ||
+            p.approval_add ||
+            p.approval_edit ||
+            p.approval_delete
+        );
+        // Keep at least one sentinel row so user_permissions override detection remains active even if all perms are unchecked
+        const toInsert = activeRows.length > 0 ? activeRows : mappedPerms.slice(0, 1);
 
-        if (toInsert.length > 0) {
-          const { error: permErr } = await supabase.from('user_permissions').insert(toInsert);
-          if (permErr) throw permErr;
-        }
-
-        // 2. Also save user's custom hidden sub-features into website_settings if needed
         const finalFeaturesMap: Record<string, boolean> = { ...subFeaturesMap };
-        const { data: existingSettings } = await supabase
-          .from('website_settings')
-          .select('id, value')
-          .eq('key', 'role_feature_permissions')
-          .maybeSingle();
 
-        const currentVal = (existingSettings?.value as Record<string, Record<string, boolean>>) || {};
-        const updatedVal = {
-          ...currentVal,
-          [`user_${target.id}`]: finalFeaturesMap,
+        const saveUserPerms = async () => {
+          const { error: delErr } = await supabase.from('user_permissions').delete().eq('user_id', target.id);
+          if (delErr) throw delErr;
+          if (toInsert.length > 0) {
+            const { error: permErr } = await supabase.from('user_permissions').insert(toInsert);
+            if (permErr) throw permErr;
+          }
         };
 
-        if (existingSettings?.id) {
-          await supabase
-            .from('website_settings')
-            .update({ value: updatedVal as any, updated_at: new Date().toISOString() })
-            .eq('id', existingSettings.id);
-        } else {
-          await supabase
-            .from('website_settings')
-            .insert({ key: 'role_feature_permissions', value: updatedVal as any });
-        }
+        await Promise.all([
+          saveUserPerms(),
+          saveFeatureSettings(`user_${target.id}`, finalFeaturesMap),
+        ]);
 
         toast.success(bn ? '✅ ইউজারের ব্যক্তিগত পারমিশন সফলভাবে সেভ হয়েছে!' : '✅ User individual permissions saved!');
       }
 
-      // Invalidate queries & clear sessionStorage permission caches
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['role-permissions'] }),
-        queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
-        queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] }),
-        queryClient.invalidateQueries({ queryKey: ['user-permissions-approval'] }),
-      ]);
+      // Clear sessionStorage caches synchronously and trigger query invalidation in background
       try {
         sessionStorage.removeItem('edumate_cached_role_features');
         if (target.id) sessionStorage.removeItem(`edumate_cached_user_perms_${target.id}`);
         if (target.name) sessionStorage.removeItem(`edumate_cached_role_perms_${target.name}`);
       } catch {}
 
-      broadcastPermissionChange();
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['role-permissions'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
+        queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-permissions-approval'] }),
+      ]);
 
+      broadcastPermissionChange();
       onSaved();
-      onBack();
     } catch (err: any) {
       toast.error(err?.message || (bn ? 'পারমিশন সেভ ব্যর্থ' : 'Failed to save permissions'));
     } finally {

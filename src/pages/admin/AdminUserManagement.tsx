@@ -1584,7 +1584,6 @@ const AdminUserManagement = () => {
               queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
               queryClient.invalidateQueries({ queryKey: ['role_feature_permissions'] });
               broadcastPermissionChange();
-              fetchUsers();
             }}
           />
         )}
