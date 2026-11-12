@@ -28,6 +28,7 @@ export const KNOWN_PAGE_FEATURES: Record<string, SubFeatureItem[]> = {
     { key: 'tab_list', label_bn: 'শিক্ষার্থী তালিকা', label_en: 'Student List', type: 'tab' },
     { key: 'tab_admission', label_bn: 'নতুন ভর্তি ফরম', label_en: 'Admission Form', type: 'tab' },
     { key: 'tab_roll_transfer', label_bn: 'রোল ও শ্রেণি স্থানান্তর', label_en: 'Roll & Class Transfer', type: 'tab' },
+    { key: 'action_bypass_requirements', label_bn: 'রিকোয়ারমেন্ট ছাড়া ভর্তি ও তথ্য সংরক্ষণের অনুমতি', label_en: 'Allow Bypassing Required Fields', type: 'action', defaultAllowed: false },
     { key: 'action_export_excel', label_bn: 'এক্সেল ডাউনলোড বাটন', label_en: 'Export Excel Button', type: 'action' },
     { key: 'action_print_profile', label_bn: 'প্রোফাইল প্রিন্ট বাটন', label_en: 'Print Profile Button', type: 'action' },
     { key: 'action_status_change', label_bn: 'ছাত্র অবস্থা পরিবর্তন (Active/Inactive)', label_en: 'Change Student Status', type: 'action' },

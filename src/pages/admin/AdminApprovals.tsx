@@ -23,7 +23,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  STUDENT_CORRECTION_FIELDS,
+  STAFF_CORRECTION_FIELDS,
+  dispatchRevisionNotification,
+  dispatchRejectionNotification,
+} from '@/lib/applicationRevisionService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -73,6 +79,8 @@ import {
   Printer,
   Download,
   Phone,
+  Send,
+  RotateCcw,
 } from 'lucide-react';
 import {
   buildStudentApplicationHTML,
@@ -88,6 +96,7 @@ const bnToEn = (str: any) => String(str || '').replace(/[০-৯]/g, d => String
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
+  needs_revision: 'bg-orange-500/10 text-orange-600 border-orange-500/30 font-semibold',
   approved: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
   active: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
   verified: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
@@ -181,7 +190,7 @@ const AdminApprovals = () => {
   } | null>(null);
   const [isDownloadingTrackerSlip, setIsDownloadingTrackerSlip] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'needs_revision' | 'approved' | 'rejected' | 'all'>('pending');
 
   // Maker-checker Sub Filters
   const [actionModuleFilter, setActionModuleFilter] = useState<string>('all');
@@ -193,6 +202,14 @@ const AdminApprovals = () => {
   const [rejectionModal, setRejectionModal] = useState<{ type: string; id: string; name?: string } | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [adminNote, setAdminNote] = useState('');
+
+  // Revision / Correction Modal States
+  const [revisionModal, setRevisionModal] = useState<{
+    type: 'student' | 'staff';
+    data: any;
+  } | null>(null);
+  const [selectedCorrectionFields, setSelectedCorrectionFields] = useState<string[]>([]);
+  const [correctionNotes, setCorrectionNotes] = useState('');
 
   // Student Approval Modal States (review, roll/reg assignment, approver)
   const [studentApprovalModal, setStudentApprovalModal] = useState<any | null>(null);
@@ -497,6 +514,8 @@ const AdminApprovals = () => {
 
       if (statusFilter === 'pending') {
         q = q.eq('status', 'pending');
+      } else if (statusFilter === 'needs_revision') {
+        q = q.eq('status', 'needs_revision');
       } else if (statusFilter === 'approved') {
         q = q.eq('status', 'active');
       } else if (statusFilter === 'rejected') {
@@ -541,6 +560,8 @@ const AdminApprovals = () => {
 
       if (statusFilter === 'pending') {
         q = q.eq('status', 'pending');
+      } else if (statusFilter === 'needs_revision') {
+        q = q.eq('status', 'needs_revision');
       } else if (statusFilter === 'approved') {
         q = q.eq('status', 'active');
       } else if (statusFilter === 'rejected') {
@@ -889,14 +910,45 @@ const AdminApprovals = () => {
       if (!targetId) return;
 
       if (status === 'rejected') {
+        const { data: stData } = await supabase
+          .from('students')
+          .select('admission_data, name_bn, name_en, phone, father_phone, student_id')
+          .eq('id', targetId)
+          .maybeSingle();
+
+        const currentAdm = (stData?.admission_data as any) || {};
+        const updatedAdm = {
+          ...currentAdm,
+          approval_status: 'rejected',
+          rejection_reason: reason || 'আবেদনটি এই মুহূর্তে গ্রহণ করা সম্ভব হয়নি',
+        };
+
         const { error } = await supabase
           .from('students')
           .update({
             approval_status: 'rejected',
             status: 'inactive',
+            rejection_reason: reason || null,
+            admission_data: updatedAdm,
           } as any)
           .eq('id', targetId);
         if (error) throw error;
+
+        if (stData) {
+          try {
+            await dispatchRejectionNotification({
+              type: 'student',
+              id: targetId,
+              name: stData.name_bn || stData.name_en,
+              phone: stData.phone || stData.father_phone,
+              appNo: stData.student_id,
+              rejectionReason: reason || 'আবেদনটি এই মুহূর্তে গ্রহণ করা সম্ভব হয়নি',
+              institutionName: institution?.name_bn || institution?.name,
+            });
+          } catch (notifErr) {
+            console.warn('[AdminApprovals] Rejection notification error:', notifErr);
+          }
+        }
         return;
       }
 
@@ -991,20 +1043,148 @@ const AdminApprovals = () => {
 
   // 2. Staff Application Approval / Rejection
   const staffMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: 'active' | 'rejected' }) => {
+    mutationFn: async ({ id, status, reason }: { id: string; status: 'active' | 'rejected' | 'needs_revision'; reason?: string }) => {
+      const { data: currentStaff } = await supabase
+        .from('staff')
+        .select('staff_data, name_bn, name_en, phone, mobile, email, staff_id')
+        .eq('id', id)
+        .maybeSingle();
+
+      const currentSd = (currentStaff?.staff_data as any) || {};
+      const updatedSd = {
+        ...currentSd,
+        status,
+        ...(reason ? { rejection_reason: reason } : {}),
+      };
+
+      const payload: any = {
+        status,
+        staff_data: updatedSd,
+      };
+      if (reason) {
+        payload.rejection_reason = reason;
+      }
+
       const { error } = await supabase
         .from('staff')
-        .update({ status } as any)
+        .update(payload)
         .eq('id', id);
       if (error) throw error;
+
+      if (status === 'rejected' && currentStaff) {
+        try {
+          await dispatchRejectionNotification({
+            type: 'staff',
+            id,
+            name: currentStaff.name_bn || currentStaff.name_en,
+            phone: currentStaff.phone || currentStaff.mobile,
+            email: currentStaff.email,
+            appNo: currentStaff.staff_id,
+            rejectionReason: reason || 'আবেদনটি এই মুহূর্তে গ্রহণ করা সম্ভব হয়নি',
+            institutionName: institution?.name_bn || institution?.name,
+          });
+        } catch (notifErr) {
+          console.warn('[AdminApprovals] Staff rejection notification error:', notifErr);
+        }
+      }
     },
-    onSuccess: (_, { status }) => {
+    onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['approvals-staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff'] });
-      toast.success(status === 'active' ? (bn ? '✅ শিক্ষক/স্টাফ অনুমোদিত হয়েছে' : '✅ Staff member approved') : (bn ? '❌ শিক্ষক/স্টাফ আবেদন বাতিল হয়েছে' : '❌ Staff application rejected'));
+      toast.success(vars.status === 'active' ? (bn ? '✅ শিক্ষক/স্টাফ অনুমোদিত হয়েছে' : '✅ Staff member approved') : (bn ? '❌ শিক্ষক/স্টাফ আবেদন বাতিল হয়েছে' : '❌ Staff application rejected'));
       setDetailModal(null);
+      setRejectionModal(null);
+      setRejectionReason('');
     },
     onError: (e: any) => toast.error(e.message || (bn ? 'সমস্যা হয়েছে' : 'Error occurred')),
+  });
+
+  // Revision Mutation (Send back for correction)
+  const revisionMutation = useMutation({
+    mutationFn: async ({ type, id, data, fields, notes }: { type: 'student' | 'staff'; id: string; data: any; fields: string[]; notes: string }) => {
+      const isStudent = type === 'student';
+      if (isStudent) {
+        const currentAdm = (data?.admission_data as any) || {};
+        const updatedAdm = {
+          ...currentAdm,
+          approval_status: 'needs_revision',
+          correction_fields: fields,
+          correction_notes: notes,
+        };
+        const { error } = await supabase
+          .from('students')
+          .update({
+            approval_status: 'needs_revision',
+            status: 'inactive',
+            correction_notes: notes,
+            correction_fields: fields,
+            admission_data: updatedAdm,
+          } as any)
+          .eq('id', id);
+        if (error) throw error;
+
+        await dispatchRevisionNotification({
+          type: 'student',
+          id,
+          name: data.name_bn || data.name_en,
+          phone: data.phone || data.father_phone,
+          email: data.email,
+          appNo: data.student_id,
+          correctionFields: fields,
+          correctionNotes: notes,
+          institutionName: institution?.name_bn || institution?.name,
+        });
+      } else {
+        const currentSd = (data?.staff_data as any) || {};
+        const updatedSd = {
+          ...currentSd,
+          status: 'needs_revision',
+          correction_fields: fields,
+          correction_notes: notes,
+        };
+        const { error } = await supabase
+          .from('staff')
+          .update({
+            status: 'needs_revision',
+            correction_notes: notes,
+            correction_fields: fields,
+            staff_data: updatedSd,
+          } as any)
+          .eq('id', id);
+        if (error) throw error;
+
+        await dispatchRevisionNotification({
+          type: 'staff',
+          id,
+          name: data.name_bn || data.name_en,
+          phone: data.phone || data.mobile,
+          email: data.email,
+          appNo: data.staff_id,
+          correctionFields: fields,
+          correctionNotes: notes,
+          institutionName: institution?.name_bn || institution?.name,
+        });
+      }
+    },
+    onSuccess: (_, vars) => {
+      if (vars.type === 'student') {
+        queryClient.invalidateQueries({ queryKey: ['approvals-students'] });
+        queryClient.invalidateQueries({ queryKey: ['students'] });
+        invalidateAllStudentQueries(queryClient);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['approvals-staff'] });
+        queryClient.invalidateQueries({ queryKey: ['staff'] });
+      }
+      toast.success(bn ? '✅ আবেদনটি সংশোধনের নির্দেশ সহ ফেরত পাঠানো হয়েছে।' : '✅ Application sent back for revision successfully.');
+      setRevisionModal(null);
+      setSelectedCorrectionFields([]);
+      setCorrectionNotes('');
+      setStudentApprovalModal(null);
+      setStaffApprovalModal(null);
+    },
+    onError: (e: any) => {
+      toast.error(e.message || (bn ? 'সমস্যা হয়েছে' : 'Error occurred'));
+    },
   });
 
   const openStaffApprovalModal = (s: any) => {
@@ -1558,7 +1738,7 @@ const AdminApprovals = () => {
             <span className="text-xs text-muted-foreground font-medium hidden sm:inline mr-1 flex items-center gap-1">
               <Filter className="w-3.5 h-3.5" /> {bn ? 'ফিল্টার:' : 'Filter:'}
             </span>
-            {(['pending', 'approved', 'rejected', 'all'] as const).map((st) => (
+            {(['pending', 'needs_revision', 'approved', 'rejected', 'all'] as const).map((st) => (
               <Button
                 key={st}
                 size="sm"
@@ -1568,6 +1748,8 @@ const AdminApprovals = () => {
               >
                 {st === 'pending'
                   ? bn ? 'অনুমোদন প্রযোজ্য' : 'Pending'
+                  : st === 'needs_revision'
+                  ? bn ? 'সংশোধন আবশ্যক' : 'Needs Revision'
                   : st === 'approved'
                   ? bn ? 'অনুমোদিত' : 'Approved'
                   : st === 'rejected'
@@ -1741,7 +1923,7 @@ const AdminApprovals = () => {
                               >
                                 <Eye className="w-4 h-4 text-primary" />
                               </Button>
-                              {s.approval_status === 'pending' && (
+                              {(s.approval_status === 'pending' || s.approval_status === 'needs_revision') && (
                                 <>
                                   <Button
                                     size="sm"
@@ -1750,6 +1932,16 @@ const AdminApprovals = () => {
                                   >
                                     <Check className="w-3.5 h-3.5" />
                                     {bn ? 'অনুমোদন' : 'Approve'}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 px-2.5 gap-1 text-xs border-amber-500/40 text-amber-600 hover:bg-amber-500/10 font-medium"
+                                    onClick={() => setRevisionModal({ type: 'student', data: s })}
+                                    title={bn ? 'ভুল সংশোধনের জন্য ফেরত পাঠান' : 'Send for Correction'}
+                                  >
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                    {bn ? 'সংশোধন' : 'Revision'}
                                   </Button>
                                   <Button
                                     size="sm"
@@ -1880,12 +2072,12 @@ const AdminApprovals = () => {
                                   variant="outline"
                                   className="h-8 px-2.5 gap-1 text-xs border-primary/30 text-primary hover:bg-primary/10"
                                   onClick={() => navigate(`/admin/staff/edit/${s.id}?from=approvals&mode=approve`)}
-                                  title={bn ? 'পূর্ণ ফর্ম পর্যালোচনা ও সংশোধন করুন' : 'Review & Edit Full Form'}
+                                  title={bn ? 'পূর্ণ ফর্ম পর্যালোচনা ও অফিসিয়াল অংশ পূরণ' : 'Review & Edit Full Form'}
                                 >
                                   <Edit className="w-3.5 h-3.5" />
-                                  {bn ? 'কারেকশন' : 'Edit'}
+                                  {bn ? 'পূর্ণ ফর্ম রিভিউ' : 'Full Review'}
                                 </Button>
-                                {s.status === 'pending' && (
+                                {(s.status === 'pending' || s.status === 'needs_revision') && (
                                   <>
                                     <Button
                                       size="sm"
@@ -1897,9 +2089,19 @@ const AdminApprovals = () => {
                                     </Button>
                                     <Button
                                       size="sm"
+                                      variant="outline"
+                                      className="h-8 px-2.5 gap-1 text-xs border-amber-500/40 text-amber-600 hover:bg-amber-500/10 font-medium"
+                                      onClick={() => setRevisionModal({ type: 'staff', data: s })}
+                                      title={bn ? 'ভুল সংশোধনের জন্য ফেরত পাঠান' : 'Send for Correction'}
+                                    >
+                                      <RotateCcw className="w-3.5 h-3.5" />
+                                      {bn ? 'সংশোধন' : 'Revision'}
+                                    </Button>
+                                    <Button
+                                      size="sm"
                                       variant="destructive"
                                       className="h-8 px-2.5 gap-1"
-                                      onClick={() => staffMutation.mutate({ id: s.id, status: 'rejected' })}
+                                      onClick={() => setRejectionModal({ type: 'staff', id: s.id, name: s.name_bn || s.name_en || 'শিক্ষক/স্টাফ' })}
                                       disabled={staffMutation.isPending}
                                     >
                                       <X className="w-3.5 h-3.5" />
@@ -3178,14 +3380,46 @@ const AdminApprovals = () => {
               </div>
             )}
 
-            <DialogFooter className="px-6 py-3 border-t bg-muted/20 flex flex-row items-center justify-between sm:justify-between gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setStaffApprovalModal(null)}
-              >
-                {bn ? 'বন্ধ করুন' : 'Cancel'}
-              </Button>
+            <DialogFooter className="px-6 py-3 border-t bg-muted/20 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setStaffApprovalModal(null)}
+                >
+                  {bn ? 'বন্ধ করুন' : 'Cancel'}
+                </Button>
+                {staffApprovalModal?.status !== 'needs_revision' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 border-amber-500/40 text-amber-600 hover:bg-amber-500/10 font-medium"
+                    onClick={() => {
+                      const s = staffApprovalModal;
+                      setStaffApprovalModal(null);
+                      setRevisionModal({ type: 'staff', data: s });
+                    }}
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    {bn ? 'সংশোধনের নির্দেশ দিন' : 'Send for Revision'}
+                  </Button>
+                )}
+                {staffApprovalModal?.status !== 'rejected' && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1.5 font-medium"
+                    onClick={() => {
+                      const s = staffApprovalModal;
+                      setStaffApprovalModal(null);
+                      setRejectionModal({ type: 'staff', id: s.id, name: s.name_bn || s.name_en || 'শিক্ষক/স্টাফ' });
+                    }}
+                  >
+                    <X className="w-4 h-4" />
+                    {bn ? 'আবেদন বাতিল' : 'Reject'}
+                  </Button>
+                )}
+              </div>
               <Button
                 size="sm"
                 className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold px-6 shadow-md shadow-emerald-600/20"
@@ -3807,6 +4041,21 @@ const AdminApprovals = () => {
                 >
                   {bn ? 'বন্ধ করুন' : 'Close'}
                 </Button>
+                {studentApprovalModal?.approval_status !== 'needs_revision' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 border-amber-500/40 text-amber-600 hover:bg-amber-500/10 font-medium"
+                    onClick={() => {
+                      const s = studentApprovalModal;
+                      setStudentApprovalModal(null);
+                      setRevisionModal({ type: 'student', data: s });
+                    }}
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    {bn ? 'সংশোধনের নির্দেশ দিন' : 'Send for Revision'}
+                  </Button>
+                )}
                 {studentApprovalModal?.approval_status !== 'rejected' && (
                   <Button
                     variant="destructive"
@@ -4241,10 +4490,99 @@ const AdminApprovals = () => {
                   } else if (rejectionModal.type === 'student') {
                     approveStudentWithDetailsMutation.mutate({ studentId: rejectionModal.id, status: 'rejected', reason: rejectionReason });
                     setRejectionModal(null);
+                  } else if (rejectionModal.type === 'staff') {
+                    staffMutation.mutate({ id: rejectionModal.id, status: 'rejected', reason: rejectionReason });
+                    setRejectionModal(null);
                   }
                 }}
               >
                 {bn ? 'নিশ্চিত প্রত্যাখ্যান' : 'Confirm Reject'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* ══════════════ REVISION / CORRECTION MODAL ══════════════ */}
+        <Dialog open={!!revisionModal} onOpenChange={(open) => { if (!open) setRevisionModal(null); }}>
+          <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-amber-600">
+                <AlertCircle className="w-5 h-5" />
+                {bn ? 'আবেদনে তথ্য সংশোধনের নির্দেশ দিন' : 'Send Application Back for Revision'}
+              </DialogTitle>
+              <DialogDescription>
+                {bn
+                  ? `"${revisionModal?.data?.name_bn || revisionModal?.data?.name_en || 'আবেদনকারী'}"-এর ফর্মে যে যে ফিল্ডে ভুল রয়েছে তা নির্বাচন করুন এবং প্রয়োজনীয় নির্দেশনা লিখে পাঠান:`
+                  : `Select the faulty fields and provide instructions for the applicant to revise:`}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div>
+                <Label className="text-xs font-bold mb-2 block text-muted-foreground">
+                  {bn ? 'যে যে ফিল্ডে ভুল রয়েছে (টিক দিন):' : 'Select fields requiring correction:'}
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-muted/30 p-3 rounded-xl border max-h-56 overflow-y-auto">
+                  {(revisionModal?.type === 'student' ? STUDENT_CORRECTION_FIELDS : STAFF_CORRECTION_FIELDS).map((field) => {
+                    const isChecked = selectedCorrectionFields.includes(field.key);
+                    return (
+                      <label
+                        key={field.key}
+                        className={`flex items-start gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
+                          isChecked ? 'bg-amber-500/10 border-amber-500/40 text-foreground font-medium' : 'bg-background hover:bg-muted/50 border-border text-muted-foreground'
+                        }`}
+                      >
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedCorrectionFields(prev => [...prev, field.key]);
+                            } else {
+                              setSelectedCorrectionFields(prev => prev.filter(k => k !== field.key));
+                            }
+                          }}
+                          className="mt-0.5"
+                        />
+                        <span>{bn ? field.label_bn : field.label_en}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-muted-foreground">
+                  {bn ? 'অ্যাডমিন নির্দেশনা বা সংশোধনী বার্তা (আবেদনকারীকে প্রদর্শিত হবে):' : 'Revision Instructions (Visible to applicant):'}
+                </Label>
+                <Textarea
+                  placeholder={bn ? 'যেমন: আপনার ছবি স্পষ্ট নয় এবং জন্ম নিবন্ধন সনদের সাথে তথ্যের অমিল রয়েছে। অনুগ্রহ করে সঠিক তথ্য প্রদান করুন।' : 'E.g., Your photo is blurred and information does not match certificate. Please update.'}
+                  value={correctionNotes}
+                  onChange={(e) => setCorrectionNotes(e.target.value)}
+                  className="min-h-[100px] text-sm"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setRevisionModal(null)}>
+                {bn ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold gap-2"
+                disabled={revisionMutation.isPending || (!correctionNotes.trim() && selectedCorrectionFields.length === 0)}
+                onClick={() => {
+                  if (!revisionModal) return;
+                  revisionMutation.mutate({
+                    type: revisionModal.type,
+                    id: revisionModal.data.id,
+                    data: revisionModal.data,
+                    fields: selectedCorrectionFields,
+                    notes: correctionNotes.trim(),
+                  });
+                }}
+              >
+                {revisionMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {bn ? 'সংশোধনের নির্দেশ পাঠান' : 'Send Revision Request'}
               </Button>
             </DialogFooter>
           </DialogContent>

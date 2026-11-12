@@ -34,6 +34,9 @@ import { Copy } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { formatAddress as formatAddressBn } from '@/lib/banglaAddressHelper';
+import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
+import { isAdminRole } from '@/lib/roles';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
@@ -45,11 +48,48 @@ const AdmissionPage = () => {
   const { fields: configFields, isLoaded, isFieldActive, getField, getFieldsBySection, getCustomFields, sections } = useAdmissionFormConfig();
 
   const { guidelines: guidelinesData } = useAdmissionGuidelines();
+  const { role } = useAuth();
+  const { isFeatureAllowed } = usePermissions();
+
+  // Admin or permitted user can bypass required validation fields
+  const canBypassRequirements = useMemo(() => {
+    if (isAdminRole(role)) return true;
+    return !!isFeatureAllowed('/admin/students', 'action_bypass_requirements');
+  }, [role, isFeatureAllowed]);
 
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlClassId = searchParams.get('class');
   const urlMode = searchParams.get('mode') || searchParams.get('tab');
+  const urlAppId = searchParams.get('id');
+
+  // Load existing student application if editing or revising
+  const { data: existingStudentApp } = useQuery({
+    queryKey: ['student-admission-revision', urlAppId],
+    queryFn: async () => {
+      if (!urlAppId) return null;
+      let q = supabase.from('students').select('*');
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(urlAppId)) {
+        q = q.eq('id', urlAppId);
+      } else {
+        q = q.or(`student_id.eq.${urlAppId},admission_data->>application_no.eq.${urlAppId}`);
+      }
+      const { data, error } = await q.maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!urlAppId,
+  });
+
+  const isStudentRevisionMode = existingStudentApp?.approval_status === 'needs_revision';
+  const studentCorrectionFields: string[] = useMemo(() => {
+    return existingStudentApp?.correction_fields || (existingStudentApp?.admission_data as any)?.correction_fields || [];
+  }, [existingStudentApp]);
+
+  const isFieldMarked = useCallback((key: string) => {
+    if (!isStudentRevisionMode) return false;
+    return studentCorrectionFields.includes(key);
+  }, [isStudentRevisionMode, studentCorrectionFields]);
 
   const isGuidelineRoute = useMemo(() => {
     return (
@@ -152,6 +192,48 @@ const AdmissionPage = () => {
   const [birthRegError, setBirthRegError] = useState('');
 
   const [selectedDivisionId, setSelectedDivisionId] = useState('');
+
+  // Pre-fill existing student application data for revision
+  useEffect(() => {
+    if (!existingStudentApp) return;
+    const adm = (existingStudentApp.admission_data as any) || {};
+    if (existingStudentApp.division_id) setSelectedDivisionId(existingStudentApp.division_id);
+    setAdmissionFlowStep('form');
+
+    setForm(prev => ({
+      ...prev,
+      first_name: existingStudentApp.name_bn || adm.first_name || '',
+      last_name: existingStudentApp.name_en || adm.last_name || '',
+      admission_class: existingStudentApp.class_id || adm.admission_class || '',
+      father_name: existingStudentApp.father_name || adm.father_name || '',
+      father_phone: existingStudentApp.father_phone || existingStudentApp.phone || '',
+      father_nid: existingStudentApp.father_nid || adm.father_nid || '',
+      father_occupation: existingStudentApp.father_occupation || adm.father_occupation || '',
+      mother_name: existingStudentApp.mother_name || adm.mother_name || '',
+      mother_phone: existingStudentApp.mother_phone || '',
+      mother_nid: existingStudentApp.mother_nid || adm.mother_nid || '',
+      mother_occupation: existingStudentApp.mother_occupation || adm.mother_occupation || '',
+      guardian_type: adm.guardian_type || (existingStudentApp.guardian_phone ? 'other' : 'father'),
+      guardian_name: adm.guardian_name || '',
+      guardian_phone: existingStudentApp.guardian_phone || adm.guardian_phone || '',
+      guardian_relation: adm.guardian_relation || '',
+      guardian_nid: adm.guardian_nid || '',
+      gender: existingStudentApp.gender || 'male',
+      date_of_birth: existingStudentApp.date_of_birth || '',
+      birth_reg_no: existingStudentApp.birth_reg_no || '',
+      religion: existingStudentApp.religion || 'islam',
+      residence_type: existingStudentApp.residence_type || 'non-resident',
+      student_type: existingStudentApp.student_type || 'new',
+      student_category: existingStudentApp.student_category || '',
+      previous_institute: existingStudentApp.previous_institute || '',
+      previous_class: existingStudentApp.previous_class || '',
+      admission_session: existingStudentApp.session_id || existingStudentApp.admission_session || '',
+      photo_url: existingStudentApp.photo_url || '',
+    }));
+
+    if (adm.address_permanent) setPermanentAddr(adm.address_permanent);
+    if (adm.address_present) setPresentAddr(adm.address_present);
+  }, [existingStudentApp]);
 
   const { data: divisions = [] } = useQuery({
     queryKey: ['divisions-active'],
@@ -469,9 +551,11 @@ const AdmissionPage = () => {
       const finalSessionId = selectedSession?.id || (form.admission_session && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(form.admission_session) ? form.admission_session : null);
       const finalSessionYear = form.session_year || selectedSession?.name || form.admission_session || null;
       const studentId = appNo;
+      const rawNameBn = form.first_name?.trim();
+      const fallbackNameBn = rawNameBn || form.last_name?.trim() || (bn ? 'নামবিহীন শিক্ষার্থী' : 'Unnamed Student');
 
       const payload = {
-        name_bn: form.first_name.trim(),
+        name_bn: fallbackNameBn,
         name_en: form.last_name.trim() || null,
         roll_number: form.roll_number?.trim() || null,
         father_name: form.father_name.trim() || null,
@@ -507,12 +591,27 @@ const AdmissionPage = () => {
         student_id: studentId,
         approval_status: 'pending',
       };
+
+      if (existingStudentApp?.id) {
+        payload.student_id = existingStudentApp.student_id || payload.student_id;
+        (payload as any).resubmitted_at = new Date().toISOString();
+        (payload as any).correction_notes = null;
+        payload.approval_status = 'pending';
+        const { error } = await supabase.from('students').update(payload as any).eq('id', existingStudentApp.id);
+        if (error) throw error;
+        return payload;
+      }
+
       const { error } = await supabase.from('students').insert(payload as any);
       if (error) throw error;
       return payload;
     },
     onSuccess: (payload) => {
-      toast.success(bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে! অনুমোদনের অপেক্ষায়।' : 'Admission submitted! Pending approval.');
+      toast.success(
+        existingStudentApp?.id
+          ? (bn ? 'ভর্তি আবেদন সংশোধন সম্পন্ন ও পুনরায় জমা হয়েছে!' : 'Admission revised & resubmitted successfully!')
+          : (bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে! অনুমোদনের অপেক্ষায়।' : 'Admission submitted! Pending approval.')
+      );
       setSubmittedData({
         ...payload,
         application_no: payload.student_id,
@@ -524,45 +623,47 @@ const AdmissionPage = () => {
   const handleSubmit = () => {
     const errors: Record<string, string> = {};
 
-    if (!selectedDivisionId && isFormFieldVisible('admission_class')) {
-      errors['admission_division'] = bn ? 'বিভাগ নির্বাচন আবশ্যক' : 'Division is required';
-    }
+    if (!canBypassRequirements) {
+      if (!selectedDivisionId && isFormFieldVisible('admission_class')) {
+        errors['admission_division'] = bn ? 'বিভাগ নির্বাচন আবশ্যক' : 'Division is required';
+      }
 
-    configFields.forEach(f => {
-      const key = f.default_value;
-      if (!key || !f.is_active || !f.is_required) return;
-      const val = form[key];
-      if (key === 'address_permanent' || key === 'address_present' || key === 'roll_number' || key === 'registration_no' || key === 'student_type' || key === 'student_category' || key === 'is_free' || key === 'admission_division') return;
-      if (key === 'guardian_name' || key === 'guardian_relation' || key === 'guardian_phone' || key === 'guardian_nid') {
-        if (form.guardian_type !== 'other') return;
-      }
-      if (!val || (typeof val === 'string' && !val.trim())) {
-        errors[key] = bn ? `${f.label_bn} আবশ্যক` : `${f.label} is required`;
-      }
-    });
+      configFields.forEach(f => {
+        const key = f.default_value;
+        if (!key || !f.is_active || !f.is_required) return;
+        const val = form[key];
+        if (key === 'address_permanent' || key === 'address_present' || key === 'roll_number' || key === 'registration_no' || key === 'student_type' || key === 'student_category' || key === 'is_free' || key === 'admission_division') return;
+        if (key === 'guardian_name' || key === 'guardian_relation' || key === 'guardian_phone' || key === 'guardian_nid') {
+          if (form.guardian_type !== 'other') return;
+        }
+        if (!val || (typeof val === 'string' && !val.trim())) {
+          errors[key] = bn ? `${f.label_bn} আবশ্যক` : `${f.label} is required`;
+        }
+      });
 
-    if (isFieldActive('birth_reg_no') && form.birth_reg_no && form.birth_reg_no.length !== 17) {
-      errors['birth_reg_no'] = bn ? 'জন্ম নিবন্ধন ১৭ ডিজিট হতে হবে' : 'Birth Reg must be 17 digits';
-    }
-    if (isFieldActive('father_nid') && isFieldActive('mother_nid')) {
-      if (!form.father_nid && !form.mother_nid) {
-        const nidMsg = bn ? 'পিতা বা মাতার যে কোন একজনের NID আবশ্যক' : 'At least one parent NID is required';
-        errors['father_nid'] = nidMsg;
-        errors['mother_nid'] = nidMsg;
+      if (isFieldActive('birth_reg_no') && form.birth_reg_no && form.birth_reg_no.length !== 17) {
+        errors['birth_reg_no'] = bn ? 'জন্ম নিবন্ধন ১৭ ডিজিট হতে হবে' : 'Birth Reg must be 17 digits';
       }
-    }
-    if (isFieldActive('father_nid') && form.father_nid && form.father_nid.length !== 10 && form.father_nid.length !== 17) {
-      errors['father_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
-    }
-    if (isFieldActive('mother_nid') && form.mother_nid && form.mother_nid.length !== 10 && form.mother_nid.length !== 17) {
-      errors['mother_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
-    }
-    if (isFieldActive('guardian_type') && !form.guardian_type) {
-      errors['guardian_type'] = bn ? 'অভিভাবক নির্বাচন করুন' : 'Select guardian';
-    }
-    if (form.guardian_type === 'other' && isFieldActive('guardian_nid')) {
-      if (form.guardian_nid && form.guardian_nid.length !== 10 && form.guardian_nid.length !== 17) {
-        errors['guardian_nid'] = bn ? 'NID ১০/১৭ ডিজিট' : 'NID 10/17 digits required';
+      if (isFieldActive('father_nid') && isFieldActive('mother_nid')) {
+        if (!form.father_nid && !form.mother_nid) {
+          const nidMsg = bn ? 'পিতা বা মাতার যে কোন একজনের NID আবশ্যক' : 'At least one parent NID is required';
+          errors['father_nid'] = nidMsg;
+          errors['mother_nid'] = nidMsg;
+        }
+      }
+      if (isFieldActive('father_nid') && form.father_nid && form.father_nid.length !== 10 && form.father_nid.length !== 17) {
+        errors['father_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
+      }
+      if (isFieldActive('mother_nid') && form.mother_nid && form.mother_nid.length !== 10 && form.mother_nid.length !== 17) {
+        errors['mother_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
+      }
+      if (isFieldActive('guardian_type') && !form.guardian_type) {
+        errors['guardian_type'] = bn ? 'অভিভাবক নির্বাচন করুন' : 'Select guardian';
+      }
+      if (form.guardian_type === 'other' && isFieldActive('guardian_nid')) {
+        if (form.guardian_nid && form.guardian_nid.length !== 10 && form.guardian_nid.length !== 17) {
+          errors['guardian_nid'] = bn ? 'NID ১০/১৭ ডিজিট' : 'NID 10/17 digits required';
+        }
       }
     }
 
@@ -601,7 +702,7 @@ const AdmissionPage = () => {
   // ===== RENDER SYSTEM FIELD =====
   const renderSystemField = (fieldKey: string, config: AdmissionFieldConfig) => {
     const label = bn ? config.label_bn : config.label;
-    const required = config.is_required;
+    const required = canBypassRequirements ? false : config.is_required;
     const reqStar = required ? <span className="text-destructive">*</span> : null;
     const hasError = !!fieldErrors[fieldKey];
     const errorBorder = hasError ? 'border-destructive ring-1 ring-destructive/30' : '';
@@ -1371,6 +1472,7 @@ const AdmissionPage = () => {
   };
 
   const validateCurrentStep = (stepKey: string): boolean => {
+    if (canBypassRequirements) return true;
     const errors: Record<string, string> = {};
 
     if (stepKey === 'student_details') {
@@ -2247,6 +2349,25 @@ const AdmissionPage = () => {
             {/* Step 3: Admission Form (When form step is active or submitted) */}
             {(admissionFlowStep === 'form' || submitted) && (
               <div className="border border-slate-200/90 dark:border-border rounded-3xl shadow-xl overflow-hidden bg-white dark:bg-card">
+                {/* Revision Alert Banner if student admission was sent back for correction */}
+                {isStudentRevisionMode && !submitted && (
+                  <div className="mx-6 mt-4 p-4 rounded-2xl border-2 border-orange-500/40 bg-orange-500/10 shadow-sm space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-bold text-orange-700 dark:text-orange-300">
+                      <AlertCircle className="w-5 h-5 shrink-0" />
+                      <span>{bn ? 'ভর্তি আবেদনে তথ্য সংশোধনের নির্দেশ (অ্যাডমিন বার্তা):' : 'Revision Instructions from Admin:'}</span>
+                    </div>
+                    {existingStudentApp?.correction_notes && (
+                      <p className="text-sm text-foreground bg-background/80 p-3 rounded-xl border leading-relaxed">
+                        {existingStudentApp.correction_notes}
+                      </p>
+                    )}
+                    <p className="text-xs text-orange-800 dark:text-orange-200 font-medium">
+                      {bn
+                        ? '⚠️ আপনার আবেদনের যেসকল ফিল্ডে ভুল রয়েছে তা সংশোধন করে নিচে "আবেদন পুনরায় জমা দিন" বাটনে ক্লিক করুন।'
+                        : '⚠️ Highlighted fields require correction. Please update them and resubmit.'}
+                    </p>
+                  </div>
+                )}
                 {/* Selected Division & Class Floating Pill */}
                 {!submitted && (
                   <div className="px-6 pt-4 pb-0">

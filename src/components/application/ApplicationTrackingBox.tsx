@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
@@ -264,9 +265,12 @@ export const ApplicationTrackingBox: React.FC<ApplicationTrackingBoxProps> = ({
         <div className="space-y-4 animate-in fade-in duration-300">
           {result.type === 'student' ? (() => {
             const s = result.data;
-            const isApproved = s.status === 'active' || s.approval_status === 'approved';
-            const isRejected = s.approval_status === 'rejected' || s.status === 'inactive';
-            const isPending = !isApproved && !isRejected;
+            const isNeedsRevision = s.approval_status === 'needs_revision' || s.status === 'needs_revision';
+            const isApproved = (s.status === 'active' || s.approval_status === 'approved') && !isNeedsRevision;
+            const isRejected = (s.approval_status === 'rejected' || (s.status === 'inactive' && !isNeedsRevision && s.approval_status !== 'pending'));
+            const isPending = !isApproved && !isRejected && !isNeedsRevision;
+            const rejectionReason = s.rejection_reason || (s.admission_data as any)?.rejection_reason;
+            const correctionNotes = s.correction_notes || (s.admission_data as any)?.correction_notes;
             const appNo = s.application_no || s.student_id || s.id?.slice(0, 8);
             const className = s.classes?.name_bn || s.classes?.name || s.admission_class || '—';
             const divName = s.divisions?.name_bn || s.divisions?.name || '—';
@@ -277,6 +281,8 @@ export const ApplicationTrackingBox: React.FC<ApplicationTrackingBoxProps> = ({
                   className={`px-5 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b ${
                     isApproved
                       ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-200'
+                      : isNeedsRevision
+                      ? 'bg-orange-500/10 border-orange-500/20 text-orange-800 dark:text-orange-200'
                       : isRejected
                       ? 'bg-rose-500/10 border-rose-500/20 text-rose-800 dark:text-rose-200'
                       : 'bg-amber-500/10 border-amber-500/20 text-amber-800 dark:text-amber-200'
@@ -285,6 +291,8 @@ export const ApplicationTrackingBox: React.FC<ApplicationTrackingBoxProps> = ({
                   <div className="flex items-center gap-2.5">
                     {isApproved ? (
                       <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                    ) : isNeedsRevision ? (
+                      <RefreshCw className="w-5 h-5 text-orange-600 shrink-0" />
                     ) : isRejected ? (
                       <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
                     ) : (
@@ -294,6 +302,8 @@ export const ApplicationTrackingBox: React.FC<ApplicationTrackingBoxProps> = ({
                       <h3 className="font-bold text-sm">
                         {isApproved
                           ? (bn ? 'ভর্তি আবেদন অনুমোদিত হয়েছে' : 'Admission Approved')
+                          : isNeedsRevision
+                          ? (bn ? 'আবেদনে তথ্য সংশোধনের নির্দেশ দেওয়া হয়েছে' : 'Correction Required')
                           : isRejected
                           ? (bn ? 'আবেদন গৃহীত হয়নি (বাতিল)' : 'Application Rejected')
                           : (bn ? 'আবেদন পর্যালোচনায় রয়েছে (অনুমোদনের অপেক্ষায়)' : 'Application Under Review')}
@@ -301,6 +311,8 @@ export const ApplicationTrackingBox: React.FC<ApplicationTrackingBoxProps> = ({
                       <p className="text-[11px] opacity-85">
                         {isApproved
                           ? (bn ? 'অভিনন্দন! আপনার ভর্তি আবেদন অনুমোদিত হয়েছে।' : 'Congratulations! Your admission has been approved.')
+                          : isNeedsRevision
+                          ? (bn ? 'কর্তৃপক্ষ আপনার আবেদনে কিছু অসঙ্গতি পেয়েছেন। অনুগ্রহ করে নির্দেশনা অনুযায়ী সংশোধন করে পুনরায় জমা দিন।' : 'Please review instructions, update required fields and resubmit.')
                           : isRejected
                           ? (bn ? 'দুঃখিত, আপনার আবেদনটি বাতিল করা হয়েছে।' : 'Sorry, your application was rejected.')
                           : (bn ? 'আপনার আবেদনটি সংশ্লিষ্ট কর্তৃপক্ষ যাচাই-বাছাই করছেন।' : 'Your application is awaiting administrative review.')}
@@ -309,14 +321,42 @@ export const ApplicationTrackingBox: React.FC<ApplicationTrackingBoxProps> = ({
                   </div>
                   <Badge
                     className={`text-xs px-3 py-0.5 font-semibold shrink-0 ${
-                      isApproved ? 'bg-emerald-600 text-white' : isRejected ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'
+                      isApproved ? 'bg-emerald-600 text-white' : isNeedsRevision ? 'bg-orange-600 text-white' : isRejected ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'
                     }`}
                   >
-                    {isApproved ? (bn ? 'অনুমোদিত' : 'Approved') : isRejected ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমাণ' : 'Pending')}
+                    {isApproved ? (bn ? 'অনুমোদিত' : 'Approved') : isNeedsRevision ? (bn ? 'সংশোধন আবশ্যক' : 'Needs Revision') : isRejected ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমাণ' : 'Pending')}
                   </Badge>
                 </div>
 
                 <CardContent className="p-5 space-y-4">
+                  {isNeedsRevision && (
+                    <div className="p-3.5 rounded-xl border border-orange-500/30 bg-orange-500/10 space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-bold text-orange-700 dark:text-orange-300">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{bn ? 'অ্যাডমিন সংশোধনী নির্দেশনা:' : 'Admin Revision Instructions:'}</span>
+                      </div>
+                      {correctionNotes && (
+                        <p className="text-xs text-foreground bg-background/80 p-2.5 rounded-lg border">
+                          {correctionNotes}
+                        </p>
+                      )}
+                      <div className="pt-1">
+                        <Button asChild size="sm" className="btn-primary-gradient text-xs font-bold gap-1.5 h-8">
+                          <Link to={`/admission?mode=apply&id=${encodeURIComponent(appNo)}`}>
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            {bn ? 'আবেদন সংশোধন করে পুনরায় জমা দিন' : 'Revise and Resubmit Application'}
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {isRejected && rejectionReason && (
+                    <div className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs text-rose-800 dark:text-rose-200">
+                      <span className="font-bold block mb-1">{bn ? 'প্রত্যাখ্যানের কারণ:' : 'Rejection Reason:'}</span>
+                      <p className="bg-background/80 p-2 rounded-lg border">{rejectionReason}</p>
+                    </div>
+                  )}
                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-xl border bg-muted/20">
                     {s.photo_url ? (
                       <img src={s.photo_url} alt="" className="w-16 h-16 rounded-xl object-cover border shadow-sm shrink-0" />
@@ -376,9 +416,12 @@ export const ApplicationTrackingBox: React.FC<ApplicationTrackingBoxProps> = ({
             );
           })() : (() => {
             const st = result.data;
+            const isNeedsRevision = st.status === 'needs_revision';
             const isApproved = st.status === 'active';
-            const isRejected = st.status === 'inactive' || st.status === 'rejected';
-            const isPending = !isApproved && !isRejected;
+            const isRejected = st.status === 'rejected' || (st.status === 'inactive' && !isNeedsRevision);
+            const isPending = !isApproved && !isRejected && !isNeedsRevision;
+            const rejectionReason = st.rejection_reason || (st.staff_data as any)?.rejection_reason;
+            const correctionNotes = st.correction_notes || (st.staff_data as any)?.correction_notes;
             const appNo = (st.staff_data as any)?.application_no || st.staff_id || st.id?.slice(0, 8);
             const desig = (st.staff_data as any)?.designation || st.designation || '—';
 
@@ -388,6 +431,8 @@ export const ApplicationTrackingBox: React.FC<ApplicationTrackingBoxProps> = ({
                   className={`px-5 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b ${
                     isApproved
                       ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-200'
+                      : isNeedsRevision
+                      ? 'bg-orange-500/10 border-orange-500/20 text-orange-800 dark:text-orange-200'
                       : isRejected
                       ? 'bg-rose-500/10 border-rose-500/20 text-rose-800 dark:text-rose-200'
                       : 'bg-amber-500/10 border-amber-500/20 text-amber-800 dark:text-amber-200'
@@ -396,6 +441,8 @@ export const ApplicationTrackingBox: React.FC<ApplicationTrackingBoxProps> = ({
                   <div className="flex items-center gap-2.5">
                     {isApproved ? (
                       <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                    ) : isNeedsRevision ? (
+                      <RefreshCw className="w-5 h-5 text-orange-600 shrink-0" />
                     ) : isRejected ? (
                       <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
                     ) : (
@@ -405,6 +452,8 @@ export const ApplicationTrackingBox: React.FC<ApplicationTrackingBoxProps> = ({
                       <h3 className="font-bold text-sm">
                         {isApproved
                           ? (bn ? 'নিয়োগ আবেদন অনুমোদিত হয়েছে' : 'Staff Application Approved')
+                          : isNeedsRevision
+                          ? (bn ? 'আবেদনে তথ্য সংশোধনের নির্দেশ দেওয়া হয়েছে' : 'Correction Required')
                           : isRejected
                           ? (bn ? 'আবেদন গৃহীত হয়নি (বাতিল)' : 'Application Rejected')
                           : (bn ? 'আবেদন পর্যালোচনায় রয়েছে (অনুমোদনের অপেক্ষায়)' : 'Application Under Review')}
@@ -412,6 +461,8 @@ export const ApplicationTrackingBox: React.FC<ApplicationTrackingBoxProps> = ({
                       <p className="text-[11px] opacity-85">
                         {isApproved
                           ? (bn ? 'অভিনন্দন! আপনার স্টাফ আবেদন অনুমোদিত হয়েছে।' : 'Congratulations! Your staff application has been approved.')
+                          : isNeedsRevision
+                          ? (bn ? 'কর্তৃপক্ষ আপনার আবেদনে কিছু অসঙ্গতি পেয়েছেন। অনুগ্রহ করে নির্দেশনা অনুযায়ী সংশোধন করে পুনরায় জমা দিন।' : 'Please review instructions, update required fields and resubmit.')
                           : isRejected
                           ? (bn ? 'দুঃখিত, আপনার আবেদনটি বাতিল করা হয়েছে।' : 'Sorry, your application was rejected.')
                           : (bn ? 'আপনার আবেদনটি সংশ্লিষ্ট কর্তৃপক্ষ যাচাই-বাছাই করছেন।' : 'Your application is awaiting administrative review.')}
@@ -420,14 +471,42 @@ export const ApplicationTrackingBox: React.FC<ApplicationTrackingBoxProps> = ({
                   </div>
                   <Badge
                     className={`text-xs px-3 py-0.5 font-semibold shrink-0 ${
-                      isApproved ? 'bg-emerald-600 text-white' : isRejected ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'
+                      isApproved ? 'bg-emerald-600 text-white' : isNeedsRevision ? 'bg-orange-600 text-white' : isRejected ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'
                     }`}
                   >
-                    {isApproved ? (bn ? 'অনুমোদিত' : 'Approved') : isRejected ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমাণ' : 'Pending')}
+                    {isApproved ? (bn ? 'অনুমোদিত' : 'Approved') : isNeedsRevision ? (bn ? 'সংশোধন আবশ্যক' : 'Needs Revision') : isRejected ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমাণ' : 'Pending')}
                   </Badge>
                 </div>
 
                 <CardContent className="p-5 space-y-4">
+                  {isNeedsRevision && (
+                    <div className="p-3.5 rounded-xl border border-orange-500/30 bg-orange-500/10 space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-bold text-orange-700 dark:text-orange-300">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{bn ? 'অ্যাডমিন সংশোধনী নির্দেশনা:' : 'Admin Revision Instructions:'}</span>
+                      </div>
+                      {correctionNotes && (
+                        <p className="text-xs text-foreground bg-background/80 p-2.5 rounded-lg border">
+                          {correctionNotes}
+                        </p>
+                      )}
+                      <div className="pt-1">
+                        <Button asChild size="sm" className="btn-primary-gradient text-xs font-bold gap-1.5 h-8">
+                          <Link to={`/staff-apply?id=${encodeURIComponent(appNo)}`}>
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            {bn ? 'আবেদন সংশোধন করে পুনরায় জমা দিন' : 'Revise and Resubmit Application'}
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {isRejected && rejectionReason && (
+                    <div className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs text-rose-800 dark:text-rose-200">
+                      <span className="font-bold block mb-1">{bn ? 'প্রত্যাখ্যানের কারণ:' : 'Rejection Reason:'}</span>
+                      <p className="bg-background/80 p-2 rounded-lg border">{rejectionReason}</p>
+                    </div>
+                  )}
                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-xl border bg-muted/20">
                     {st.photo_url ? (
                       <img src={st.photo_url} alt="" className="w-16 h-16 rounded-xl object-cover border shadow-sm shrink-0" />

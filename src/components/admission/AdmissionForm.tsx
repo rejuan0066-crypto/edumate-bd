@@ -25,6 +25,9 @@ import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 import { formatAddress as formatAddressBn } from '@/lib/banglaAddressHelper';
 import { getStaffCategoryKey } from '@/lib/staffOrderHelper';
 import { useVerifierDepartments } from '@/hooks/useSignatoryAuthorities';
+import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
+import { isAdminRole } from '@/lib/roles';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
@@ -45,6 +48,14 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
   const { validate, validateAll } = useValidationRules('student');
   const { data: apiVerifyEnabled } = useApiVerificationEnabled();
   const { fields: configFields, isLoaded, isFieldActive, getField, getFieldsBySection, getCustomFields, sections } = useAdmissionFormConfig();
+  const { role } = useAuth();
+  const { isFeatureAllowed } = usePermissions();
+
+  // Admin or user with explicit permission can bypass required fields
+  const canBypassRequirements = useMemo(() => {
+    if (isAdminRole(role)) return true;
+    return !!isFeatureAllowed('/admin/students', 'action_bypass_requirements');
+  }, [role, isFeatureAllowed]);
 
   // Form state
   const [currentStep, setCurrentStep] = useState(0);
@@ -807,8 +818,11 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
     const studentId = studentRegNo || (isEditMode ? (editStudent.student_id ? bnToEn(editStudent.student_id) : null) : null);
     const studentRoll = form.roll_number?.trim() ? bnToEn(form.roll_number.trim()) : null;
 
+    const rawNameBn = form.first_name?.trim();
+    const fallbackNameBn = rawNameBn || form.last_name?.trim() || (editStudent?.name_bn ? String(editStudent.name_bn) : null) || (bn ? 'নামবিহীন শিক্ষার্থী' : 'Unnamed Student');
+
     return {
-      name_bn: form.first_name.trim(),
+      name_bn: fallbackNameBn,
       name_en: form.last_name.trim() || null,
       roll_number: studentRoll,
       father_name: form.father_name.trim() || null,
@@ -935,31 +949,33 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
     console.log('[AdmissionForm] selectedDivisionId:', selectedDivisionId);
     console.log('[AdmissionForm] configFields count:', configFields.length, 'isLoaded:', isLoaded);
 
-    // Division & Class selection is required in both add and edit mode
-    if (!selectedDivisionId) {
-      errors['admission_class'] = bn ? 'বিভাগ নির্বাচন আবশ্যক' : 'Division selection is required';
-    } else if (!form.admission_class) {
-      errors['admission_class'] = bn ? 'শ্রেণী নির্বাচন আবশ্যক' : 'Class selection is required';
-    }
+    if (!canBypassRequirements) {
+      // Division & Class selection is required in both add and edit mode when requirements are enforced
+      if (!selectedDivisionId) {
+        errors['admission_class'] = bn ? 'বিভাগ নির্বাচন আবশ্যক' : 'Division selection is required';
+      } else if (!form.admission_class) {
+        errors['admission_class'] = bn ? 'শ্রেণী নির্বাচন আবশ্যক' : 'Class selection is required';
+      }
 
-    // Admin panel form: minimal validation to allow flexible adding and updating
-    if (!form.first_name?.trim()) {
-      errors['first_name'] = bn ? 'শিক্ষার্থীর নাম আবশ্যক' : 'Student name is required';
-    }
+      // Minimal validation when requirements are enforced
+      if (!form.first_name?.trim()) {
+        errors['first_name'] = bn ? 'শিক্ষার্থীর নাম আবশ্যক' : 'Student name is required';
+      }
 
-    // Special format validations: only trigger if value is actually provided
-    if (form.birth_reg_no && form.birth_reg_no.length !== 17) {
-      errors['birth_reg_no'] = bn ? 'জন্ম নিবন্ধন ১৭ ডিজিট হতে হবে' : 'Birth Reg must be 17 digits';
-    }
-    if (form.father_nid && form.father_nid.length !== 10 && form.father_nid.length !== 17) {
-      errors['father_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
-    }
-    if (form.mother_nid && form.mother_nid.length !== 10 && form.mother_nid.length !== 17) {
-      errors['mother_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
-    }
-    if (form.guardian_type === 'other' && form.guardian_nid) {
-      if (form.guardian_nid.length !== 10 && form.guardian_nid.length !== 17) {
-        errors['guardian_nid'] = bn ? 'NID ১০/১৭ ডিজিট' : 'NID 10/17 digits required';
+      // Special format validations: only trigger if value is actually provided
+      if (form.birth_reg_no && form.birth_reg_no.length !== 17) {
+        errors['birth_reg_no'] = bn ? 'জন্ম নিবন্ধন ১৭ ডিজিট হতে হবে' : 'Birth Reg must be 17 digits';
+      }
+      if (form.father_nid && form.father_nid.length !== 10 && form.father_nid.length !== 17) {
+        errors['father_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
+      }
+      if (form.mother_nid && form.mother_nid.length !== 10 && form.mother_nid.length !== 17) {
+        errors['mother_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
+      }
+      if (form.guardian_type === 'other' && form.guardian_nid) {
+        if (form.guardian_nid.length !== 10 && form.guardian_nid.length !== 17) {
+          errors['guardian_nid'] = bn ? 'NID ১০/১৭ ডিজিট' : 'NID 10/17 digits required';
+        }
       }
     }
     console.log('[AdmissionForm] final errors:', errors);
@@ -997,7 +1013,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
   };
 
   const validateCurrentStep = (stepKey: string): boolean => {
-    if (isEditMode) return true;
+    if (isEditMode || canBypassRequirements) return true;
     const errors: Record<string, string> = {};
 
     if (stepKey === 'student_details') {
@@ -1102,7 +1118,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
   // ===== RENDER A SYSTEM FIELD BY field_key =====
   const renderSystemField = (fieldKey: string, config: AdmissionFieldConfig) => {
     const label = bn ? config.label_bn : config.label;
-    const required = config.is_required;
+    const required = canBypassRequirements ? false : config.is_required;
     const reqStar = required ? <span className="text-destructive">*</span> : null;
     const hasError = !!fieldErrors[fieldKey];
     const errorBorder = hasError ? 'border-destructive ring-1 ring-destructive/30' : '';

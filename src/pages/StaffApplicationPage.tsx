@@ -78,6 +78,34 @@ const StaffApplicationPage = () => {
   const [searchParams] = useSearchParams();
   const urlMode = searchParams.get('mode');
   const urlDesignation = searchParams.get('designation');
+  const urlAppId = searchParams.get('id');
+
+  const { data: existingApp, isLoading: loadingExistingApp } = useQuery({
+    queryKey: ['staff-application-revision', urlAppId],
+    queryFn: async () => {
+      if (!urlAppId) return null;
+      let q = supabase.from('staff').select('*');
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(urlAppId)) {
+        q = q.eq('id', urlAppId);
+      } else {
+        q = q.or(`staff_id.eq.${urlAppId},staff_data->>application_no.eq.${urlAppId}`);
+      }
+      const { data, error } = await q.maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!urlAppId,
+  });
+
+  const isRevisionMode = existingApp?.status === 'needs_revision';
+  const correctionFields: string[] = useMemo(() => {
+    return existingApp?.correction_fields || (existingApp?.staff_data as any)?.correction_fields || [];
+  }, [existingApp]);
+
+  const isFieldMarked = (key: string) => {
+    if (!isRevisionMode) return false;
+    return correctionFields.includes(key);
+  };
 
   const [pageMode, setPageMode] = useState<'apply' | 'track'>('apply');
   const [designation, setDesignation] = useState('');
@@ -262,6 +290,62 @@ const StaffApplicationPage = () => {
   const [customDocType, setCustomDocType] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Pre-fill existing data for revision mode
+  useEffect(() => {
+    if (!existingApp) return;
+    const sd = (existingApp.staff_data as any) || {};
+    if (existingApp.designation) {
+      setDesignation(existingApp.designation);
+      setDesignationConfirmed(true);
+    }
+    setFirstName(sd.first_name || existingApp.name_bn || '');
+    setLastName(sd.last_name || existingApp.name_en || '');
+    setMobile(existingApp.phone?.replace(/^\+880/, '') || existingApp.mobile?.replace(/^\+880/, '') || '');
+    setStaffEmail(existingApp.email || '');
+    setPhotoUrl(existingApp.photo_url || null);
+    setDob(existingApp.date_of_birth || sd.dob || '');
+    setMaritalStatus(existingApp.marital_status || sd.marital_status || '');
+    setReligion(existingApp.religion || sd.religion || 'islam');
+    setNid(existingApp.nid || sd.nid || '');
+    setEducation(existingApp.education || sd.education || '');
+    setExperience(existingApp.experience || sd.experience || '');
+    setPrevInstitute(existingApp.previous_institute || sd.previous_institute || '');
+    if (sd.permanent_address) setPermanentAddr(sd.permanent_address);
+    if (sd.present_address) setPresentAddr(sd.present_address);
+    if (sd.parents?.father) {
+      setFatherName(sd.parents.father.name || '');
+      setFatherMobile(sd.parents.father.mobile?.replace(/^\+880/, '') || '');
+      setFatherNid(sd.parents.father.nid || '');
+      setFatherOccupation(sd.parents.father.occupation || '');
+    }
+    if (sd.parents?.mother) {
+      setMotherName(sd.parents.mother.name || '');
+      setMotherMobile(sd.parents.mother.mobile?.replace(/^\+880/, '') || '');
+      setMotherNid(sd.parents.mother.nid || '');
+      setMotherOccupation(sd.parents.mother.occupation || '');
+    }
+    if (sd.identifier) {
+      setIdentifierName(sd.identifier.name || '');
+      setIdentifierRelation(sd.identifier.relation || '');
+      setIdentifierMobile(sd.identifier.mobile?.replace(/^\+880/, '') || '');
+      setIdentifierNid(sd.identifier.nid || '');
+      if (sd.identifier.address) setIdentifierAddr(sd.identifier.address);
+    }
+    if (sd.relatives_identifier) {
+      setRelIdName(sd.relatives_identifier.name || '');
+      setRelIdRelation(sd.relatives_identifier.relation || '');
+      setRelIdMobile(sd.relatives_identifier.mobile?.replace(/^\+880/, '') || '');
+      setRelIdNid(sd.relatives_identifier.nid || '');
+      if (sd.relatives_identifier.address) setRelIdAddr(sd.relatives_identifier.address);
+    }
+    if (Array.isArray(sd.documents)) {
+      setDocuments(sd.documents);
+    }
+    if (sd.signature_url) {
+      setSignatureUrl(sd.signature_url);
+    }
+  }, [existingApp]);
+
   const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -397,7 +481,11 @@ const StaffApplicationPage = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const appNo = await generateStaffApplicationNo();
+      const isUpdating = !!existingApp?.id;
+      const appNo = isUpdating
+        ? (existingApp.staff_id || (existingApp.staff_data as any)?.application_no || await generateStaffApplicationNo())
+        : await generateStaffApplicationNo();
+
       const { name_bn: resolvedBn, name_en: resolvedEn } = resolveStaffFormNames(firstName, lastName);
       const fullName = bn ? (resolvedBn || resolvedEn || '') : (resolvedEn || resolvedBn || '');
       const desigObj = designationsList.find(d => d.id === designation);
@@ -410,6 +498,7 @@ const StaffApplicationPage = () => {
       const cleanRelId = cleanPhoneNumber(relIdMobile, relIdMobileCode);
 
       const staffData = {
+        ...((existingApp?.staff_data as any) || {}),
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         mobile_code: cleanStaff ? cleanStaff.code : mobileCode,
@@ -464,6 +553,18 @@ const StaffApplicationPage = () => {
         status: 'pending',
       };
 
+      if (isUpdating) {
+        record.resubmitted_at = new Date().toISOString();
+        const { data, error } = await supabase
+          .from('staff')
+          .update(record)
+          .eq('id', existingApp.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data || record;
+      }
+
       const { data, error } = await supabase.from('staff').insert(record).select().single();
       if (error) throw error;
       return data || record;
@@ -471,7 +572,11 @@ const StaffApplicationPage = () => {
     onSuccess: (data) => {
       setSubmittedStaffData(data);
       setSubmitted(true);
-      toast.success(bn ? 'আবেদন সফলভাবে জমা হয়েছে! আবেদন নম্বর সংরক্ষণ করুন।' : 'Application submitted successfully! Please save your application number.');
+      toast.success(
+        existingApp?.id
+          ? (bn ? 'আবেদন সফলভাবে পুনরায় জমা হয়েছে! আবেদন নম্বর অপরিবর্তিত রয়েছে।' : 'Application revised & resubmitted successfully!')
+          : (bn ? 'আবেদন সফলভাবে জমা হয়েছে! আবেদন নম্বর সংরক্ষণ করুন।' : 'Application submitted successfully! Please save your application number.')
+      );
     },
     onError: (e: any) => toast.error(e.message || 'Error submitting application'),
   });
@@ -1498,6 +1603,26 @@ const StaffApplicationPage = () => {
             {/* Step 2: Main Staff Form (Visible when designation is confirmed) */}
             {designationConfirmed && (
               <div className="border border-slate-200/90 dark:border-border rounded-3xl shadow-xl overflow-hidden bg-white dark:bg-card">
+                
+                {/* Revision Alert Banner if application was sent back for correction */}
+                {isRevisionMode && (
+                  <div className="mx-6 mt-4 p-4 rounded-2xl border-2 border-orange-500/40 bg-orange-500/10 shadow-sm space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-bold text-orange-700 dark:text-orange-300">
+                      <AlertCircle className="w-5 h-5 shrink-0" />
+                      <span>{bn ? 'সংশোধনী নির্দেশনা (অ্যাডমিন কর্তৃক চিহ্নিত):' : 'Revision Instructions from Admin:'}</span>
+                    </div>
+                    {existingApp?.correction_notes && (
+                      <p className="text-sm text-foreground bg-background/80 p-3 rounded-xl border leading-relaxed">
+                        {existingApp.correction_notes}
+                      </p>
+                    )}
+                    <p className="text-xs text-orange-800 dark:text-orange-200 font-medium">
+                      {bn
+                        ? '⚠️ আপনার আবেদনের যেসকল ফিল্ডে ভুল রয়েছে তা চিহ্নিত করা হয়েছে। তথ্য সংশোধন করে পুনরায় জমা দিন।'
+                        : '⚠️ Highlighted fields require correction. Please update them and resubmit.'}
+                    </p>
+                  </div>
+                )}
                 
                 {/* Selected Designation Floating Banner */}
                 <div className="px-6 pt-4 pb-0">

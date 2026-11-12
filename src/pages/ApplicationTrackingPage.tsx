@@ -286,9 +286,13 @@ const ApplicationTrackingPage: React.FC = () => {
             {/* Student Result */}
             {result.type === 'student' && (() => {
               const s = result.data;
-              const isApproved = s.status === 'active' || s.approval_status === 'approved';
-              const isRejected = s.approval_status === 'rejected' || s.status === 'inactive';
-              const isPending = !isApproved && !isRejected;
+              const isNeedsRevision = s.status === 'needs_revision' || s.approval_status === 'needs_revision' || (s.admission_data as any)?.status === 'needs_revision';
+              const isApproved = !isNeedsRevision && (s.status === 'active' || s.approval_status === 'approved');
+              const isRejected = !isNeedsRevision && (s.approval_status === 'rejected' || s.status === 'inactive' || s.status === 'rejected');
+              const isPending = !isApproved && !isRejected && !isNeedsRevision;
+
+              const rejectionReason = (s.rejection_reason as string) || (s.admission_data as any)?.rejection_reason || '';
+              const correctionNotes = (s.correction_notes as string) || (s.admission_data as any)?.correction_notes || '';
 
               const appNo = s.application_no || s.student_id || s.id?.slice(0, 8);
               const className = s.classes?.name_bn || s.classes?.name || s.admission_class || '—';
@@ -300,15 +304,19 @@ const ApplicationTrackingPage: React.FC = () => {
                   <div
                     className={`px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b ${
                       isApproved
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-800'
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+                        : isNeedsRevision
+                        ? 'bg-orange-500/10 border-orange-500/20 text-orange-800 dark:text-orange-300'
                         : isRejected
-                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-800'
-                        : 'bg-amber-500/10 border-amber-500/20 text-amber-800'
+                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-800 dark:text-rose-300'
+                        : 'bg-amber-500/10 border-amber-500/20 text-amber-800 dark:text-amber-300'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       {isApproved ? (
                         <CheckCircle className="w-6 h-6 text-emerald-600 shrink-0" />
+                      ) : isNeedsRevision ? (
+                        <RefreshCw className="w-6 h-6 text-orange-600 shrink-0" />
                       ) : isRejected ? (
                         <AlertCircle className="w-6 h-6 text-rose-600 shrink-0" />
                       ) : (
@@ -318,6 +326,8 @@ const ApplicationTrackingPage: React.FC = () => {
                         <h3 className="font-bold text-base">
                           {isApproved
                             ? (bn ? 'ভর্তি আবেদন অনুমোদিত হয়েছে' : 'Admission Approved')
+                            : isNeedsRevision
+                            ? (bn ? 'আবেদনে তথ্য সংশোধনের নির্দেশ রয়েছে' : 'Needs Correction / Revision')
                             : isRejected
                             ? (bn ? 'আবেদন গৃহীত হয়নি (বাতিল)' : 'Application Rejected')
                             : (bn ? 'আবেদন পর্যালোচনায় রয়েছে (অনুমোদনের অপেক্ষায়)' : 'Application Under Review')}
@@ -325,6 +335,8 @@ const ApplicationTrackingPage: React.FC = () => {
                         <p className="text-xs opacity-90">
                           {isApproved
                             ? (bn ? 'অভিনন্দন! আপনার ভর্তি আবেদন অনুমোদিত হয়েছে এবং রোল নম্বর বরাদ্দ হয়েছে।' : 'Congratulations! Your admission has been approved.')
+                            : isNeedsRevision
+                            ? (bn ? 'কর্তৃপক্ষ আপনার আবেদনের কিছু তথ্য সংশোধনের জন্য পাঠিয়েছেন। নিচের নির্দেশনা দেখে এখনই সংশোধন করুন।' : 'Admin requested corrections. Please review the notes below and update.')
                             : isRejected
                             ? (bn ? 'দুঃখিত, আপনার আবেদনটি এই মুহূর্তে অনুমোদন করা সম্ভব হয়নি।' : 'Sorry, your application was rejected.')
                             : (bn ? 'আপনার আবেদনটি সংশ্লিষ্ট কর্তৃপক্ষ যাচাই-বাছাই করছেন।' : 'Your application is awaiting administrative review.')}
@@ -336,16 +348,52 @@ const ApplicationTrackingPage: React.FC = () => {
                       className={`text-xs px-3 py-1 font-semibold ${
                         isApproved
                           ? 'bg-emerald-600 text-white'
+                          : isNeedsRevision
+                          ? 'bg-orange-600 text-white'
                           : isRejected
                           ? 'bg-rose-600 text-white'
                           : 'bg-amber-600 text-white'
                       }`}
                     >
-                      {isApproved ? (bn ? 'অনুমোদিত' : 'Approved') : isRejected ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমাণ' : 'Pending')}
+                      {isApproved
+                        ? (bn ? 'অনুমোদিত' : 'Approved')
+                        : isNeedsRevision
+                        ? (bn ? 'সংশোধন প্রয়োজন' : 'Needs Revision')
+                        : isRejected
+                        ? (bn ? 'বাতিল' : 'Rejected')
+                        : (bn ? 'অপেক্ষমাণ' : 'Pending')}
                     </Badge>
                   </div>
 
                   <CardContent className="p-6 space-y-6">
+                    {/* Revision Alert Box */}
+                    {isNeedsRevision && (
+                      <div className="p-4 rounded-xl border-2 border-orange-500/40 bg-orange-500/10 space-y-3">
+                        <div className="flex items-center gap-2 text-sm font-bold text-orange-700 dark:text-orange-300">
+                          <AlertCircle className="w-5 h-5 shrink-0" />
+                          <span>{bn ? 'কর্তৃপক্ষের সংশোধনের নির্দেশনা:' : 'Admin Revision Instructions:'}</span>
+                        </div>
+                        {correctionNotes && (
+                          <p className="text-sm text-foreground bg-background/90 p-3 rounded-lg border font-medium leading-relaxed">
+                            {correctionNotes}
+                          </p>
+                        )}
+                        <Button asChild className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold h-10 gap-2">
+                          <Link to={`/admission?mode=apply&id=${encodeURIComponent(appNo)}`}>
+                            <RefreshCw className="w-4 h-4" />
+                            {bn ? 'এখানে ক্লিক করে আবেদন সংশোধন করুন' : 'Click Here to Edit & Resubmit'}
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Rejection Reason Box */}
+                    {isRejected && rejectionReason && (
+                      <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/5 space-y-1">
+                        <span className="text-xs font-bold text-rose-600 block">{bn ? 'বাতিলের কারণ:' : 'Reason for Rejection:'}</span>
+                        <p className="text-sm text-rose-800 dark:text-rose-200 font-medium leading-relaxed">{rejectionReason}</p>
+                      </div>
+                    )}
                     {/* Candidate Overview */}
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-xl border bg-muted/30">
                       {s.photo_url ? (
@@ -440,9 +488,13 @@ const ApplicationTrackingPage: React.FC = () => {
             {/* Staff Result */}
             {result.type === 'staff' && (() => {
               const s = result.data;
-              const isApproved = s.status === 'active';
-              const isRejected = s.status === 'rejected';
-              const isPending = !isApproved && !isRejected;
+              const isNeedsRevision = s.status === 'needs_revision' || (s.staff_data as any)?.status === 'needs_revision';
+              const isApproved = !isNeedsRevision && s.status === 'active';
+              const isRejected = !isNeedsRevision && (s.status === 'rejected' || s.status === 'inactive');
+              const isPending = !isApproved && !isRejected && !isNeedsRevision;
+
+              const rejectionReason = (s.rejection_reason as string) || (s.staff_data as any)?.rejection_reason || '';
+              const correctionNotes = (s.correction_notes as string) || (s.staff_data as any)?.correction_notes || '';
 
               const appNo = (s.staff_data as any)?.application_no || s.staff_id || s.id?.slice(0, 8);
               const displayName = s.name_bn || s.name_en || '—';
@@ -453,15 +505,19 @@ const ApplicationTrackingPage: React.FC = () => {
                   <div
                     className={`px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b ${
                       isApproved
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-800'
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+                        : isNeedsRevision
+                        ? 'bg-orange-500/10 border-orange-500/20 text-orange-800 dark:text-orange-300'
                         : isRejected
-                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-800'
-                        : 'bg-amber-500/10 border-amber-500/20 text-amber-800'
+                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-800 dark:text-rose-300'
+                        : 'bg-amber-500/10 border-amber-500/20 text-amber-800 dark:text-amber-300'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       {isApproved ? (
                         <CheckCircle className="w-6 h-6 text-emerald-600 shrink-0" />
+                      ) : isNeedsRevision ? (
+                        <RefreshCw className="w-6 h-6 text-orange-600 shrink-0" />
                       ) : isRejected ? (
                         <AlertCircle className="w-6 h-6 text-rose-600 shrink-0" />
                       ) : (
@@ -471,6 +527,8 @@ const ApplicationTrackingPage: React.FC = () => {
                         <h3 className="font-bold text-base">
                           {isApproved
                             ? (bn ? 'নিয়োগ আবেদন অনুমোদিত হয়েছে' : 'Employment Approved')
+                            : isNeedsRevision
+                            ? (bn ? 'আবেদনে তথ্য সংশোধনের নির্দেশ রয়েছে' : 'Needs Correction / Revision')
                             : isRejected
                             ? (bn ? 'আবেদন গৃহীত হয়নি (বাতিল)' : 'Application Rejected')
                             : (bn ? 'আবেদন পর্যালোচনায় রয়েছে (অনুমোদনের অপেক্ষায়)' : 'Application Under Review')}
@@ -478,6 +536,8 @@ const ApplicationTrackingPage: React.FC = () => {
                         <p className="text-xs opacity-90">
                           {isApproved
                             ? (bn ? 'অভিনন্দন! আপনার আবেদনটি অনুমোদিত হয়েছে এবং স্টাফ তালিকাভুক্ত করা হয়েছে।' : 'Congratulations! Your staff recruitment has been approved.')
+                            : isNeedsRevision
+                            ? (bn ? 'কর্তৃপক্ষ আপনার আবেদনের কিছু তথ্য সংশোধনের জন্য পাঠিয়েছেন। নিচের নির্দেশনা দেখে এখনই সংশোধন করুন।' : 'Admin requested corrections. Please review the notes below and update.')
                             : isRejected
                             ? (bn ? 'দুঃখিত, এই মুহূর্তে আপনার আবেদনটি গৃহীত হয়নি।' : 'Your application was rejected.')
                             : (bn ? 'নিয়োগ কমিটি আপনার আবেদনটি যাচাই-বাছাই করছেন।' : 'Recruitment committee is reviewing your submission.')}
@@ -489,16 +549,52 @@ const ApplicationTrackingPage: React.FC = () => {
                       className={`text-xs px-3 py-1 font-semibold ${
                         isApproved
                           ? 'bg-emerald-600 text-white'
+                          : isNeedsRevision
+                          ? 'bg-orange-600 text-white'
                           : isRejected
                           ? 'bg-rose-600 text-white'
                           : 'bg-amber-600 text-white'
                       }`}
                     >
-                      {isApproved ? (bn ? 'অনুমোদিত' : 'Approved') : isRejected ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমাণ' : 'Pending')}
+                      {isApproved
+                        ? (bn ? 'অনুমোদিত' : 'Approved')
+                        : isNeedsRevision
+                        ? (bn ? 'সংশোধন প্রয়োজন' : 'Needs Revision')
+                        : isRejected
+                        ? (bn ? 'বাতিল' : 'Rejected')
+                        : (bn ? 'অপেক্ষমাণ' : 'Pending')}
                     </Badge>
                   </div>
 
                   <CardContent className="p-6 space-y-6">
+                    {/* Revision Alert Box */}
+                    {isNeedsRevision && (
+                      <div className="p-4 rounded-xl border-2 border-orange-500/40 bg-orange-500/10 space-y-3">
+                        <div className="flex items-center gap-2 text-sm font-bold text-orange-700 dark:text-orange-300">
+                          <AlertCircle className="w-5 h-5 shrink-0" />
+                          <span>{bn ? 'কর্তৃপক্ষের সংশোধনের নির্দেশনা:' : 'Admin Revision Instructions:'}</span>
+                        </div>
+                        {correctionNotes && (
+                          <p className="text-sm text-foreground bg-background/90 p-3 rounded-lg border font-medium leading-relaxed">
+                            {correctionNotes}
+                          </p>
+                        )}
+                        <Button asChild className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold h-10 gap-2">
+                          <Link to={`/staff-apply?id=${encodeURIComponent(appNo)}`}>
+                            <RefreshCw className="w-4 h-4" />
+                            {bn ? 'এখানে ক্লিক করে স্টাফ আবেদন সংশোধন করুন' : 'Click Here to Edit & Resubmit'}
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Rejection Reason Box */}
+                    {isRejected && rejectionReason && (
+                      <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/5 space-y-1">
+                        <span className="text-xs font-bold text-rose-600 block">{bn ? 'বাতিলের কারণ:' : 'Reason for Rejection:'}</span>
+                        <p className="text-sm text-rose-800 dark:text-rose-200 font-medium leading-relaxed">{rejectionReason}</p>
+                      </div>
+                    )}
                     {/* Candidate Overview */}
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-xl border bg-muted/30">
                       {s.photo_url ? (
