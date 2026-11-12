@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { isAdminRole } from '@/lib/roles';
+import { getFeatureDefaultAllowed } from '@/lib/pageFeatures';
 
 export interface Permission {
   menu_path: string;
@@ -397,7 +398,8 @@ export const usePermissions = () => {
     const userMap = user?.id ? hiddenFeatures[`user_${user.id}`] : undefined;
     const roleMap = role ? hiddenFeatures[role] : undefined;
 
-    if (!userMap && !roleMap) return true; // Default allowed unless restricted
+    const defaultAllowed = getFeatureDefaultAllowed(menuPath, featureKey);
+    if (!userMap && !roleMap) return defaultAllowed;
 
     const fullKey = `${menuPath}:${featureKey}`;
 
@@ -426,7 +428,7 @@ export const usePermissions = () => {
       return !!roleMap[fullKey];
     }
 
-    return true;
+    return defaultAllowed;
   }, [role, user, canView, hiddenFeatures]);
 
   // Check ONLY individual user_permissions (ignoring role_permissions)

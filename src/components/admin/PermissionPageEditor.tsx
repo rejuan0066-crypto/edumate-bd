@@ -30,7 +30,7 @@ import {
   Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { KNOWN_PAGE_FEATURES, SubFeatureItem } from '@/lib/pageFeatures';
+import { KNOWN_PAGE_FEATURES, SubFeatureItem, getFeatureDefaultAllowed } from '@/lib/pageFeatures';
 import { getPagePermissionProfile, PagePermissionProfile } from '@/lib/permissionProfiles';
 import { broadcastPermissionChange } from '@/hooks/usePermissions';
 import type { MenuPathItem } from '@/lib/menuPathList';
@@ -228,8 +228,9 @@ export const PermissionPageEditor = ({
 
   const toggleSubFeature = (path: string, featKey: string) => {
     const key = `${path}:${featKey}`;
+    const defaultAllowed = getFeatureDefaultAllowed(path, featKey);
     setSubFeaturesMap((prev) => {
-      const curr = prev[key] !== false; // default true
+      const curr = prev[key] !== undefined ? !!prev[key] : defaultAllowed;
       const nextVal = !curr;
       const nextMap = { ...prev, [key]: nextVal };
       // If toggling off the entire tab, also clear sub-actions
@@ -942,7 +943,11 @@ export const PermissionPageEditor = ({
                             setSubFeaturesMap((prev) => {
                               const next = { ...prev };
                               subFeatures.forEach((f) => {
-                                delete next[`${mp.path}:${f.key}`];
+                                if (f.defaultAllowed === false) {
+                                  next[`${mp.path}:${f.key}`] = true;
+                                } else {
+                                  delete next[`${mp.path}:${f.key}`];
+                                }
                               });
                               return next;
                             });
@@ -973,7 +978,8 @@ export const PermissionPageEditor = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                       {subFeatures.map((feat) => {
                         const featKey = `${mp.path}:${feat.key}`;
-                        const isAllowed = subFeaturesMap[featKey] !== false; // default true unless explicitly toggled off
+                        const defaultAllowed = feat.defaultAllowed !== false;
+                        const isAllowed = subFeaturesMap[featKey] !== undefined ? !!subFeaturesMap[featKey] : defaultAllowed;
                         const isTab = feat.type === 'tab';
 
                         return (
@@ -1012,7 +1018,9 @@ export const PermissionPageEditor = ({
                                   : 'text-rose-600 bg-rose-500/10 border-rose-500/30'
                               }`}
                             >
-                              {isAllowed ? (bn ? 'দৃশ্যমান' : 'Visible') : (bn ? '১০০% হাইড' : 'Hidden')}
+                              {feat.defaultAllowed === false
+                                ? (isAllowed ? (bn ? 'অনুমোদিত' : 'Allowed') : (bn ? 'নিষ্ক্রিয়' : 'Restricted'))
+                                : (isAllowed ? (bn ? 'দৃশ্যমান' : 'Visible') : (bn ? '১০০% হাইড' : 'Hidden'))}
                             </Badge>
                           </div>
                         );

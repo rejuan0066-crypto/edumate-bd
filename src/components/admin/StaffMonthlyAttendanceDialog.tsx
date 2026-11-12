@@ -20,6 +20,7 @@ import { isAdminRole } from '@/lib/roles';
 import { useApprovalWorkflow } from '@/hooks/useApprovalWorkflow';
 import { todayIsoInTz } from '@/lib/timezone';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const STATUS_META: Record<string, {
   bnLabel: string; enLabel: string; icon: any;
@@ -51,6 +52,9 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const { data: instInfo } = useInstitutionInfo();
   const { user, role } = useAuth();
   const isAdmin = isAdminRole(role);
+  const { isFeatureAllowed: isStaffAttFeature } = usePagePermissions('/admin/staff-attendance');
+  const { isFeatureAllowed: isAttFeature } = usePagePermissions('/admin/attendance');
+  const canMarkPastDate = isAdmin || isStaffAttFeature('action_past_date_attendance') || isAttFeature('action_past_date_attendance');
   const { submitForApproval } = useApprovalWorkflow();
   const { tz: appTz } = useAppTimezone();
 
@@ -305,9 +309,9 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
 
     setSavingKey(dateKey);
 
-    // Past date restriction: Staff users cannot edit past attendance directly without approval
+    // Past date restriction: Users without past-date permission cannot edit past attendance directly without approval
     const isPastDate = dateKey < todayIsoInTz(appTz);
-    if (isPastDate && !isAdmin) {
+    if (isPastDate && !canMarkPastDate) {
       try {
         const staffName = staff?.name_bn || staff?.name_en || 'স্টাফ';
         const statusLabel = newStatus ? (STATUS_META[newStatus]?.bnLabel || newStatus) : (bn ? 'মুছে ফেলা' : 'Cleared');
@@ -598,7 +602,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         </div>
 
         <div className="px-4 py-3 space-y-3">
-          {!isAdmin && (
+          {!canMarkPastDate && (
             <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-200 text-xs">
               <Clock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
               <span>

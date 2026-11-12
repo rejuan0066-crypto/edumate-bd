@@ -13,6 +13,8 @@ export interface SubFeatureItem {
   description_en?: string;
   /** Granular capabilities customizable inside this tab (View, Add, Edit, Delete, Print, Approval) */
   supportsActions?: boolean;
+  /** Default state when no explicit permission entry exists (defaults to true) */
+  defaultAllowed?: boolean;
 }
 
 export interface PageFeatureGroup {
@@ -113,8 +115,19 @@ export const KNOWN_PAGE_FEATURES: Record<string, SubFeatureItem[]> = {
     { key: 'tab_staff_att', label_bn: 'শিক্ষক/স্টাফ হাজিরা', label_en: 'Staff Attendance', type: 'tab' },
     { key: 'tab_att_reports', label_bn: 'মাসিক হাজিরা রিপোর্ট', label_en: 'Monthly Attendance Report', type: 'tab' },
     { key: 'tab_att_settings', label_bn: 'হাজিরা শিফট সেটিংস', label_en: 'Attendance Shift Settings', type: 'tab' },
+    { key: 'action_past_date_attendance', label_bn: 'বিগত তারিখের উপস্থিতি দেওয়ার অনুমতি', label_en: 'Allow Past Date Attendance', type: 'action', defaultAllowed: false },
     { key: 'action_send_sms', label_bn: 'অনুপস্থিতির SMS পাঠানোর বাটন', label_en: 'Send Absence SMS Button', type: 'action' },
     { key: 'action_export_att', label_bn: 'হাজিরা এক্সপোর্ট বাটন', label_en: 'Export Attendance Button', type: 'action' },
+  ],
+
+  // স্টাফ উপস্থিতি (/admin/staff-attendance)
+  '/admin/staff-attendance': [
+    { key: 'action_past_date_attendance', label_bn: 'বিগত তারিখের উপস্থিতি দেওয়ার অনুমতি', label_en: 'Allow Past Date Attendance', type: 'action', defaultAllowed: false },
+  ],
+
+  // ছাত্র উপস্থিতি (/admin/student-attendance)
+  '/admin/student-attendance': [
+    { key: 'action_past_date_attendance', label_bn: 'বিগত তারিখের উপস্থিতি দেওয়ার অনুমতি', label_en: 'Allow Past Date Attendance', type: 'action', defaultAllowed: false },
   ],
 
   // প্রশ্নপত্র (/admin/question-papers)
@@ -247,4 +260,11 @@ export const KNOWN_PAGE_FEATURES: Record<string, SubFeatureItem[]> = {
     { key: 'action_bulk_approve', label_bn: 'একসাথে সকল অনুমোদন বাটন', label_en: 'Bulk Approve Button', type: 'action' },
     { key: 'action_reject', label_bn: 'বাতিল/রিজেক্ট বাটন', label_en: 'Reject Button', type: 'action' },
   ],
+};
+
+export const getFeatureDefaultAllowed = (menuPath: string, featureKey: string): boolean => {
+  const feats = KNOWN_PAGE_FEATURES[menuPath];
+  if (!feats) return true;
+  const found = feats.find((f) => f.key === featureKey);
+  return found?.defaultAllowed ?? true;
 };

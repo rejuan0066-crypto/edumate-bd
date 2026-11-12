@@ -160,6 +160,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const [entityType, setEntityType] = useState<'student' | 'staff'>(resolvedTab);
 
   const targetMenuPath = entityType === 'staff' ? '/admin/staff-attendance' : '/admin/student-attendance';
+  const canMarkPastDate = isAdmin || (
+    entityType === 'staff'
+      ? (permsB.isFeatureAllowed('action_past_date_attendance') || (!forcedTab && permsA.isFeatureAllowed('action_past_date_attendance')))
+      : (permsC.isFeatureAllowed('action_past_date_attendance') || (!forcedTab && permsA.isFeatureAllowed('action_past_date_attendance')))
+  );
   const requiresResetApproval = useMemo(() => {
     if (isAdmin) return false;
     return Boolean(needsApproval(targetMenuPath, 'delete') || needsApproval('/admin/attendance', 'delete'));
@@ -1524,9 +1529,9 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         updateData.check_out_time = null;
       }
 
-      // Past date restriction: Non-admin users cannot edit past attendance directly without approval
+      // Past date restriction: Users without past-date permission cannot edit past attendance directly without approval
       const isPastDate = selectedDate < todayIsoInTz(appTz);
-      if (isPastDate && !isAdmin) {
+      if (isPastDate && !canMarkPastDate) {
         const entity = entities.find((e: any) => e.id === entityId);
         const entityName = entity?.name_bn || entity?.name_en || (entityType === 'staff' ? 'স্টাফ' : 'শিক্ষার্থী');
         const statusLabel = status === 'present' ? (bn ? 'উপস্থিত' : 'Present')
@@ -1574,7 +1579,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     },
     onMutate: async ({ entityId, status, remarks, check_in_time, check_out_time, shift }) => {
       const isPastDate = selectedDate < todayIsoInTz(appTz);
-      if (isPastDate && !isAdmin) {
+      if (isPastDate && !canMarkPastDate) {
         return { isApproval: true };
       }
       const shiftVal = shift || (isDutyTab ? 'morning' : effectiveShift);
@@ -1645,7 +1650,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   // Bulk mark for duty shifts (morning or evening)
   const handleBulkMarkDuty = async (targetShift: 'morning' | 'evening', status: string = 'present') => {
     const isPastDate = selectedDate < todayIsoInTz(appTz);
-    if (isPastDate && !isAdmin) {
+    if (isPastDate && !canMarkPastDate) {
       toast.error(
         bn
           ? 'পূর্বের তারিখের সবার হাজিরা এক সাথে দেওয়ার অনুমতি নেই। শুধুমাত্র এডমিন পূর্বের তারিখে পরিবর্তন করতে পারেন।'
@@ -1687,7 +1692,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   const bulkMutation = useMutation({
     mutationFn: async (status: string) => {
       const isPastDate = selectedDate < todayIsoInTz(appTz);
-      if (isPastDate && !isAdmin) {
+      if (isPastDate && !canMarkPastDate) {
         throw new Error(
           bn
             ? 'পূর্বের তারিখের সবার হাজিরা এক সাথে দেওয়ার অনুমতি নেই। শুধুমাত্র এডমিন পূর্বের তারিখে পরিবর্তন করতে পারেন।'
@@ -4120,8 +4125,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
           </div>
         )}
 
-        {/* Past Date Notification Banner for Non-Admin Staff Users */}
-        {selectedDate < todayIsoInTz(appTz) && !isAdmin && (
+        {/* Past Date Notification Banner for Users Without Past-Date Attendance Permission */}
+        {selectedDate < todayIsoInTz(appTz) && !canMarkPastDate && (
           <div className="rounded-2xl border p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs transition-all border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200">
             <div className="flex items-center gap-2.5">
               <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
