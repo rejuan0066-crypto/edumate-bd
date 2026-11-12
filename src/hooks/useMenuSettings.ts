@@ -234,7 +234,9 @@ const mergeWithDefaults = (saved: MenuItemConfig[], defaults: MenuItemConfig[]):
   const missingTopLevel = defaults.filter(d => !savedIds.has(d.id));
   // Check for missing children in existing parents
   const merged = saved.map(item => {
-    const defaultItem = defaults.find(d => d.id === item.id);
+    const defaultItem = defaults.find(
+      d => d.id === item.id || (d.path && d.path !== '#' && d.path === item.path)
+    );
     if (defaultItem?.children && defaultItem.children.length > 0) {
       const existingChildIds = new Set((item.children || []).map(c => c.id));
       const missingChildren = defaultItem.children.filter(dc => !existingChildIds.has(dc.id) && !savedIds.has(dc.id));
