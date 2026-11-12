@@ -4125,30 +4125,6 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
           </div>
         )}
 
-        {/* Past Date Notification Banner for Users Without Past-Date Attendance Permission */}
-        {selectedDate < todayIsoInTz(appTz) && !canMarkPastDate && (
-          <div className="rounded-2xl border p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs transition-all border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
-                <Clock className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="font-bold">
-                  {bn ? `পূর্ববর্তী তারিখ (${selectedDate}) — এডমিন অনুমোদন প্রযোজ্য` : `Past Date (${selectedDate}) — Admin Approval Required`}
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {bn
-                    ? 'স্টাফ ব্যবহারকারীদের জন্য গত তারিখের হাজিরা সরাসরি পরিবর্তন লক করা আছে। যেকোনো বাটনে ক্লিক করলে তা সরাসরি কার্যকর না হয়ে এডমিনের কাছে অনুমোদনের আবেদন যাবে।'
-                    : 'Direct editing of past attendance is restricted for staff users. Any changes will be submitted for Admin approval.'}
-                </p>
-              </div>
-            </div>
-            <Badge variant="outline" className="bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40 text-xs font-semibold px-2.5 py-1 shrink-0">
-              {bn ? 'অনুমোদন সাপেক্ষ' : 'Approval Required'}
-            </Badge>
-          </div>
-        )}
-
         <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
           <DialogContent className="max-w-md rounded-[28px] border border-border/20 bg-background/95 p-0 backdrop-blur-xl shadow-[0_24px_80px_-16px_hsl(var(--foreground)/0.25)] overflow-hidden">
             <div className="border-b border-border/10 bg-destructive/5 px-6 py-5">

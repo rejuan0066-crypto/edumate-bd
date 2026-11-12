@@ -602,17 +602,6 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         </div>
 
         <div className="px-4 py-3 space-y-3">
-          {!canMarkPastDate && (
-            <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-200 text-xs">
-              <Clock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-              <span>
-                {bn
-                  ? 'পূর্ববর্তী তারিখের হাজিরা পরিবর্তনে এডমিন অনুমোদন প্রযোজ্য হবে।'
-                  : 'Changes to past date attendance require Admin approval.'}
-              </span>
-            </div>
-          )}
-
           {/* Month nav with chips & Print/PDF actions */}
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/40 bg-gradient-to-r from-background/80 via-muted/20 to-background/80 backdrop-blur p-2 shadow-sm">
             <div className="flex items-center gap-1.5 min-w-0">
