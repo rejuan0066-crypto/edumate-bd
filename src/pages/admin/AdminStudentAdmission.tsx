@@ -65,7 +65,7 @@ const AdminStudentAdmission = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<AdmissionStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<AdmissionStatusFilter>('pending');
   const [filterDivisionId, setFilterDivisionId] = useState('all');
   const [filterSessionId, setFilterSessionId] = useState('all');
   const [filterClassId, setFilterClassId] = useState('all');
