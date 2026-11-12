@@ -5,7 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Trash2, Loader2, CheckCircle, Eye, XCircle, Clock, Pencil, Filter, UserX, UserCheck, Printer, History, Download, BarChart3, Layers, MoreHorizontal, Users, Sparkles, RotateCcw } from 'lucide-react';
+import { Search, Trash2, Loader2, CheckCircle, Eye, XCircle, Clock, Pencil, Filter, UserX, UserCheck, Printer, History, Download, BarChart3, Layers, MoreHorizontal, Users, Sparkles, RotateCcw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -375,19 +375,15 @@ const AdminStudents = () => {
   }, [students, filterDivisionId, filterSessionId, academicSessions, filterClassId, getEffectiveClassId, search]);
 
   const allCount = baseFiltered.length;
-  const activeCount = useMemo(() => baseFiltered.filter((s: any) => !isStudentEffectivelyInactive(s) && (s.approval_status === 'approved' || !s.approval_status)).length, [baseFiltered, isStudentEffectivelyInactive]);
-  const pendingCount = useMemo(() => baseFiltered.filter((s: any) => (s.approval_status || 'pending') === 'pending').length, [baseFiltered]);
+  const activeCount = useMemo(() => baseFiltered.filter((s: any) => !isStudentEffectivelyInactive(s)).length, [baseFiltered, isStudentEffectivelyInactive]);
   const oldCount = useMemo(() => baseFiltered.filter((s: any) => s.student_type === 'old').length, [baseFiltered]);
   const newCount = useMemo(() => baseFiltered.filter((s: any) => s.student_type !== 'old').length, [baseFiltered]);
-  const inactiveCount = useMemo(() => baseFiltered.filter((s: any) => isStudentEffectivelyInactive(s) || s.approval_status === 'rejected').length, [baseFiltered, isStudentEffectivelyInactive]);
+  const inactiveCount = useMemo(() => baseFiltered.filter((s: any) => isStudentEffectivelyInactive(s)).length, [baseFiltered, isStudentEffectivelyInactive]);
 
   const filtered = useMemo(() => {
     return baseFiltered.filter((s: any) => {
       if (filterStatus === 'active') {
-        return !isStudentEffectivelyInactive(s) && (s.approval_status === 'approved' || !s.approval_status);
-      }
-      if (filterStatus === 'pending') {
-        return (s.approval_status || 'pending') === 'pending';
+        return !isStudentEffectivelyInactive(s);
       }
       if (filterStatus === 'old') {
         return s.student_type === 'old';
@@ -396,7 +392,7 @@ const AdminStudents = () => {
         return s.student_type !== 'old';
       }
       if (filterStatus === 'inactive') {
-        return isStudentEffectivelyInactive(s) || s.approval_status === 'rejected';
+        return isStudentEffectivelyInactive(s);
       }
       return true;
     });
@@ -442,7 +438,6 @@ const AdminStudents = () => {
       bn ? 'বিভাগ' : 'Division',
       bn ? 'সেশন' : 'Session',
       bn ? 'ছাত্রের ধরন' : 'Student Type',
-      bn ? 'অনুমোদন' : 'Approval',
       bn ? 'স্ট্যাটাস' : 'Status',
       bn ? 'মোবাইল' : 'Mobile',
       bn ? 'পিতার নাম' : 'Father Name',
@@ -462,7 +457,6 @@ const AdminStudents = () => {
         csvCell(divName),
         csvCell(sessName),
         s.student_type === 'old' ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New'),
-        s.approval_status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : (bn ? 'অপেক্ষমাণ' : 'Pending'),
         !isInactive ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive'),
         csvCell(s.phone || s.guardian_phone || '-'),
         csvCell(s.father_name || ''),
@@ -592,16 +586,11 @@ const AdminStudents = () => {
               <Download className="w-3.5 h-3.5 text-primary" />
               {bn ? 'এক্সপোর্ট' : 'Export'}
             </Button>
-            {canAddItem && isFeatureAllowed('tab_admission') !== false && (
-              <Button onClick={() => navigate('/admin/students/admission')} className="btn-primary-gradient h-8 text-xs flex items-center gap-1.5 shadow-sm rounded-xl px-4">
-                <Plus className="w-3.5 h-3.5 mr-1" /> {bn ? 'নতুন ভর্তি' : 'New Admission'}
-              </Button>
-            )}
           </div>
         </div>
 
         {/* Metric Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => setFilterStatus('all')}
@@ -637,25 +626,6 @@ const AdminStudents = () => {
             </div>
             <div className="text-2xl font-black font-display tracking-tight text-emerald-600 dark:text-emerald-400 mt-1">
               {formatDigits(activeCount, bn)}
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFilterStatus('pending')}
-            className={cn(
-              "p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer relative overflow-hidden hover:shadow-md hover:-translate-y-0.5",
-              filterStatus === 'pending'
-                ? "bg-amber-500/10 border-amber-500 shadow-xs ring-1 ring-amber-500/40"
-                : "bg-card border-border/80 hover:border-border hover:bg-muted/30 shadow-xs"
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-muted-foreground">{bn ? 'অপেক্ষমাণ' : 'Pending'}</span>
-              <Clock className="w-3.5 h-3.5 text-amber-600" />
-            </div>
-            <div className="text-2xl font-black font-display tracking-tight text-amber-600 dark:text-amber-400 mt-1">
-              {formatDigits(pendingCount, bn)}
             </div>
           </button>
 
@@ -805,7 +775,6 @@ const AdminStudents = () => {
                 {sortedFiltered.map((s: any) => {
                   const effectiveClass = getClassName(getEffectiveClassId(s));
                   const isInactive = isStudentEffectivelyInactive(s);
-                  const isPending = (s.approval_status || 'pending') === 'pending';
                   const classSerial = getClassSerial(s);
                   return (
                     <div 
@@ -849,15 +818,11 @@ const AdminStudents = () => {
                                 • {effectiveClass}
                               </span>
                             )}
-                            {isPending ? (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-600 font-medium">
-                                {bn ? 'অপেক্ষমাণ' : 'Pending'}
-                              </span>
-                            ) : isInactive ? (
+                            {isInactive && (
                               <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-rose-500/15 text-rose-600 font-medium">
                                 {bn ? 'নিষ্ক্রিয়' : 'Inactive'}
                               </span>
-                            ) : null}
+                            )}
                           </div>
                         </div>
                       </div>
@@ -917,9 +882,7 @@ const AdminStudents = () => {
                       const effectiveClass = getClassName(getEffectiveClassId(s));
                       const divName = bn ? s.divisions?.name_bn : (s.divisions?.name || '-');
                       const isOld = s.student_type === 'old';
-                      const isApproved = s.approval_status === 'approved';
                       const isInactive = isStudentEffectivelyInactive(s);
-                      const isPending = (s.approval_status || 'pending') === 'pending';
                       const isRowPending = studentTypeMutation.isPending && studentTypeMutation.variables?.id === s.id;
 
                       return (
@@ -972,8 +935,8 @@ const AdminStudents = () => {
                           <td className="text-center px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                             {canApproveItem ? (
                               <button
-                                disabled={!isApproved || isRowPending}
-                                onClick={() => { if (isApproved) { setTypeChangeFor(s); setTypeChangeReason(''); } }}
+                                disabled={isRowPending}
+                                onClick={() => { setTypeChangeFor(s); setTypeChangeReason(''); }}
                                 className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border transition-all cursor-pointer ${
                                   isOld ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20 hover:bg-violet-500/20' : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20 hover:bg-sky-500/20'
                                 }`}
@@ -989,12 +952,17 @@ const AdminStudents = () => {
                             )}
                           </td>
                           <td className="text-center px-4 py-3.5">
-                            <div className="flex flex-col items-center gap-1">
-                              {getApprovalBadge(s.approval_status || 'pending')}
-                              {isInactive && (
-                                <span className="text-[10px] text-destructive font-medium">({bn ? 'নিষ্ক্রিয়' : 'Inactive'})</span>
-                              )}
-                            </div>
+                            {isInactive ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                                <UserX className="w-3 h-3" />
+                                {bn ? 'নিষ্ক্রিয়' : 'Inactive'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                <UserCheck className="w-3 h-3" />
+                                {bn ? 'সক্রিয়' : 'Active'}
+                              </span>
+                            )}
                           </td>
                           <td className="text-right px-6 py-3.5" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-1.5">
