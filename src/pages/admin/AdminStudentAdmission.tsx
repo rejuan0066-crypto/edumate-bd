@@ -74,6 +74,7 @@ const AdminStudentAdmission = () => {
   const canBypassRequirements = isAdminRole(role) || isFeatureAllowed('action_bypass_requirements');
 
   const [showAdd, setShowAdd] = useState(false);
+  const [admissionModalMode, setAdmissionModalMode] = useState<'admission' | 'edit' | 'approve'>('admission');
   const [editStudent, setEditStudent] = useState<any>(null);
   const [showDetail, setShowDetail] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -509,6 +510,7 @@ const AdminStudentAdmission = () => {
                 <Button
                   onClick={() => {
                     setEditStudent(null);
+                    setAdmissionModalMode('admission');
                     setShowAdd(true);
                   }}
                   className="btn-primary-gradient h-8 text-xs flex items-center gap-1.5 shadow-sm rounded-xl px-4"
@@ -949,6 +951,21 @@ const AdminStudentAdmission = () => {
                                   </>
                                 )}
 
+                                {canApproveItem && (appStatus === 'pending' || appStatus === 'needs_revision') && (
+                                  <Button
+                                    size="sm"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs font-bold rounded-xl shadow-xs h-8 px-3"
+                                    onClick={() => {
+                                      setEditStudent(s);
+                                      setAdmissionModalMode('approve');
+                                      setShowAdd(true);
+                                    }}
+                                  >
+                                    <FileCheck className="w-3.5 h-3.5" />
+                                    <span>{bn ? 'ফুল ফর্ম রিভিউ ও অনুমোদন' : 'Review & Approve'}</span>
+                                  </Button>
+                                )}
+
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -965,11 +982,24 @@ const AdminStudentAdmission = () => {
                                       <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                                     </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                                  <DropdownMenuContent align="end" className="w-52 rounded-xl">
+                                    {canApproveItem && (
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setEditStudent(s);
+                                          setAdmissionModalMode('approve');
+                                          setShowAdd(true);
+                                        }}
+                                        className="gap-2 cursor-pointer text-xs font-semibold text-emerald-600"
+                                      >
+                                        <FileCheck className="w-3.5 h-3.5" />
+                                        <span>{bn ? 'ফুল ফর্ম রিভিউ ও অনুমোদন' : 'Full Form Review'}</span>
+                                      </DropdownMenuItem>
+                                    )}
                                     {canApproveItem && appStatus !== 'approved' && (
                                       <DropdownMenuItem onClick={() => handleApproveReject(s, 'approved')} className="gap-2 cursor-pointer text-xs text-emerald-600">
                                         <CheckCircle className="w-3.5 h-3.5" />
-                                        <span>{bn ? 'অনুমোদন করুন' : 'Approve'}</span>
+                                        <span>{bn ? 'সরাসরি অনুমোদন করুন' : 'Direct Approve'}</span>
                                       </DropdownMenuItem>
                                     )}
                                     {canApproveItem && appStatus !== 'needs_revision' && (
@@ -991,7 +1021,7 @@ const AdminStudentAdmission = () => {
                                       </DropdownMenuItem>
                                     )}
                                     {canEditItem && (
-                                      <DropdownMenuItem onClick={() => { setEditStudent(s); setShowAdd(true); }} className="gap-2 cursor-pointer text-xs">
+                                      <DropdownMenuItem onClick={() => { setEditStudent(s); setAdmissionModalMode('edit'); setShowAdd(true); }} className="gap-2 cursor-pointer text-xs">
                                         <Pencil className="w-3.5 h-3.5 text-emerald-600" />
                                         <span>{bn ? 'তথ্য সম্পাদনা' : 'Edit Info'}</span>
                                       </DropdownMenuItem>
@@ -1048,15 +1078,25 @@ const AdminStudentAdmission = () => {
         </div>
       </AdminLayout>
 
-      {/* Admission Form Modal (opens on + নতুন ভর্তি আবেদন or Edit) */}
+      {/* Admission Form Modal (opens on + নতুন ভর্তি আবেদন, Edit or Review & Approve) */}
       <AdmissionForm
         open={showAdd}
         onOpenChange={(o) => {
           setShowAdd(o);
-          if (!o) setEditStudent(null);
+          if (!o) {
+            setEditStudent(null);
+            setAdmissionModalMode('admission');
+          }
         }}
         editStudent={editStudent}
+        mode={admissionModalMode}
         bypassRequirements={canBypassRequirements}
+        onRevision={(st) => setRevisionStudent(st)}
+        onReject={(st) => setRejectionStudent(st)}
+        onApprove={() => {
+          queryClient.invalidateQueries({ queryKey: ['admission-students'] });
+          refetch();
+        }}
       />
 
       {/* Detail View Dialog */}

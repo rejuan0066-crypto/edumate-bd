@@ -4,6 +4,7 @@ import AdminPageWithTabs from './AdminPageWithTabs';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useIsEmbedded } from '@/contexts/EmbeddedContext';
 import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -28,6 +29,7 @@ import {
   CreditCard, Settings, Globe, GraduationCap, Menu, X, LogOut,
   ChevronRight, Layers, Receipt, Heart, ReceiptText, FileSignature,
   FilePlus, FileCheck, Tag, Wrench, UserCircle, ChevronDown, FileBox,
+  RotateCcw, ArrowRight, AlertCircle,
   Blocks, FlaskConical, CalendarDays, ShieldCheck, BarChart3, KeyRound, Palette,
   ListOrdered, Home, Image, Mail, Phone, MapPin, Star, Award, Clock, Folder, LayoutGrid,
   HardDrive, MessageSquare, Wallet, UserPlus, Camera, Search, Maximize2, MoreVertical,
@@ -139,6 +141,59 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
+  });
+
+  // Query personal applications that need revision for the logged-in user
+  const { data: revisionAlerts = [] } = useQuery({
+    queryKey: ['my-revision-alerts', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const alerts: Array<{ type: 'student' | 'staff'; id: string; appNo: string; notes?: string }> = [];
+      try {
+        // 1. Student admission applications submitted by or linked to this user
+        const { data: stData } = await supabase
+          .from('students')
+          .select('id, student_id, approval_status, status, correction_notes, admission_data')
+          .or('approval_status.eq.needs_revision,status.eq.needs_revision')
+          .limit(10);
+        (stData || []).forEach((s: any) => {
+          const adm = s.admission_data || {};
+          const isOwner = adm.user_id === user.id || adm.submitted_by === user.id || adm.email === user.email;
+          if (isOwner) {
+            alerts.push({
+              type: 'student',
+              id: s.id,
+              appNo: s.student_id || adm.application_no || s.id.slice(0, 8),
+              notes: s.correction_notes || adm.correction_notes,
+            });
+          }
+        });
+
+        // 2. Staff applications submitted by or linked to this user
+        const { data: sfData } = await supabase
+          .from('staff')
+          .select('id, staff_id, status, staff_data')
+          .eq('status', 'needs_revision')
+          .limit(10);
+        (sfData || []).forEach((s: any) => {
+          const sd = (s.staff_data as any) || {};
+          const isOwner = s.user_id === user.id || sd.user_id === user.id || sd.submitted_by === user.id || s.email === user.email;
+          if (isOwner) {
+            alerts.push({
+              type: 'staff',
+              id: s.id,
+              appNo: sd.application_no || s.staff_id || s.id.slice(0, 8),
+              notes: sd.correction_notes || (s as any).correction_notes,
+            });
+          }
+        });
+      } catch (err) {
+        console.warn('Failed to query revision alerts:', err);
+      }
+      return alerts;
+    },
+    enabled: !!user?.id,
+    refetchInterval: 30000,
   });
 
   const sidebarDisplayName = (sidebarStaffPhoto?.name_bn || sidebarStaffPhoto?.name_en)
@@ -757,6 +812,44 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
           {/* Content */}
           <main className="flex-1 min-w-0 w-full max-w-full px-3 sm:px-6 md:px-8 pb-24 lg:pb-12 pt-4 sm:pt-6 max-w-[1536px] mx-auto overflow-x-hidden">
+            {/* Logged-in User Application Revision Alert Banner */}
+            {revisionAlerts.length > 0 && (
+              <div className="mb-4 space-y-2">
+                {revisionAlerts.map((rev) => (
+                  <div
+                    key={rev.id}
+                    className="p-3.5 px-4 rounded-2xl bg-orange-500/10 border-2 border-orange-500/40 text-orange-900 dark:text-orange-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-orange-500/20 text-orange-700 dark:text-orange-300 flex items-center justify-center shrink-0">
+                        <AlertCircle className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold">
+                          {language === 'bn'
+                            ? `আপনার ${rev.type === 'student' ? 'ভর্তি' : 'স্টাফ নিয়োগ'} আবেদনে (${rev.appNo}) কিছু তথ্য সংশোধনের নির্দেশ দেওয়া হয়েছে`
+                            : `Corrections requested for your ${rev.type === 'student' ? 'admission' : 'staff'} application (${rev.appNo})`}
+                        </p>
+                        {rev.notes && (
+                          <p className="text-[11px] opacity-90 line-clamp-1">
+                            {language === 'bn' ? 'অ্যাডমিন নির্দেশনা: ' : 'Admin notes: '}{rev.notes}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      asChild
+                      size="sm"
+                      className="bg-orange-600 hover:bg-orange-700 text-white font-bold h-8 text-xs shrink-0 gap-1.5 shadow-xs self-end sm:self-center"
+                    >
+                      <Link to={rev.type === 'student' ? `/admission?mode=apply&id=${encodeURIComponent(rev.appNo)}` : `/staff-apply?id=${encodeURIComponent(rev.appNo)}`}>
+                        {language === 'bn' ? 'সংশোধন করুন' : 'Edit Application'} <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
             <BackButton position="top" />
             {/* Modern SaaS Content Container */}
             <div className="admin-page-card rounded-xl sm:rounded-2xl bg-card border border-border/80 p-3.5 sm:p-6 lg:p-7 min-h-[65vh] w-full shadow-sm relative overflow-hidden">

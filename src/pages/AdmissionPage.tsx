@@ -704,9 +704,19 @@ const AdmissionPage = () => {
     const label = bn ? config.label_bn : config.label;
     const required = canBypassRequirements ? false : config.is_required;
     const reqStar = required ? <span className="text-destructive">*</span> : null;
+    const isMarked = isFieldMarked(fieldKey);
+    const markedBadge = isMarked ? (
+      <Badge variant="destructive" className="ml-2 text-[10px] py-0 px-1.5 font-bold animate-pulse inline-flex items-center gap-0.5">
+        <span>⚠</span> {bn ? 'সংশোধনের নির্দেশ' : 'Correction Needed'}
+      </Badge>
+    ) : null;
     const hasError = !!fieldErrors[fieldKey];
-    const errorBorder = hasError ? 'border-destructive ring-1 ring-destructive/30' : '';
-    const errorLabel = hasError ? 'text-destructive' : '';
+    const errorBorder = isMarked
+      ? 'border-rose-500 ring-2 ring-rose-500/40 bg-rose-500/5'
+      : hasError
+      ? 'border-destructive ring-1 ring-destructive/30'
+      : '';
+    const errorLabel = isMarked ? 'text-rose-600 font-bold' : hasError ? 'text-destructive' : '';
 
     switch (fieldKey) {
       case 'photo_url':

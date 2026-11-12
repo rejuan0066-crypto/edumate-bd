@@ -4090,6 +4090,7 @@ const AdminApprovals = () => {
         {showEditAdmissionForm && (
           <AdmissionForm
             open={showEditAdmissionForm}
+            mode="approve"
             onOpenChange={(o) => {
               setShowEditAdmissionForm(o);
               if (!o) {
@@ -4111,6 +4112,12 @@ const AdminApprovals = () => {
               }
             }}
             editStudent={editStudentForModal}
+            onRevision={(st) => setRevisionModal({ type: 'student', data: st })}
+            onReject={(st) => setRejectionModal({ type: 'student', id: st.id, name: st.name_bn || st.name_en || 'শিক্ষার্থী' })}
+            onApprove={() => {
+              refetchStudents();
+              setStudentApprovalModal(null);
+            }}
           />
         )}
 

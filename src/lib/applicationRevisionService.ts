@@ -184,3 +184,68 @@ export async function dispatchRejectionNotification(params: NotificationParams) 
     }
   }
 }
+
+/**
+ * Dispatch Approval Notification (In-app, SMS, Email)
+ */
+export async function dispatchApprovalNotification(params: NotificationParams & { roll?: string; reg?: string; className?: string }) {
+  const { type, id, name, phone, email, appNo, institutionName, roll, reg, className } = params;
+  const isStudent = type === 'student';
+  const roleTitle = isStudent ? 'ভর্তি আবেদন' : 'নিয়োগ আবেদন';
+  const roleTitleEn = isStudent ? 'Admission Application' : 'Staff Application';
+  const identifier = appNo || id?.slice(0, 8);
+  const inst = institutionName || 'আমাদের প্রতিষ্ঠানে';
+
+  // 1. In-app Notification
+  try {
+    await supabase.from('notifications').insert({
+      title: `${roleTitleEn} Approved: ${identifier}`,
+      title_bn: `${roleTitle} অনুমোদিত হয়েছে: ${identifier}`,
+      message: `Congratulations! Your ${roleTitleEn.toLowerCase()} has been approved.${roll ? ` Roll: ${roll}` : ''}`,
+      message_bn: `অভিনন্দন! আপনার ${roleTitle} (${identifier}) অনুমোদিত হয়েছে।${roll ? ` রোল: ${roll}` : ''}${reg ? `, রেজি: ${reg}` : ''}`,
+      type: 'success',
+      category: isStudent ? 'admission' : 'staff',
+      link: isStudent ? `/track?id=${identifier}` : '/staff-apply?mode=track',
+    });
+  } catch (err) {
+    console.warn('[RevisionService] Failed to insert in-app approval notification:', err);
+  }
+
+  // 2. SMS Notification
+  if (phone) {
+    try {
+      const cleanPhone = phone.replace(/[^0-9+]/g, '');
+      const smsText = isStudent
+        ? `অভিনন্দন ${name || 'শিক্ষার্থী'}! ${inst}-এ আপনার ভর্তি আবেদন (${identifier}) অনুমোদিত হয়েছে। শ্রেণি: ${className || 'নির্ধারিত'}, রোল: ${roll || 'N/A'}, রেজি: ${reg || 'N/A'}। স্লিপ ডাউনলোড করতে ভিজিট করুন: ${window.location.origin}/track?id=${identifier}`
+        : `অভিনন্দন ${name || 'সহকর্মী'}! ${inst}-এ আপনার নিয়োগ আবেদন (${identifier}) অনুমোদিত হয়েছে। বিস্তারিত দেখতে লগইন করুন: ${window.location.origin}/login`;
+      await supabase.functions.invoke('send-sms', {
+        body: { phone: cleanPhone, message: smsText },
+      });
+    } catch (err) {
+      console.warn('[RevisionService] Approval SMS dispatch skipped or failed:', err);
+    }
+  }
+
+  // 3. Email Notification
+  if (email) {
+    try {
+      await supabase.functions.invoke('send-welcome-email', {
+        body: {
+          email: email.trim(),
+          full_name: name || undefined,
+          subject: `অভিনন্দন! ${roleTitle} অনুমোদিত হয়েছে (${identifier}) - ${inst}`,
+          kind: isStudent ? 'student' : 'user',
+          metadata: {
+            appNo: identifier,
+            type,
+            status: 'approved',
+            roll,
+            reg,
+          },
+        },
+      });
+    } catch (err) {
+      console.warn('[RevisionService] Approval email dispatch skipped or failed:', err);
+    }
+  }
+}

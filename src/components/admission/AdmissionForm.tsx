@@ -19,7 +19,7 @@ import FileUploadField from '@/components/FileUploadField';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
 import { useApiVerificationEnabled } from '@/hooks/useApiVerification';
-import { Plus, Search, Loader2, AlertCircle, CheckCircle, Save, ArrowLeft, ArrowRight, GraduationCap, User, UserCheck, Heart, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
+import { Plus, Search, Loader2, AlertCircle, CheckCircle, Save, ArrowLeft, ArrowRight, GraduationCap, User, UserCheck, Heart, MapPin, ShieldCheck, Sparkles, Check, X, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 import { formatAddress as formatAddressBn } from '@/lib/banglaAddressHelper';
@@ -28,6 +28,8 @@ import { useVerifierDepartments } from '@/hooks/useSignatoryAuthorities';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { isAdminRole } from '@/lib/roles';
+import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { dispatchApprovalNotification } from '@/lib/applicationRevisionService';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
@@ -40,17 +42,35 @@ interface AdmissionFormProps {
   embedded?: boolean; // render inline on a page instead of modal dialog
   onSuccess?: () => void;
   bypassRequirements?: boolean;
+  mode?: 'admission' | 'edit' | 'approve';
+  onApprove?: (studentData: any) => void;
+  onReject?: (studentData: any) => void;
+  onRevision?: (studentData: any) => void;
 }
 
-const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSuccess, bypassRequirements }: AdmissionFormProps) => {
+const AdmissionForm = ({
+  open,
+  onOpenChange,
+  editStudent,
+  embedded = false,
+  onSuccess,
+  bypassRequirements,
+  mode = 'admission',
+  onApprove,
+  onReject,
+  onRevision,
+}: AdmissionFormProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
+  const { data: institution } = useInstitutionInfo();
   const { validate, validateAll } = useValidationRules('student');
   const { data: apiVerifyEnabled } = useApiVerificationEnabled();
   const { fields: configFields, isLoaded, isFieldActive, getField, getFieldsBySection, getCustomFields, sections } = useAdmissionFormConfig();
   const { role } = useAuth();
   const { isFeatureAllowed } = usePermissions();
+
+  const isApproveMode = mode === 'approve';
 
   // Admin or user with explicit permission can bypass required fields
   const canBypassRequirements = useMemo(() => {
@@ -58,6 +78,14 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
     if (isAdminRole(role)) return true;
     return !!isFeatureAllowed('/admin/students', 'action_bypass_requirements') || !!isFeatureAllowed('/admin/students/admission', 'action_bypass_requirements');
   }, [bypassRequirements, role, isFeatureAllowed]);
+
+  const studentCorrectionFields: string[] = useMemo(() => {
+    return editStudent?.correction_fields || (editStudent?.admission_data as any)?.correction_fields || [];
+  }, [editStudent]);
+
+  const isFieldMarked = useCallback((key: string) => {
+    return studentCorrectionFields.includes(key);
+  }, [studentCorrectionFields]);
 
   // Form state
   const [currentStep, setCurrentStep] = useState(0);
@@ -944,6 +972,48 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
+  const approveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = buildStudentPayload();
+      const updatedStudentId = (form.registration_no?.trim() ? bnToEn(form.registration_no.trim()) : null) || editStudent?.student_id;
+      const { error } = await supabase.from('students').update({
+        ...payload,
+        student_id: updatedStudentId,
+        registration_no: updatedStudentId,
+        status: 'active',
+        approval_status: 'approved',
+      } as any).eq('id', editStudent.id);
+      if (error) throw error;
+
+      // Dispatch approval notification
+      const phone = form.father_phone || form.guardian_phone || (editStudent as any)?.phone;
+      const email = (payload as any).email || (editStudent as any)?.email;
+      const targetClass = classes.find((c: any) => c.id === (form.admission_class || editStudent?.class_id));
+      await dispatchApprovalNotification({
+        type: 'student',
+        id: editStudent.id,
+        name: payload.name_bn || editStudent?.name_bn,
+        phone,
+        email,
+        appNo: editStudent?.student_id || (editStudent?.admission_data as any)?.application_no,
+        roll: payload.roll_number,
+        reg: updatedStudentId,
+        className: targetClass?.name_bn || targetClass?.name,
+        institutionName: institution?.name_bn || institution?.name,
+      });
+    },
+    onSuccess: async () => {
+      await invalidateAllStudentQueries(queryClient);
+      await queryClient.refetchQueries({ queryKey: ['students'] });
+      resetForm();
+      onOpenChange(false);
+      onSuccess?.();
+      onApprove?.(editStudent);
+      toast.success(bn ? 'শিক্ষার্থীর আবেদন সফলভাবে অনুমোদিত হয়েছে!' : 'Student application approved successfully!');
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
   const handleSubmit = () => {
     const errors: Record<string, string> = {};
     console.log('[AdmissionForm] handleSubmit called');
@@ -1007,7 +1077,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
       return;
     }
     setFieldErrors({});
-    if (isEditMode) {
+    if (isApproveMode) {
+      approveMutation.mutate();
+    } else if (isEditMode) {
       updateMutation.mutate();
     } else {
       addMutation.mutate();
@@ -1015,7 +1087,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
   };
 
   const validateCurrentStep = (stepKey: string): boolean => {
-    if (isEditMode || canBypassRequirements) return true;
+    if (isEditMode || isApproveMode || canBypassRequirements) return true;
     const errors: Record<string, string> = {};
 
     if (stepKey === 'student_details') {
@@ -1122,9 +1194,19 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
     const label = bn ? config.label_bn : config.label;
     const required = canBypassRequirements ? false : config.is_required;
     const reqStar = required ? <span className="text-destructive">*</span> : null;
+    const isMarked = isFieldMarked(fieldKey);
+    const markedBadge = isMarked ? (
+      <Badge variant="destructive" className="ml-2 text-[10px] py-0 px-1.5 font-bold animate-pulse inline-flex items-center gap-0.5">
+        <span>⚠</span> {bn ? 'সংশোধনের নির্দেশ' : 'Correction Needed'}
+      </Badge>
+    ) : null;
     const hasError = !!fieldErrors[fieldKey];
-    const errorBorder = hasError ? 'border-destructive ring-1 ring-destructive/30' : '';
-    const errorLabel = hasError ? 'text-destructive' : '';
+    const errorBorder = isMarked
+      ? 'border-rose-500 ring-2 ring-rose-500/40 bg-rose-500/5'
+      : hasError
+      ? 'border-destructive ring-1 ring-destructive/30'
+      : '';
+    const errorLabel = isMarked ? 'text-rose-600 font-bold' : hasError ? 'text-destructive' : '';
 
     switch (fieldKey) {
       case 'photo_url':
@@ -2112,7 +2194,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
 
   const handleStepClick = (targetIdx: number) => {
     if (targetIdx === safeCurrentStep) return;
-    if (targetIdx < safeCurrentStep || isEditMode) {
+    if (targetIdx < safeCurrentStep || isEditMode || isApproveMode) {
       setCurrentStep(targetIdx);
       const dialogContent = document.querySelector('[role="dialog"]');
       if (dialogContent) dialogContent.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2149,7 +2231,11 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
             <div>
               <div className="flex items-center gap-2.5">
                 <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-foreground tracking-tight">
-                  {isEditMode ? (bn ? 'ছাত্রের তথ্য সম্পাদনা' : 'Edit Student Details') : (bn ? 'ভর্তি আবেদন ফরম' : 'Admission Application Form')}
+                  {isApproveMode
+                    ? (bn ? 'ভর্তি আবেদন পূর্ণাঙ্গ পর্যালোচনা ও চূড়ান্ত অনুমোদন' : 'Full Application Review & Final Approval')
+                    : isEditMode
+                    ? (bn ? 'ছাত্রের তথ্য সম্পাদনা' : 'Edit Student Details')
+                    : (bn ? 'ভর্তি আবেদন ফরম' : 'Admission Application Form')}
                 </h2>
                 <span className="text-xs bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full font-semibold">
                   {sessionDisplayName} {bn ? 'শিক্ষাবর্ষ' : 'Academic Year'}
@@ -2532,7 +2618,65 @@ const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSu
             </span>
           </div>
 
-          {safeCurrentStep < allStepKeys.length - 1 ? (
+          {isApproveMode ? (
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              {safeCurrentStep < allStepKeys.length - 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCurrentStep(prev => Math.min(allStepKeys.length - 1, prev + 1));
+                    scrollToFormTop();
+                  }}
+                  className="h-9 px-3 text-xs font-semibold gap-1"
+                >
+                  <span>{bn ? 'পরবর্তী' : 'Next'}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Button>
+              )}
+              {onRevision && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 border-amber-500/40 text-amber-600 hover:bg-amber-500/10 font-bold h-9 text-xs"
+                  onClick={() => {
+                    onRevision(editStudent);
+                    onOpenChange(false);
+                  }}
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  {bn ? 'সংশোধনের নির্দেশ' : 'Revision'}
+                </Button>
+              )}
+              {onReject && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="gap-1.5 font-bold h-9 text-xs"
+                  onClick={() => {
+                    onReject(editStudent);
+                    onOpenChange(false);
+                  }}
+                >
+                  <X className="w-3.5 h-3.5" />
+                  {bn ? 'বাতিল' : 'Reject'}
+                </Button>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 text-xs gap-1.5 shadow-md shadow-emerald-600/20"
+                onClick={() => approveMutation.mutate()}
+                disabled={approveMutation.isPending}
+              >
+                {approveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4" />}
+                {bn ? 'অনুমোদন ও চূড়ান্ত করুন' : 'Approve & Finalize'}
+              </Button>
+            </div>
+          ) : safeCurrentStep < allStepKeys.length - 1 ? (
             <Button
               type="button"
               onClick={() => {
