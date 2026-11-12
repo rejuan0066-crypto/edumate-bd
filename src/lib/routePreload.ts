@@ -17,6 +17,7 @@ const ROUTE_LOADERS: Record<string, Loader> = {
 
   // Students & Academics
   '/admin/students': () => import('@/pages/admin/AdminStudents'),
+  '/admin/students/admission': () => import('@/pages/admin/AdminStudentAdmission'),
   '/admin/bulk-import': () => import('@/pages/admin/AdminBulkImport'),
   '/admin/student-categories': () => import('@/pages/admin/AdminStudentCategories'),
   '/admin/divisions': () => import('@/pages/admin/AdminDivisions'),

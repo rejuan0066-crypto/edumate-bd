@@ -21,7 +21,8 @@ export const DEFAULT_MENU_PATHS: MenuPathItem[] = [
   { path: '/admin/profile', label_bn: 'ব্যক্তিগত প্রোফাইল', label_en: 'Profile', group_bn: 'ড্যাশবোর্ড ও রিপোর্ট', group_en: 'Dashboard & Reports' },
 
   // ===== শিক্ষার্থী ও ভর্তি =====
-  { path: '/admin/students', label_bn: 'শিক্ষার্থী ব্যবস্থাপনা', label_en: 'Students Management', group_bn: 'শিক্ষার্থী ও অ্যাকাডেমিক', group_en: 'Students & Academics' },
+  { path: '/admin/students', label_bn: 'ছাত্র তালিকা', label_en: 'Student List', group_bn: 'শিক্ষার্থী ও অ্যাকাডেমিক', group_en: 'Students & Academics' },
+  { path: '/admin/students/admission', label_bn: 'ছাত্র ভর্তি', label_en: 'Student Admission', group_bn: 'শিক্ষার্থী ও অ্যাকাডেমিক', group_en: 'Students & Academics' },
   { path: '/admin/bulk-import', label_bn: 'বাল্ক শিক্ষার্থী ইমপোর্ট', label_en: 'Bulk Student Import', group_bn: 'শিক্ষার্থী ও অ্যাকাডেমিক', group_en: 'Students & Academics' },
   { path: '/admin/student-categories', label_bn: 'শিক্ষার্থী ক্যাটাগরি', label_en: 'Student Categories', group_bn: 'শিক্ষার্থী ও অ্যাকাডেমিক', group_en: 'Students & Academics' },
   { path: '/admin/divisions', label_bn: 'বিভাগ, শ্রেণি ও শাখা', label_en: 'Divisions & Classes', group_bn: 'শিক্ষার্থী ও অ্যাকাডেমিক', group_en: 'Students & Academics' },

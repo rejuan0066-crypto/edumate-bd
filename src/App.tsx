@@ -80,6 +80,7 @@ const QuranPage = lazy(() => import("./pages/QuranPage"));
 // Lazy-loaded admin pages (huge bundle — never loaded on public PWA boot)
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const AdminStudents = lazy(() => import("./pages/admin/AdminStudents"));
+const AdminStudentAdmission = lazy(() => import("./pages/admin/AdminStudentAdmission"));
 const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
 const AdminStaffProfilePage = lazy(() => import("./pages/admin/AdminStaffProfilePage"));
 const AdminStudentProfilePage = lazy(() => import("./pages/admin/AdminStudentProfilePage"));
@@ -445,6 +446,7 @@ const App = () => (
                     <Route path="committees" element={<ModuleGuard menuPath="/admin/committees"><AdminCommittees /></ModuleGuard>} />
                     <Route path="committee-audit-log" element={<ModuleGuard menuPath="/admin/committee-audit-log"><AdminCommitteeAuditLog /></ModuleGuard>} />
                     <Route path="students" element={<ModuleGuard menuPath="/admin/students"><AdminStudents /></ModuleGuard>} />
+                    <Route path="students/admission" element={<ModuleGuard menuPath="/admin/students/admission"><AdminStudentAdmission /></ModuleGuard>} />
                     <Route path="students/profile/:id" element={<ModuleGuard menuPath="/admin/students"><AdminStudentProfilePage /></ModuleGuard>} />
                     <Route path="staff" element={<ModuleGuard menuPath="/admin/staff"><AdminStaff staffType="all" /></ModuleGuard>} />
                     <Route path="staff/profile/:id" element={<ModuleGuard menuPath="/admin/staff"><AdminStaffProfilePage /></ModuleGuard>} />

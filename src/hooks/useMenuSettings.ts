@@ -30,6 +30,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
   // ছাত্র ব্যবস্থাপনা
   { id: 'student-management', path: '/admin/students', label_bn: 'ছাত্র ব্যবস্থাপনা', label_en: 'Student Management', icon: 'Users', visible: true, sort_order: 1, children: [
     { id: 'students', path: '/admin/students', label_bn: 'ছাত্র তালিকা', label_en: 'Student List', icon: 'Users', visible: true, sort_order: 0 },
+    { id: 'student-admission', path: '/admin/students/admission', label_bn: 'ছাত্র ভর্তি', label_en: 'Student Admission', icon: 'UserPlus', visible: true, sort_order: 0.5 },
     { id: 'student-promotion', path: '/admin/student-promotion', label_bn: 'প্রমোশন/ডিমোশন', label_en: 'Promotion/Demotion', icon: 'ArrowUpDown', visible: true, sort_order: 1 },
     { id: 'admission-letters', path: '/admin/admission-letters', label_bn: 'ভর্তি পত্র', label_en: 'Admission Letters', icon: 'FileCheck', visible: true, sort_order: 2 },
     { id: 'id-cards', path: '/admin/id-cards', label_bn: 'আইডি কার্ড', label_en: 'ID Cards', icon: 'CreditCard', visible: true, sort_order: 3 },
@@ -244,7 +245,10 @@ const mergeWithDefaults = (saved: MenuItemConfig[], defaults: MenuItemConfig[]):
           ...item,
           children: [
             ...existingChildren,
-            ...missingChildren.map((mc, idx) => ({ ...mc, sort_order: maxChildOrder + 1 + idx })),
+            ...missingChildren.map((mc, idx) => ({
+              ...mc,
+              sort_order: mc.sort_order >= 0 && mc.sort_order < maxChildOrder ? mc.sort_order : maxChildOrder + 1 + idx,
+            })),
           ],
         };
       }
@@ -292,7 +296,15 @@ const MENU_CACHE_KEY = 'menu-settings-cache';
 const readMenuCache = (): MenuConfig => {
   try {
     const raw = localStorage.getItem(MENU_CACHE_KEY);
-    if (raw) return sanitizeConfig(JSON.parse(raw));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return sanitizeConfig({
+        ...DEFAULT_MENU_CONFIG,
+        ...parsed,
+        sidebar: parsed.sidebar ? mergeWithDefaults(parsed.sidebar, DEFAULT_SIDEBAR) : DEFAULT_SIDEBAR,
+        public: parsed.public ? mergeWithDefaults(parsed.public, DEFAULT_PUBLIC) : DEFAULT_PUBLIC,
+      });
+    }
   } catch {}
   return DEFAULT_MENU_CONFIG;
 };

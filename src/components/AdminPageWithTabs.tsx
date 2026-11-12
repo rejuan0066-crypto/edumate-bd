@@ -15,6 +15,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 const PAGE_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
   '/admin': lazy(() => import('@/pages/admin/Dashboard')),
   '/admin/students': lazy(() => import('@/pages/admin/AdminStudents')),
+  '/admin/students/admission': lazy(() => import('@/pages/admin/AdminStudentAdmission')),
   '/admin/staff': lazy(() => import('@/pages/admin/AdminStaff')),
   '/admin/divisions': lazy(() => import('@/pages/admin/AdminDivisions')),
   '/admin/subjects': lazy(() => import('@/pages/admin/AdminSubjects')),

@@ -1,7 +1,6 @@
 import { safeRows, csvCell, safeCell } from '@/lib/spreadsheetSafe';
 import { sanitizeCsvCell } from '@/lib/sanitizeFormula';
 import AdminLayout from '@/components/AdminLayout';
-import TabContainer from '@/components/TabContainer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -594,7 +593,7 @@ const AdminStudents = () => {
               {bn ? 'এক্সপোর্ট' : 'Export'}
             </Button>
             {canAddItem && isFeatureAllowed('tab_admission') !== false && (
-              <Button onClick={() => setShowAdd(true)} className="btn-primary-gradient h-8 text-xs flex items-center gap-1.5 shadow-sm rounded-xl px-4">
+              <Button onClick={() => navigate('/admin/students/admission')} className="btn-primary-gradient h-8 text-xs flex items-center gap-1.5 shadow-sm rounded-xl px-4">
                 <Plus className="w-3.5 h-3.5 mr-1" /> {bn ? 'নতুন ভর্তি' : 'New Admission'}
               </Button>
             )}
@@ -1102,35 +1101,7 @@ const AdminStudents = () => {
   return (
     <>
     <AdminLayout>
-      <TabContainer
-        tabs={[
-          ...(isFeatureAllowed('tab_list') !== false ? [{
-            id: 'list',
-            label: bn ? 'ছাত্র তালিকা' : 'Student List',
-            icon: Eye,
-            content: studentListContent,
-          }] : []),
-          ...(canAddItem && isFeatureAllowed('tab_admission') !== false ? [{
-            id: 'admission',
-            label: bn ? 'নতুন ভর্তি' : 'New Admission',
-            icon: Plus,
-            content: (
-              <div className="space-y-4">
-                <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
-                  <Plus className="w-6 h-6 text-primary" />
-                  {bn ? 'নতুন ভর্তি ফর্ম' : 'New Admission Form'}
-                </h1>
-                <p className="text-muted-foreground text-sm">{bn ? 'নতুন ছাত্র ভর্তি করতে নিচের বাটনে ক্লিক করুন' : 'Click below to open the admission form'}</p>
-                <Button onClick={() => setShowAdd(true)} className="btn-primary-gradient">
-                  <Plus className="w-4 h-4 mr-2" /> {bn ? 'ভর্তি ফর্ম খুলুন' : 'Open Admission Form'}
-                </Button>
-                <AdmissionForm open={showAdd} onOpenChange={(o) => { setShowAdd(o); if (!o) setEditStudent(null); }} editStudent={editStudent} />
-              </div>
-            ),
-          }] : []),
-        ]}
-        paramKey="tab"
-      />
+      {isFeatureAllowed('tab_list') !== false ? studentListContent : null}
     </AdminLayout>
     <DeleteConfirmDialog
       open={!!deleteId}

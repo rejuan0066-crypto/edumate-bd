@@ -34,9 +34,11 @@ interface AdmissionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editStudent?: any; // pass existing student record for edit mode
+  embedded?: boolean; // render inline on a page instead of modal dialog
+  onSuccess?: () => void;
 }
 
-const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) => {
+const AdmissionForm = ({ open, onOpenChange, editStudent, embedded = false, onSuccess }: AdmissionFormProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
@@ -898,6 +900,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       await queryClient.refetchQueries({ queryKey: ['students'] });
       resetForm();
       onOpenChange(false);
+      onSuccess?.();
       toast.success(bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে! অনুমোদনের অপেক্ষায়।' : 'Admission submitted! Pending approval.');
     },
     onError: (e: any) => toast.error(e.message || 'Error'),
@@ -919,6 +922,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       await queryClient.refetchQueries({ queryKey: ['students'] });
       resetForm();
       onOpenChange(false);
+      onSuccess?.();
       toast.success(bn ? 'ছাত্রের তথ্য সফলভাবে আপডেট হয়েছে!' : 'Student updated successfully!');
     },
     onError: (e: any) => toast.error(e.message || 'Error'),
@@ -2106,9 +2110,17 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   const activeSessionObj = academicSessions.find((s: any) => s.id === form.admission_session || s.name === form.admission_session);
   const sessionDisplayName = (bn ? (activeSessionObj?.name_bn || activeSessionObj?.name) : activeSessionObj?.name) || form.session_year || (bn ? 'চলতি' : 'Current');
 
-  return (
-    <Dialog open={open} onOpenChange={o => { onOpenChange(o); if (!o) resetForm(); }}>
-      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto dialog-content-scroll border border-slate-200/90 dark:border-border rounded-3xl shadow-2xl p-0 bg-white dark:bg-card overflow-hidden">
+  const scrollToFormTop = () => {
+    if (embedded) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      const dialogContent = document.querySelector('[role="dialog"]');
+      if (dialogContent) dialogContent.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const formContent = (
+    <>
         
         {/* Top Modal Header (1:1 Mockup Match) */}
         <div className="px-6 py-5 bg-gradient-to-r from-emerald-50/70 via-white to-teal-50/50 dark:from-emerald-950/30 dark:via-background dark:to-teal-950/20 border-b border-slate-200/80 dark:border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -2472,8 +2484,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
               variant="outline"
               onClick={() => {
                 setCurrentStep(prev => Math.max(0, prev - 1));
-                const dialogContent = document.querySelector('[role="dialog"]');
-                if (dialogContent) dialogContent.scrollTo({ top: 0, behavior: 'smooth' });
+                scrollToFormTop();
               }}
               className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 dark:border-border bg-white dark:bg-card text-xs font-semibold text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-foreground hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-xs"
             >
@@ -2497,8 +2508,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
               onClick={() => {
                 if (validateCurrentStep(allStepKeys[safeCurrentStep])) {
                   setCurrentStep(prev => Math.min(allStepKeys.length - 1, prev + 1));
-                  const dialogContent = document.querySelector('[role="dialog"]');
-                  if (dialogContent) dialogContent.scrollTo({ top: 0, behavior: 'smooth' });
+                  scrollToFormTop();
                 }
               }}
               className="w-full sm:w-auto px-7 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all flex items-center justify-center gap-2"
@@ -2524,6 +2534,21 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             </Button>
           )}
         </div>
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div className="w-full border border-slate-200/90 dark:border-border rounded-3xl shadow-lg bg-white dark:bg-card overflow-hidden">
+        {formContent}
+      </div>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={o => { onOpenChange(o); if (!o) resetForm(); }}>
+      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto dialog-content-scroll border border-slate-200/90 dark:border-border rounded-3xl shadow-2xl p-0 bg-white dark:bg-card overflow-hidden">
+        {formContent}
       </DialogContent>
     </Dialog>
   );

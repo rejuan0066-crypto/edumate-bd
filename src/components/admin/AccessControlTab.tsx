@@ -30,6 +30,7 @@ const ALL_ADMIN_PATHS = [
   { path: '/admin/designations', label_en: 'Designations', label_bn: 'পদবি' },
   { path: '/admin/academic-sessions', label_en: 'Academic Sessions', label_bn: 'একাডেমিক সেশন' },
   { path: '/admin/students', label_en: 'Students', label_bn: 'ছাত্র ব্যবস্থাপনা' },
+  { path: '/admin/students/admission', label_en: 'Student Admission', label_bn: 'ছাত্র ভর্তি' },
   { path: '/admin/staff', label_en: 'Staff Management', label_bn: 'স্টাফ ব্যবস্থাপনা' },
   { path: '/admin/divisions', label_en: 'Divisions & Class', label_bn: 'বিভাগ ও শ্রেণী' },
   { path: '/admin/subjects', label_en: 'Subjects', label_bn: 'বিষয়সমূহ' },
