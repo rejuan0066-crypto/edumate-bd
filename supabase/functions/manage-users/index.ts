@@ -458,16 +458,21 @@ Deno.serve(async (req) => {
 
     // LIST users
     if (req.method === "GET" && !action) {
-      const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+      const [
+        { data: { users }, error: listError },
+        { data: roles },
+        { data: profiles },
+      ] = await Promise.all([
+        supabaseAdmin.auth.admin.listUsers(),
+        supabaseAdmin.from("user_roles").select("user_id, role"),
+        supabaseAdmin.from("profiles").select("id, full_name, status"),
+      ]);
       if (listError) {
         return new Response(JSON.stringify({ error: listError.message }), {
           status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Get all roles
-      const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role");
-      const { data: profiles } = await supabaseAdmin.from("profiles").select("id, full_name, status");
       const userIds = users.map((u: any) => u.id).filter(Boolean);
       const userEmails = users.map((u: any) => u.email).filter(Boolean);
       const [staffByIdResult, staffByEmailResult] = await Promise.all([

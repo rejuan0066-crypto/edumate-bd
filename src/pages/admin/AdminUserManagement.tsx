@@ -444,41 +444,50 @@ const AdminUserManagement = () => {
         if (u.staff?.id) includedStaffMap[u.id] = u.staff;
       });
 
-      // Pull linked staff records if the function response does not include them yet
-      const ids = list.map(u => u.id).filter(Boolean);
-      if (Object.keys(includedStaffMap).length > 0) {
+      const hasIncludedStaff = Object.keys(includedStaffMap).length > 0;
+      if (hasIncludedStaff) {
         setStaffByUser(includedStaffMap);
         try { localStorage.setItem(STAFF_BY_USER_CACHE_KEY, JSON.stringify(includedStaffMap)); } catch {}
-      } else if (ids.length > 0) {
-        const { data: staffRows } = await supabase
-          .from('staff')
-          .select('id, user_id, name_bn, name_en, designation, staff_category, photo_url')
-          .in('user_id', ids)
-          .is('deleted_at', null);
-        const map: Record<string, LinkedStaff> = {};
-        (staffRows || []).forEach(r => {
-          if (r.user_id) map[r.user_id] = { id: r.id, name_bn: r.name_bn, name_en: r.name_en, designation: r.designation, staff_category: r.staff_category, photo_url: r.photo_url };
-        });
-        setStaffByUser(map);
-        try { localStorage.setItem(STAFF_BY_USER_CACHE_KEY, JSON.stringify(map)); } catch {}
-      } else {
-        setStaffByUser({});
       }
 
-      // Pull administrative_officers linked by user_id
+      // Release main table spinner immediately once users list arrives
+      setLoading(false);
+
+      // Pull fallback staff + administrative_officers in parallel in the background
+      const ids = list.map(u => u.id).filter(Boolean);
       if (ids.length > 0) {
-        const { data: officerRows } = await supabase
-          .from('administrative_officers' as any)
-          .select('id, user_id, name_bn, designation')
-          .in('user_id', ids)
-          .is('deleted_at', null);
-        const omap: Record<string, { id: string; name_bn: string; designation: string | null }> = {};
-        (officerRows || []).forEach((r: any) => {
-          if (r.user_id) omap[r.user_id] = { id: r.id, name_bn: r.name_bn, designation: r.designation };
-        });
-        setAdminOfficerByUser(omap);
-        try { localStorage.setItem(OFFICERS_BY_USER_CACHE_KEY, JSON.stringify(omap)); } catch {}
+        void Promise.all([
+          !hasIncludedStaff
+            ? supabase
+                .from('staff')
+                .select('id, user_id, name_bn, name_en, designation, staff_category, photo_url')
+                .in('user_id', ids)
+                .is('deleted_at', null)
+                .then(({ data: staffRows }) => {
+                  const map: Record<string, LinkedStaff> = {};
+                  (staffRows || []).forEach(r => {
+                    if (r.user_id) map[r.user_id] = { id: r.id, name_bn: r.name_bn, name_en: r.name_en, designation: r.designation, staff_category: r.staff_category, photo_url: r.photo_url };
+                  });
+                  setStaffByUser(map);
+                  try { localStorage.setItem(STAFF_BY_USER_CACHE_KEY, JSON.stringify(map)); } catch {}
+                })
+            : Promise.resolve(),
+          supabase
+            .from('administrative_officers' as any)
+            .select('id, user_id, name_bn, designation')
+            .in('user_id', ids)
+            .is('deleted_at', null)
+            .then(({ data: officerRows }) => {
+              const omap: Record<string, { id: string; name_bn: string; designation: string | null }> = {};
+              (officerRows || []).forEach((r: any) => {
+                if (r.user_id) omap[r.user_id] = { id: r.id, name_bn: r.name_bn, designation: r.designation };
+              });
+              setAdminOfficerByUser(omap);
+              try { localStorage.setItem(OFFICERS_BY_USER_CACHE_KEY, JSON.stringify(omap)); } catch {}
+            }),
+        ]);
       } else {
+        setStaffByUser({});
         setAdminOfficerByUser({});
       }
     } catch {
