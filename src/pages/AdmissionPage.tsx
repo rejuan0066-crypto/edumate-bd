@@ -35,6 +35,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { formatAddress as formatAddressBn } from '@/lib/banglaAddressHelper';
 import { useAuth } from '@/hooks/useAuth';
+import { useStudentCategories } from '@/hooks/useStudentCategories';
 import { usePermissions } from '@/hooks/usePermissions';
 import { isAdminRole } from '@/lib/roles';
 
@@ -244,14 +245,7 @@ const AdmissionPage = () => {
     },
   });
 
-  const { data: studentCategories = [] } = useQuery({
-    queryKey: ['student_categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('student_categories').select('*').eq('is_active', true).order('sort_order');
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { categories: studentCategories } = useStudentCategories();
 
   const { data: classes = [] } = useQuery({
     queryKey: ['classes'],

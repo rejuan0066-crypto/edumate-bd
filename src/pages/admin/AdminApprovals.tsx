@@ -41,6 +41,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { useStudentCategories } from '@/hooks/useStudentCategories';
 import { getStaffDisplayNames } from '@/lib/nameFormatter';
 import { getStaffCategoryKey } from '@/lib/staffOrderHelper';
 import { useVerifierDepartments } from '@/hooks/useSignatoryAuthorities';
@@ -254,14 +255,8 @@ const AdminApprovals = () => {
     },
   });
 
-  // Student Categories for approval assignment
-  const { data: studentCategories = [] } = useQuery({
-    queryKey: ['student-categories-approvals'],
-    queryFn: async () => {
-      const { data } = await supabase.from('student_categories').select('id, name, name_bn').order('name');
-      return data || [];
-    },
-  });
+  // Student Categories for approval assignment (deduplicated)
+  const { categories: studentCategories } = useStudentCategories();
 
   // Classes and Divisions for roll/reg auto-generation
   const { data: allClasses = [] } = useQuery({
@@ -3733,23 +3728,16 @@ const AdminApprovals = () => {
                       <Label className="text-xs font-bold text-foreground">
                         {bn ? 'ছাত্রের ক্যাটাগরি *' : 'Student Category *'}
                       </Label>
-                      <Select value={assignedCategory} onValueChange={setAssignedCategory}>
+                      <Select value={assignedCategory || 'general'} onValueChange={setAssignedCategory}>
                         <SelectTrigger className="h-10 bg-background text-xs font-medium">
                           <SelectValue placeholder={bn ? 'ক্যাটাগরি নির্বাচন করুন' : 'Select Category'} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-50">
                           {studentCategories.map((cat: any) => (
-                            <SelectItem key={cat.id} value={cat.name}>
-                              {bn ? cat.name_bn : cat.name}
+                            <SelectItem key={cat.id || cat.name} value={cat.name}>
+                              {bn ? (cat.name_bn || cat.name) : (cat.name || cat.name_bn)}
                             </SelectItem>
                           ))}
-                          {studentCategories.length === 0 && (
-                            <>
-                              <SelectItem value="general">{bn ? 'সাধারণ' : 'General'}</SelectItem>
-                              <SelectItem value="poor">{bn ? 'অসচ্ছল' : 'Insolvent'}</SelectItem>
-                              <SelectItem value="orphan">{bn ? 'এতিম' : 'Orphan'}</SelectItem>
-                            </>
-                          )}
                         </SelectContent>
                       </Select>
                       <p className="text-[11px] text-muted-foreground">

@@ -30,6 +30,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { isAdminRole } from '@/lib/roles';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { useStudentCategories } from '@/hooks/useStudentCategories';
 import { dispatchApprovalNotification } from '@/lib/applicationRevisionService';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
@@ -145,14 +146,7 @@ const AdmissionForm = ({
     },
   });
 
-  const { data: studentCategories = [] } = useQuery({
-    queryKey: ['student_categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('student_categories').select('*').eq('is_active', true).order('sort_order');
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { categories: studentCategories } = useStudentCategories();
 
   const { data: classes = [] } = useQuery({
     queryKey: ['classes'],
@@ -1894,7 +1888,7 @@ const AdmissionForm = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/5 via-background to-secondary/30 shadow-2xs">
             <div>
               <Label className="text-xs font-semibold text-foreground uppercase tracking-wider">{bn ? 'ছাত্রের ক্যাটাগরি' : 'Student Category'} <span className="text-destructive">*</span></Label>
-              <Select value={form.student_category} onValueChange={v => {
+              <Select value={form.student_category || 'general'} onValueChange={v => {
                 setForm(prev => ({
                   ...prev,
                   student_category: v,
@@ -1903,13 +1897,12 @@ const AdmissionForm = ({
                 }));
               }}>
                 <SelectTrigger className="bg-background mt-1.5 h-10 rounded-xl"><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-50">
                   {studentCategories.map((cat: any) => (
-                    <SelectItem key={cat.id} value={cat.name}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                    <SelectItem key={cat.id || cat.name} value={cat.name}>
+                      {bn ? (cat.name_bn || cat.name) : (cat.name || cat.name_bn)}
+                    </SelectItem>
                   ))}
-                  {studentCategories.length === 0 && (
-                    <SelectItem value="general">{bn ? 'সাধারণ' : 'General'}</SelectItem>
-                  )}
                 </SelectContent>
               </Select>
             </div>

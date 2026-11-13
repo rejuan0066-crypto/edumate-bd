@@ -55,8 +55,11 @@ const StudentCategoryManager = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('student_categories').update({ is_active: false }).eq('id', id);
-      if (error) throw error;
+      const { error } = await supabase.from('student_categories').delete().eq('id', id);
+      if (error) {
+        const { error: updateErr } = await supabase.from('student_categories').update({ is_active: false }).eq('id', id);
+        if (updateErr) throw updateErr;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student_categories'] });
