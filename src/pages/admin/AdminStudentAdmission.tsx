@@ -33,6 +33,7 @@ import {
   Eye,
   Pencil,
   Trash2,
+  ArrowLeft,
   Printer,
   MoreHorizontal,
   Loader2,
@@ -468,6 +469,68 @@ const AdminStudentAdmission = () => {
     });
     return formatted;
   };
+
+  if (showAdd || editStudent) {
+    return (
+      <AdminLayout>
+        <div className="space-y-4 max-w-5xl mx-auto pb-12 animate-fade-in">
+          <div className="flex items-center justify-between bg-card border border-border/80 rounded-2xl px-5 py-3.5 shadow-xs">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowAdd(false);
+                setEditStudent(null);
+                setAdmissionModalMode('admission');
+              }}
+              className="gap-2 text-xs font-semibold hover:bg-secondary/80 rounded-xl"
+            >
+              <ArrowLeft className="w-4 h-4 text-emerald-600" />
+              <span>{bn ? 'ভর্তি আবেদন তালিকায় ফিরে যান' : 'Back to Admission Applications'}</span>
+            </Button>
+            <div className="text-right">
+              <span className="text-xs font-bold text-foreground">
+                {admissionModalMode === 'approve'
+                  ? (bn ? 'আবেদন রিভিউ ও অফিসিয়াল অনুমোদন' : 'Application Review & Approval')
+                  : editStudent
+                  ? (bn ? `আবেদনের তথ্য সম্পাদনা: ${editStudent.name_bn || editStudent.name_en || ''}` : `Edit Application: ${editStudent.name_en || editStudent.name_bn || ''}`)
+                  : (bn ? 'নতুন ভর্তি আবেদন' : 'New Admission Application')}
+              </span>
+            </div>
+          </div>
+
+          <AdmissionForm
+            open={true}
+            embedded={true}
+            onOpenChange={(o) => {
+              if (!o) {
+                setShowAdd(false);
+                setEditStudent(null);
+                setAdmissionModalMode('admission');
+              }
+            }}
+            editStudent={editStudent}
+            mode={admissionModalMode}
+            bypassRequirements={canBypassRequirements}
+            onRevision={(st) => setRevisionStudent(st)}
+            onReject={(st) => setRejectionStudent(st)}
+            onApprove={() => {
+              invalidateAllStudentQueries(queryClient);
+              queryClient.invalidateQueries({ queryKey: ['students'] });
+              setShowAdd(false);
+              setEditStudent(null);
+              setAdmissionModalMode('admission');
+            }}
+            onSuccess={() => {
+              setShowAdd(false);
+              setEditStudent(null);
+              setAdmissionModalMode('admission');
+            }}
+          />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <>
@@ -1077,27 +1140,6 @@ const AdminStudentAdmission = () => {
           </div>
         </div>
       </AdminLayout>
-
-      {/* Admission Form Modal (opens on + নতুন ভর্তি আবেদন, Edit or Review & Approve) */}
-      <AdmissionForm
-        open={showAdd}
-        onOpenChange={(o) => {
-          setShowAdd(o);
-          if (!o) {
-            setEditStudent(null);
-            setAdmissionModalMode('admission');
-          }
-        }}
-        editStudent={editStudent}
-        mode={admissionModalMode}
-        bypassRequirements={canBypassRequirements}
-        onRevision={(st) => setRevisionStudent(st)}
-        onReject={(st) => setRejectionStudent(st)}
-        onApprove={() => {
-          invalidateAllStudentQueries(queryClient);
-          queryClient.invalidateQueries({ queryKey: ['students'] });
-        }}
-      />
 
       {/* Detail View Dialog */}
       <Dialog open={!!showDetail} onOpenChange={(o) => { if (!o) setShowDetail(null); }}>

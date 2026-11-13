@@ -166,7 +166,7 @@ const AdminStudentProfilePage = () => {
               {canEditItem && (
                 <Button
                   size="sm"
-                  onClick={() => setEditOpen(true)}
+                  onClick={() => navigate(`/admin/students/edit/${student.id}`)}
                   className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
                 >
                   <Pencil className="w-3.5 h-3.5" />

@@ -2262,6 +2262,19 @@ const AdmissionForm = ({
                 {bn ? `ধাপ ${safeCurrentStep + 1} / ${allStepKeys.length}` : `Step ${safeCurrentStep + 1} of ${allStepKeys.length}`}
               </span>
             </div>
+            {embedded && (
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl gap-1"
+                title={bn ? 'বন্ধ করুন' : 'Close'}
+              >
+                <X className="w-4 h-4" />
+                <span className="hidden sm:inline">{bn ? 'বন্ধ করুন' : 'Close'}</span>
+              </Button>
+            )}
           </div>
         </div>
 

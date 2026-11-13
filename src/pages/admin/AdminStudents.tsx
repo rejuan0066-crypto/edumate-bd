@@ -5,7 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Trash2, Loader2, CheckCircle, Eye, XCircle, Clock, Pencil, Filter, UserX, UserCheck, Printer, History, Download, BarChart3, Layers, MoreHorizontal, Users, Sparkles, RotateCcw } from 'lucide-react';
+import { Search, Trash2, Loader2, CheckCircle, Eye, XCircle, Clock, Pencil, Filter, UserX, UserCheck, Printer, History, Download, BarChart3, Layers, MoreHorizontal, Users, Sparkles, RotateCcw, ArrowLeft } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useConfirm } from '@/contexts/ConfirmContext';
@@ -44,6 +44,9 @@ const AdminStudents = () => {
   const confirm = useConfirm();
   const bn = language === 'bn';
   const navigate = useNavigate();
+  const { id: routeEditId } = useParams<{ id?: string }>();
+  const location = useLocation();
+  const isAddRoute = location.pathname.endsWith('/students/add');
   const { data: institution } = useInstitutionInfo();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
@@ -134,6 +137,20 @@ const AdminStudents = () => {
       return data;
     },
   });
+
+  // Sync route params with edit mode
+  useEffect(() => {
+    if (routeEditId && students && students.length > 0) {
+      const match = students.find((s: any) => s.id === routeEditId);
+      if (match) {
+        setEditStudent(match);
+        setShowAdd(true);
+      }
+    } else if (isAddRoute) {
+      setEditStudent(null);
+      setShowAdd(true);
+    }
+  }, [routeEditId, isAddRoute, students]);
 
   // Self-healing migration: automatically convert any legacy Bengali digits in DB to English digits
   useEffect(() => {
@@ -987,7 +1004,7 @@ const AdminStudents = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-44 rounded-xl">
                                   {canEditItem && (
-                                    <DropdownMenuItem onClick={() => { setEditStudent(s); setShowAdd(true); }} className="gap-2 cursor-pointer text-xs">
+                                    <DropdownMenuItem onClick={() => { setEditStudent(s); setShowAdd(true); navigate(`/admin/students/edit/${s.id}`); }} className="gap-2 cursor-pointer text-xs">
                                       <Pencil className="w-3.5 h-3.5 text-emerald-600" />
                                       <span>{bn ? 'তথ্য সম্পাদনা' : 'Edit Info'}</span>
                                     </DropdownMenuItem>
@@ -1057,23 +1074,67 @@ const AdminStudents = () => {
             </>
           )}
         </div>
-      {/* Dynamic Admission Form */}
-      <AdmissionForm
-        open={showAdd}
-        onOpenChange={(o) => { setShowAdd(o); if (!o) setEditStudent(null); }}
-        editStudent={editStudent}
-        bypassRequirements={canBypassRequirements}
-      />
-
       {/* Detail View Dialog */}
       <Dialog open={!!showDetail} onOpenChange={o => { if (!o) setShowDetail(null); }}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto rounded-[40px]">
           <DialogHeader><DialogTitle className="text-center">{bn ? 'ছাত্রের বিস্তারিত' : 'Student Details'}</DialogTitle></DialogHeader>
-          {showDetail && <StudentProfileModal student={showDetail} bn={bn} getApprovalBadge={getApprovalBadge} getSessionName={getSessionName} getClassName={(cId: string) => getClassName(cId || getEffectiveClassId(showDetail))} setEditStudent={setEditStudent} setShowDetail={setShowDetail} setShowAdd={setShowAdd} statusMutation={statusMutation} canEditItem={canEditItem} canDeleteItem={canDeleteItem} />}
+          {showDetail && <StudentProfileModal student={showDetail} bn={bn} getApprovalBadge={getApprovalBadge} getSessionName={getSessionName} getClassName={(cId: string) => getClassName(cId || getEffectiveClassId(showDetail))} setEditStudent={(st) => { setEditStudent(st); setShowAdd(true); if (st?.id) navigate(`/admin/students/edit/${st.id}`); }} setShowDetail={setShowDetail} setShowAdd={setShowAdd} statusMutation={statusMutation} canEditItem={canEditItem} canDeleteItem={canDeleteItem} />}
         </DialogContent>
       </Dialog>
     </div>
   );
+
+  if (showAdd || editStudent) {
+    return (
+      <AdminLayout>
+        <div className="space-y-4 max-w-5xl mx-auto pb-12 animate-fade-in">
+          {/* Top Return Button & Title Bar */}
+          <div className="flex items-center justify-between bg-card border border-border/80 rounded-2xl px-5 py-3.5 shadow-xs">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowAdd(false);
+                setEditStudent(null);
+                navigate('/admin/students');
+              }}
+              className="gap-2 text-xs font-semibold hover:bg-secondary/80 rounded-xl"
+            >
+              <ArrowLeft className="w-4 h-4 text-emerald-600" />
+              <span>{bn ? 'শিক্ষার্থী তালিকায় ফিরে যান' : 'Back to Student List'}</span>
+            </Button>
+            <div className="text-right">
+              <span className="text-xs font-bold text-foreground">
+                {editStudent
+                  ? (bn ? `ছাত্রের তথ্য সম্পাদনা: ${editStudent.name_bn || editStudent.name_en || ''}` : `Edit Student: ${editStudent.name_en || editStudent.name_bn || ''}`)
+                  : (bn ? 'নতুন শিক্ষার্থী ভর্তি আবেদন' : 'New Student Admission')}
+              </span>
+            </div>
+          </div>
+
+          {/* Embedded Full Page AdmissionForm */}
+          <AdmissionForm
+            open={true}
+            embedded={true}
+            onOpenChange={(o) => {
+              if (!o) {
+                setShowAdd(false);
+                setEditStudent(null);
+                navigate('/admin/students');
+              }
+            }}
+            editStudent={editStudent}
+            bypassRequirements={canBypassRequirements}
+            onSuccess={() => {
+              setShowAdd(false);
+              setEditStudent(null);
+              navigate('/admin/students');
+            }}
+          />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <>

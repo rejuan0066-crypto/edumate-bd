@@ -446,6 +446,8 @@ const App = () => (
                     <Route path="committees" element={<ModuleGuard menuPath="/admin/committees"><AdminCommittees /></ModuleGuard>} />
                     <Route path="committee-audit-log" element={<ModuleGuard menuPath="/admin/committee-audit-log"><AdminCommitteeAuditLog /></ModuleGuard>} />
                     <Route path="students" element={<ModuleGuard menuPath="/admin/students"><AdminStudents /></ModuleGuard>} />
+                    <Route path="students/add" element={<ModuleGuard action="add" menuPath="/admin/students"><AdminStudents /></ModuleGuard>} />
+                    <Route path="students/edit/:id" element={<ModuleGuard action="edit" menuPath="/admin/students"><AdminStudents /></ModuleGuard>} />
                     <Route path="students/admission" element={<ModuleGuard menuPath="/admin/students/admission"><AdminStudentAdmission /></ModuleGuard>} />
                     <Route path="students/profile/:id" element={<ModuleGuard menuPath="/admin/students"><AdminStudentProfilePage /></ModuleGuard>} />
                     <Route path="staff" element={<ModuleGuard menuPath="/admin/staff"><AdminStaff staffType="all" /></ModuleGuard>} />
