@@ -3,10 +3,16 @@ import App from "./App.tsx";
 import "./index.css";
 import { installPwaPrintAdapter } from "./lib/pwaPrintAdapter";
 
-// Handle Vite preload errors cleanly without unprompted page reloads
+// Handle Vite preload errors (e.g. after a new deployment with new bundle hashes)
+// Automatically reloads once with cache bust to ensure user gets latest version
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault();
   console.warn('[vite] Preload error intercepted:', event);
+  const reloaded = sessionStorage.getItem('vite_chunk_reloaded');
+  if (!reloaded) {
+    sessionStorage.setItem('vite_chunk_reloaded', Date.now().toString());
+    window.location.reload();
+  }
 });
 
 // Patch window.open / blob downloads so receipts, salary slips, certificates,

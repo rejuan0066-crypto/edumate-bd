@@ -120,7 +120,7 @@ const AdminClassRoutine = () => {
         .maybeSingle();
 
       if (data?.value && Array.isArray(data.value) && data.value.length > 0) {
-        return data.value as MasterRoutineItem[];
+        return data.value as unknown as MasterRoutineItem[];
       }
       return DEFAULT_MASTER_ROUTINES;
     },
@@ -431,8 +431,8 @@ const AdminClassRoutine = () => {
           bn={bn}
           sessionId={sessions[0]?.id}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['class-routines'] });
-            queryClient.invalidateQueries({ queryKey: ['all-classes-periods'] });
+            qc.invalidateQueries({ queryKey: ['class-routines'] });
+            qc.invalidateQueries({ queryKey: ['all-classes-periods'] });
           }}
         />
       </div>

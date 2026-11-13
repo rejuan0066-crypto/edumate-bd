@@ -99,7 +99,7 @@ const StaffApplicationPage = () => {
 
   const isRevisionMode = existingApp?.status === 'needs_revision';
   const correctionFields: string[] = useMemo(() => {
-    return existingApp?.correction_fields || (existingApp?.staff_data as any)?.correction_fields || [];
+    return (existingApp as any)?.correction_fields || (existingApp?.staff_data as any)?.correction_fields || [];
   }, [existingApp]);
 
   const isFieldMarked = (key: string) => {
@@ -300,11 +300,11 @@ const StaffApplicationPage = () => {
     }
     setFirstName(sd.first_name || existingApp.name_bn || '');
     setLastName(sd.last_name || existingApp.name_en || '');
-    setMobile(existingApp.phone?.replace(/^\+880/, '') || existingApp.mobile?.replace(/^\+880/, '') || '');
+    setMobile(existingApp.phone?.replace(/^\+880/, '') || (existingApp as any)?.mobile?.replace(/^\+880/, '') || (existingApp as any)?.staff_data?.mobile?.replace(/^\+880/, '') || '');
     setStaffEmail(existingApp.email || '');
     setPhotoUrl(existingApp.photo_url || null);
     setDob(existingApp.date_of_birth || sd.dob || '');
-    setMaritalStatus(existingApp.marital_status || sd.marital_status || '');
+    setMaritalStatus((existingApp as any)?.marital_status || sd.marital_status || '');
     setReligion(existingApp.religion || sd.religion || 'islam');
     setNid(existingApp.nid || sd.nid || '');
     setEducation(existingApp.education || sd.education || '');
@@ -1611,9 +1611,9 @@ const StaffApplicationPage = () => {
                       <AlertCircle className="w-5 h-5 shrink-0" />
                       <span>{bn ? 'সংশোধনী নির্দেশনা (অ্যাডমিন কর্তৃক চিহ্নিত):' : 'Revision Instructions from Admin:'}</span>
                     </div>
-                    {existingApp?.correction_notes && (
+                    {(existingApp as any)?.correction_notes && (
                       <p className="text-sm text-foreground bg-background/80 p-3 rounded-xl border leading-relaxed">
-                        {existingApp.correction_notes}
+                        {(existingApp as any)?.correction_notes}
                       </p>
                     )}
                     <p className="text-xs text-orange-800 dark:text-orange-200 font-medium">

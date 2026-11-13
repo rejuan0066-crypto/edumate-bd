@@ -83,7 +83,7 @@ const AdmissionPage = () => {
 
   const isStudentRevisionMode = existingStudentApp?.approval_status === 'needs_revision';
   const studentCorrectionFields: string[] = useMemo(() => {
-    return existingStudentApp?.correction_fields || (existingStudentApp?.admission_data as any)?.correction_fields || [];
+    return (existingStudentApp as any)?.correction_fields || (existingStudentApp?.admission_data as any)?.correction_fields || [];
   }, [existingStudentApp]);
 
   const isFieldMarked = useCallback((key: string) => {
@@ -223,7 +223,7 @@ const AdmissionPage = () => {
       birth_reg_no: existingStudentApp.birth_reg_no || '',
       religion: existingStudentApp.religion || 'islam',
       residence_type: existingStudentApp.residence_type || 'non-resident',
-      student_type: existingStudentApp.student_type || 'new',
+      student_type: (existingStudentApp as any)?.student_type || 'new',
       student_category: existingStudentApp.student_category || '',
       previous_institute: existingStudentApp.previous_institute || '',
       previous_class: existingStudentApp.previous_class || '',
@@ -2366,9 +2366,9 @@ const AdmissionPage = () => {
                       <AlertCircle className="w-5 h-5 shrink-0" />
                       <span>{bn ? 'ভর্তি আবেদনে তথ্য সংশোধনের নির্দেশ (অ্যাডমিন বার্তা):' : 'Revision Instructions from Admin:'}</span>
                     </div>
-                    {existingStudentApp?.correction_notes && (
+                    {(existingStudentApp as any)?.correction_notes && (
                       <p className="text-sm text-foreground bg-background/80 p-3 rounded-xl border leading-relaxed">
-                        {existingStudentApp.correction_notes}
+                        {(existingStudentApp as any)?.correction_notes}
                       </p>
                     )}
                     <p className="text-xs text-orange-800 dark:text-orange-200 font-medium">

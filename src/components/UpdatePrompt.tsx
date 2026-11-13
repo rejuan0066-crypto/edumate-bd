@@ -79,7 +79,8 @@ const UpdatePrompt = () => {
   // Update popup disabled - ?????? ???? ?????? ??? ???? ???? ??? ??????
   return null;
 
-  // @ts-expect-error unreachable
+  // unreachable code below is disabled
+  // @ts-ignore
   const { language } = useLanguage();
   const bn = language === 'bn';
   const [updateAvailable, setUpdateAvailable] = useState(false);

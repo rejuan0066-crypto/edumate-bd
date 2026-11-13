@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import PhotoUpload from '@/components/PhotoUpload';
 import FileUploadField from '@/components/FileUploadField';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
@@ -999,7 +1000,7 @@ const AdmissionForm = ({
         roll: payload.roll_number,
         reg: updatedStudentId,
         className: targetClass?.name_bn || targetClass?.name,
-        institutionName: institution?.name_bn || institution?.name,
+        institutionName: (institution as any)?.name_bn || institution?.name || '',
       });
     },
     onSuccess: async () => {

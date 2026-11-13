@@ -210,7 +210,7 @@ const AdminStudentAdmission = () => {
             email: student.email,
             appNo: student.student_id,
             rejectionReason: reason || 'আবেদনটি এই মুহূর্তে গ্রহণ করা সম্ভব হয়নি',
-            institutionName: institution?.name_bn || institution?.name,
+            institutionName: (institution as any)?.name_bn || institution?.name || '',
           });
         } catch {}
       }
@@ -263,7 +263,7 @@ const AdminStudentAdmission = () => {
             appNo: student.student_id,
             correctionFields: fields,
             correctionNotes: notes,
-            institutionName: institution?.name_bn || institution?.name,
+            institutionName: (institution as any)?.name_bn || institution?.name || '',
           });
         } catch {}
       }
@@ -1094,8 +1094,8 @@ const AdminStudentAdmission = () => {
         onRevision={(st) => setRevisionStudent(st)}
         onReject={(st) => setRejectionStudent(st)}
         onApprove={() => {
-          queryClient.invalidateQueries({ queryKey: ['admission-students'] });
-          refetch();
+          invalidateAllStudentQueries(queryClient);
+          queryClient.invalidateQueries({ queryKey: ['students'] });
         }}
       />
 

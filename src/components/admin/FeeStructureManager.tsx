@@ -126,8 +126,9 @@ export const FeeStructureManager: React.FC = () => {
 
     try {
       setUploadingFile(true);
-      const uploadedUrl = await uploadToCloudinary(file);
-      if (!uploadedUrl) {
+      const uploadRes = await uploadToCloudinary(file);
+      const fileUrl = uploadRes?.secure_url || uploadRes?.url;
+      if (!fileUrl) {
         throw new Error('Upload failed');
       }
 
@@ -137,7 +138,7 @@ export const FeeStructureManager: React.FC = () => {
       const newAtt: FeeStructureAttachment = {
         id: `att-${Date.now()}`,
         title: newFileTitle.trim(),
-        url: uploadedUrl,
+        url: fileUrl,
         file_type: ext,
         file_size: sizeStr
       };

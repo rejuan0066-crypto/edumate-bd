@@ -38,6 +38,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { getStaffDisplayNames } from '@/lib/nameFormatter';
@@ -943,7 +944,7 @@ const AdminApprovals = () => {
               phone: stData.phone || stData.father_phone,
               appNo: stData.student_id,
               rejectionReason: reason || 'আবেদনটি এই মুহূর্তে গ্রহণ করা সম্ভব হয়নি',
-              institutionName: institution?.name_bn || institution?.name,
+              institutionName: (institution as any)?.name_bn || institution?.name || '',
             });
           } catch (notifErr) {
             console.warn('[AdminApprovals] Rejection notification error:', notifErr);
@@ -1046,7 +1047,7 @@ const AdminApprovals = () => {
     mutationFn: async ({ id, status, reason }: { id: string; status: 'active' | 'rejected' | 'needs_revision'; reason?: string }) => {
       const { data: currentStaff } = await supabase
         .from('staff')
-        .select('staff_data, name_bn, name_en, phone, mobile, email, staff_id')
+        .select('staff_data, name_bn, name_en, phone, email, staff_id')
         .eq('id', id)
         .maybeSingle();
 
@@ -1077,11 +1078,11 @@ const AdminApprovals = () => {
             type: 'staff',
             id,
             name: currentStaff.name_bn || currentStaff.name_en,
-            phone: currentStaff.phone || currentStaff.mobile,
+            phone: currentStaff.phone || (currentStaff as any)?.staff_data?.mobile || (currentStaff as any)?.staff_data?.phone,
             email: currentStaff.email,
             appNo: currentStaff.staff_id,
             rejectionReason: reason || 'আবেদনটি এই মুহূর্তে গ্রহণ করা সম্ভব হয়নি',
-            institutionName: institution?.name_bn || institution?.name,
+            institutionName: (institution as any)?.name_bn || institution?.name || '',
           });
         } catch (notifErr) {
           console.warn('[AdminApprovals] Staff rejection notification error:', notifErr);
@@ -1132,7 +1133,7 @@ const AdminApprovals = () => {
           appNo: data.student_id,
           correctionFields: fields,
           correctionNotes: notes,
-          institutionName: institution?.name_bn || institution?.name,
+          institutionName: (institution as any)?.name_bn || institution?.name || '',
         });
       } else {
         const currentSd = (data?.staff_data as any) || {};
@@ -1156,13 +1157,13 @@ const AdminApprovals = () => {
         await dispatchRevisionNotification({
           type: 'staff',
           id,
-          name: data.name_bn || data.name_en,
-          phone: data.phone || data.mobile,
-          email: data.email,
-          appNo: data.staff_id,
+          name: (data as any)?.name_bn || (data as any)?.name_en,
+          phone: (data as any)?.phone || (data as any)?.mobile || (data as any)?.staff_data?.mobile,
+          email: (data as any)?.email,
+          appNo: (data as any)?.staff_id,
           correctionFields: fields,
           correctionNotes: notes,
-          institutionName: institution?.name_bn || institution?.name,
+          institutionName: (institution as any)?.name_bn || institution?.name || '',
         });
       }
     },
@@ -1423,7 +1424,7 @@ const AdminApprovals = () => {
         if (target_id) recordPayload.id = target_id;
         const { error } = await supabase
           .from('attendance_records')
-          .upsert(recordPayload, { onConflict: 'attendance_date,entity_type,entity_id,shift' });
+          .upsert(recordPayload as any, { onConflict: 'attendance_date,entity_type,entity_id,shift' });
         if (error) throw error;
         return;
       }
